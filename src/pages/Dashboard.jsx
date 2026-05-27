@@ -170,6 +170,27 @@ export default function Dashboard({ currentUser, setCurrentPage, todayRecord, se
         />
       </div>
 
+
+      {/* Mobile-Only Premium Quick Start Grid */}
+      <div className="quick-start-grid">
+        <div className="quick-action-card" onClick={() => setCurrentPage('vocabulary')}>
+          <span className="quick-action-icon">📚</span>
+          <span className="quick-action-label">核心單字</span>
+        </div>
+        <div className="quick-action-card" onClick={() => { setPracticeFilter('5'); setCurrentPage('question-practice'); }}>
+          <span className="quick-action-icon">✏️</span>
+          <span className="quick-action-label">Part 5 選擇</span>
+        </div>
+        <div className="quick-action-card" onClick={() => { setPracticeFilter('7'); setCurrentPage('question-practice'); }}>
+          <span className="quick-action-icon">📰</span>
+          <span className="quick-action-label">Part 7 閱讀</span>
+        </div>
+        <div className="quick-action-card" onClick={() => setCurrentPage('mock-test')}>
+          <span className="quick-action-icon">📝</span>
+          <span className="quick-action-label">模擬測驗</span>
+        </div>
+      </div>
+
       {/* Main Grid: Today's Tasks & Quick Starts */}
       <div className="grid grid-cols-3 gap-3">
         {/* Today's Tasks Card */}
@@ -208,8 +229,8 @@ export default function Dashboard({ currentUser, setCurrentPage, todayRecord, se
           </div>
         </div>
 
-        {/* Quick Actions Card */}
-        <div className="card flex flex-col justify-between">
+        {/* Quick Actions Card (Hidden on Mobile) */}
+        <div className="card flex flex-col justify-between mobile-hide">
           <div>
             <h2 style={{ fontSize: '1.3rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>⚡ 快速開始練習</h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-sub)', marginBottom: '1.25rem' }}>一鍵開啟對應的專注學習區塊</p>

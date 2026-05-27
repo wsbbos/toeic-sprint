@@ -123,7 +123,7 @@ export default function Onboarding({ currentUser, onSaveGoals }) {
 
         <button 
           type="submit" 
-          className="btn btn-primary" 
+          className="btn btn-primary onboarding-submit-btn" 
           style={{ width: '100%', marginTop: '1rem', fontSize: '1.1rem', padding: '1rem' }}
         >
           🚀 開啟我的 TOEIC Sprint 訓練！
