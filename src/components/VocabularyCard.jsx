@@ -1,4 +1,5 @@
 // src/components/VocabularyCard.jsx
+import { speakText, isSpeechSupported } from '../utils/speech';
 
 export default function VocabularyCard({ vocab, isFlipped, currentStatus, onFlip, onStatusChange }) {
   const getBadgeClass = (status) => {
@@ -23,6 +24,8 @@ export default function VocabularyCard({ vocab, isFlipped, currentStatus, onFlip
     e.stopPropagation(); // Prevent flipping when clicking status button
     onStatusChange(status);
   };
+
+  const speechAvailable = isSpeechSupported();
 
   return (
     <div className={`vocab-card-wrapper ${isFlipped ? 'flipped' : ''}`} onClick={onFlip}>
@@ -55,7 +58,51 @@ export default function VocabularyCard({ vocab, isFlipped, currentStatus, onFlip
         {/* BACK */}
         <div className="vocab-card-back">
           <div className="flex justify-between align-center" style={{ marginBottom: '0.5rem' }}>
-            <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{vocab.word}</span>
+            <div className="flex align-center gap-1">
+              <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{vocab.word}</span>
+              <button 
+                type="button"
+                className="btn-outline"
+                style={{ 
+                  border: 'none', 
+                  background: 'none', 
+                  cursor: speechAvailable ? 'pointer' : 'not-allowed', 
+                  fontSize: '0.9rem', 
+                  padding: '2px 4px', 
+                  borderRadius: 'var(--radius-sm)',
+                  opacity: speechAvailable ? 1 : 0.4
+                }}
+                disabled={!speechAvailable}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  speakText(vocab.word, 1.0);
+                }}
+                title={speechAvailable ? "🔊 正常語速發音" : "此瀏覽器不支援發音"}
+              >
+                🔊
+              </button>
+              <button 
+                type="button"
+                className="btn-outline"
+                style={{ 
+                  border: 'none', 
+                  background: 'none', 
+                  cursor: speechAvailable ? 'pointer' : 'not-allowed', 
+                  fontSize: '0.9rem', 
+                  padding: '2px 4px', 
+                  borderRadius: 'var(--radius-sm)',
+                  opacity: speechAvailable ? 1 : 0.4
+                }}
+                disabled={!speechAvailable}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  speakText(vocab.word, 0.7);
+                }}
+                title={speechAvailable ? "🐌 慢速發音" : "此瀏覽器不支援發音"}
+              >
+                🐌
+              </button>
+            </div>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>釋義</span>
           </div>
 

@@ -8,7 +8,14 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
     <>
       <nav className="navbar">
         <div className="nav-container">
-          <a href="#dashboard" className="nav-brand" onClick={(e) => { e.preventDefault(); if (currentUser) setCurrentPage('dashboard'); }}>
+          <a 
+            href="#home" 
+            className="nav-brand" 
+            onClick={(e) => { 
+              e.preventDefault(); 
+              if (currentUser) setCurrentPage('home'); 
+            }}
+          >
             <span>🚀 TOEIC Sprint</span>
           </a>
           
@@ -16,11 +23,20 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
             <ul className="nav-links">
               <li>
                 <a 
+                  href="#home" 
+                  className={`nav-link ${currentPage === 'home' ? 'active' : ''}`}
+                  onClick={(e) => { e.preventDefault(); setCurrentPage('home'); }}
+                >
+                  首頁
+                </a>
+              </li>
+              <li>
+                <a 
                   href="#dashboard" 
                   className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('dashboard'); }}
                 >
-                  儀表板
+                  學習總覽
                 </a>
               </li>
               <li>
@@ -57,15 +73,6 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                   onClick={(e) => { e.preventDefault(); setCurrentPage('mock-test'); }}
                 >
                   模擬考
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="#stats" 
-                  className={`nav-link ${currentPage === 'statistics' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setCurrentPage('statistics'); }}
-                >
-                  統計分析
                 </a>
               </li>
               <li>
@@ -127,7 +134,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
         </div>
       </nav>
 
-      {/* Mobile sliding drawer menu */}
+      {/* Mobile sliding drawer menu overlay */}
       {currentUser && isDrawerOpen && (
         <>
           <div className="mobile-drawer-overlay" onClick={() => setIsDrawerOpen(false)} />
@@ -137,12 +144,12 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
               <button type="button" className="drawer-close" onClick={() => setIsDrawerOpen(false)}>✕</button>
             </div>
             <div className="drawer-body">
-              <a href="#dashboard" className={`drawer-item ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('dashboard'); setIsDrawerOpen(false); }}>🏠 儀表板</a>
+              <a href="#home" className={`drawer-item ${currentPage === 'home' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('home'); setIsDrawerOpen(false); }}>🏠 系統首頁</a>
+              <a href="#dashboard" className={`drawer-item ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('dashboard'); setIsDrawerOpen(false); }}>📊 學習總覽</a>
               <a href="#practice" className={`drawer-item ${currentPage === 'practice-center' || currentPage === 'question-practice' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('practice-center'); setIsDrawerOpen(false); }}>📖 練習中心</a>
               <a href="#vocab" className={`drawer-item ${currentPage === 'vocabulary' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('vocabulary'); setIsDrawerOpen(false); }}>📚 核心單字</a>
               <a href="#wrongbook" className={`drawer-item ${currentPage === 'wrong-book' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('wrong-book'); setIsDrawerOpen(false); }}>📓 錯題本</a>
               <a href="#mocktest" className={`drawer-item ${currentPage === 'mock-test' || currentPage === 'result' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('mock-test'); setIsDrawerOpen(false); }}>📝 模擬考</a>
-              <a href="#stats" className={`drawer-item ${currentPage === 'statistics' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('statistics'); setIsDrawerOpen(false); }}>📈 統計分析</a>
               <a href="#friends" className={`drawer-item ${currentPage === 'friends' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('friends'); setIsDrawerOpen(false); }}>🤝 戰友排行榜</a>
               <a href="#settings" className={`drawer-item ${currentPage === 'settings' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('settings'); setIsDrawerOpen(false); }}>⚙️ 學習設定</a>
               <div className="drawer-divider" />
@@ -160,11 +167,18 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
       {currentUser && (
         <div className="mobile-bottom-tabs">
           <div 
-            className={`mobile-tab-item ${currentPage === 'dashboard' ? 'active' : ''}`} 
-            onClick={() => setCurrentPage('dashboard')}
+            className={`mobile-tab-item ${currentPage === 'home' ? 'active' : ''}`} 
+            onClick={() => setCurrentPage('home')}
           >
             <span className="tab-icon">🏠</span>
             <span>首頁</span>
+          </div>
+          <div 
+            className={`mobile-tab-item ${currentPage === 'dashboard' ? 'active' : ''}`} 
+            onClick={() => setCurrentPage('dashboard')}
+          >
+            <span className="tab-icon">📊</span>
+            <span>總覽</span>
           </div>
           <div 
             className={`mobile-tab-item ${currentPage === 'practice-center' || currentPage === 'question-practice' ? 'active' : ''}`} 
@@ -181,13 +195,6 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
             <span>錯題本</span>
           </div>
           <div 
-            className={`mobile-tab-item ${currentPage === 'statistics' ? 'active' : ''}`} 
-            onClick={() => setCurrentPage('statistics')}
-          >
-            <span className="tab-icon">📈</span>
-            <span>分析</span>
-          </div>
-          <div 
             className={`mobile-tab-item ${currentPage === 'settings' ? 'active' : ''}`} 
             onClick={() => setCurrentPage('settings')}
           >
@@ -199,4 +206,3 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
     </>
   );
 }
-

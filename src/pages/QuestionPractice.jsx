@@ -1,5 +1,6 @@
 // src/pages/QuestionPractice.jsx
 import { useState, useEffect } from 'react';
+import { speakText, stopSpeaking, extractAudioTranscript, isSpeechSupported } from '../utils/speech';
 
 export default function QuestionPractice({ setCurrentPage, practiceFilter, onAnswerSubmitted, questions = [] }) {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -8,6 +9,7 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
   const [seconds, setSeconds] = useState(0);
   const [sessionResults, setSessionResults] = useState([]);
   const [focusMode, setFocusMode] = useState(false); // Focus Mode Toggle
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Timer logic
   useEffect(() => {
@@ -15,6 +17,10 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
       setSeconds(prev => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    return () => stopSpeaking();
   }, []);
 
   // Filter questions based on part/type
@@ -51,6 +57,8 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
   };
 
   const handleNext = () => {
+    stopSpeaking();
+    setIsPlaying(false);
     if (currentIdx + 1 < activeQuestions.length) {
       setCurrentIdx(currentIdx + 1);
       setSelectedChoice('');
@@ -147,15 +155,60 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
 
         {/* Listening Mock Audio Control */}
         {(currentQuestion.part >= 1 && currentQuestion.part <= 4) && (
-          <div className="audio-player-mock" style={{ padding: '1.25rem', backgroundColor: 'var(--primary-light)', border: '1px dashed var(--primary)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <span style={{ fontSize: '2rem', animation: submitted ? 'none' : 'float 3s ease-in-out infinite' }}>🎧</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>聽力測驗模擬音檔</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>點擊播放按鈕模擬日常聽力聽感</div>
+          <div className="audio-player-mock" style={{ 
+            padding: '1.25rem', 
+            backgroundColor: 'var(--primary-light)', 
+            border: '1px dashed var(--primary)', 
+            borderRadius: 'var(--radius-md)', 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '0.75rem', 
+            marginBottom: '1.5rem' 
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ fontSize: '2rem', animation: isPlaying ? 'float 2s ease-in-out infinite' : 'none' }}>🗣️</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>Listening TTS 模擬語音 Demo</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: '600', marginTop: '0.25rem', lineHeight: '1.4' }}>
+                  ⚠️ 聲明：本功能採用瀏覽器語音合成（TTS）技術進行模擬，並非正式 TOEIC 聽力考試官方原檔音訊，僅供日常英聽語感輔助練習。
+                </div>
+              </div>
             </div>
-            <button className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }} onClick={() => alert('聽力音檔播放中... 🔊')}>
-              🔊 播放 Mock Audio
-            </button>
+            
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center', marginTop: '0.25rem' }}>
+              {isSpeechSupported() ? (
+                <>
+                  {isPlaying ? (
+                    <>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--primary)', marginRight: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                        🔊 語音播放中...
+                      </span>
+                      <button className="btn btn-outline btn-sm" onClick={() => {
+                        stopSpeaking();
+                        setIsPlaying(false);
+                      }}>
+                        ⏹️ 停止播放
+                      </button>
+                      <button className="btn btn-primary btn-sm" onClick={() => {
+                        setIsPlaying(true);
+                        speakText(extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false));
+                      }}>
+                        🔄 重播
+                      </button>
+                    </>
+                  ) : (
+                    <button className="btn btn-primary btn-sm" onClick={() => {
+                      setIsPlaying(true);
+                      speakText(extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false));
+                    }}>
+                      🔊 播放模擬語音
+                    </button>
+                  )}
+                </>
+              ) : (
+                <span style={{ fontSize: '0.85rem', color: 'var(--danger)', fontWeight: 600 }}>您的瀏覽器暫時不支援 Web Speech API 語音合成。</span>
+              )}
+            </div>
           </div>
         )}
 

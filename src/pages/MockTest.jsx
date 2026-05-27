@@ -6,9 +6,6 @@ export default function MockTest({ setCurrentPage, onStartMockTest }) {
     setCurrentPage('mock-test-active'); // will build the active exam page
   };
 
-  const handleStartFull = () => {
-    alert('目前題庫不足 200 題，請先使用 Mini Mock Test 或新增更多題目。');
-  };
 
   return (
     <div className="flex flex-col gap-3 practice-container">
@@ -22,10 +19,13 @@ export default function MockTest({ setCurrentPage, onStartMockTest }) {
       <div className="card flex justify-between align-center" style={{ borderLeft: '5px solid var(--primary)' }}>
         <div style={{ flex: 1, paddingRight: '1.5rem' }}>
           <span className="badge badge-mastered" style={{ marginBottom: '0.5rem' }}>推薦入門 ⚡</span>
-          <h2 style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>Mini Mock Test (極速模擬考)</h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-sub)' }}>
-            精選 20 題模擬考題 (包含聽力題與閱讀理解)，15 分鐘作答時間。適合檢測當前學習水平與測試系統。
+          <h2 style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>文字題 Mini Mock (極速模擬考)</h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-sub)', lineHeight: '1.4' }}>
+            精選 20 題完整文字題 (排除官方聽力與圖表多媒體題)，限時 15 分鐘。
           </p>
+          <div style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600, marginTop: '0.4rem' }}>
+            ⚠️ 說明：目前系統為文字精簡版，沒有包含正式 TOEIC 官方圖片與音檔，本測驗僅包含純文字閱讀與文法理解題，供日常快速實力檢測。
+          </div>
         </div>
         <button className="btn btn-primary" onClick={handleStartMini}>
           開始測驗 ➔
@@ -33,24 +33,23 @@ export default function MockTest({ setCurrentPage, onStartMockTest }) {
       </div>
 
       {/* Full Mock Test Card */}
-      <div className="card flex justify-between align-center" style={{ borderLeft: '5px solid var(--secondary)', opacity: 0.85 }}>
+      <div className="card flex justify-between align-center" style={{ borderLeft: '5px solid var(--border-color)', opacity: 0.6, backgroundColor: 'var(--bg-card)' }}>
         <div style={{ flex: 1, paddingRight: '1.5rem' }}>
-          <span className="badge badge-review" style={{ marginBottom: '0.5rem' }}>黃金規格 🏆</span>
-          <h2 style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>Full Mock Test (完整模擬考)</h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-sub)' }}>
-            比照官方 200 題完整規格。聽力 100 題 (45 分鐘) + 閱讀 100 題 (75 分鐘)。總作答時間 120 分鐘。
+          <span className="badge" style={{ marginBottom: '0.5rem', backgroundColor: 'var(--border-color)', color: 'var(--text-sub)' }}>即將推出 Coming Soon 🏆</span>
+          <h2 style={{ fontSize: '1.3rem', marginBottom: '0.25rem', color: 'var(--text-sub)' }}>Full Mock Test (完整官方模擬考)</h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>
+            比照官方 200 題完整規格。聽力 100 題 + 閱讀 100 題，總作答時間 120 分鐘。本功能需依賴官方影音圖檔資料庫，敬請期待。
           </p>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: 600 }}>
-            <span>🎧 Listening: 100 題</span>
-            <span>📖 Reading: 100 題</span>
+            <span>🎧 Listening: 100 題 (即將推出)</span>
+            <span>📖 Reading: 100 題 (即將推出)</span>
             <span>⏱️ 時間: 120 分鐘</span>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <button className="btn btn-outline" onClick={handleStartFull}>
-            架構預覽
+          <button className="btn btn-outline" disabled style={{ cursor: 'not-allowed' }}>
+            即將推出
           </button>
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-light)', textAlign: 'center' }}>V1 提示: 題庫不足200題</span>
         </div>
       </div>
 
@@ -58,10 +57,10 @@ export default function MockTest({ setCurrentPage, onStartMockTest }) {
       <div className="card" style={{ backgroundColor: 'hsl(220, 10%, 97%)' }}>
         <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>⚠️ 考場規則說明</h3>
         <ul style={{ fontSize: '0.85rem', color: 'var(--text-sub)', paddingLeft: '1.2rem', lineHeight: '1.6' }}>
-          <li>模擬考計時器啟動後，中途無法暫停，請確保有充足的時間作答。</li>
-          <li>作答過程中「不會」顯示任何即時解析或正誤提示，交卷後方可查看結果。</li>
+          <li>本文字題 Mini Mock 模擬考計時器啟動後，中途無法暫停，請確保有充足的時間作答。</li>
+          <li>作答過程中「不會」顯示任何即時解析或正誤提示，交卷後方可查看結果與精美解析報告。</li>
           <li>交卷後，所有答錯題目將自動匯入至「錯題本」，以便後續追蹤。</li>
-          <li>考試結果將生成估算分數 (10-990分) 並列入學習數據統計中。</li>
+          <li>考試結果將生成估算分數 (10-990分，純閱讀折算) 並列入學習數據統計中。</li>
         </ul>
       </div>
     </div>

@@ -5,34 +5,46 @@ export default function ActiveMockTest({ setCurrentPage, onMockExamSubmitted, qu
   const [answers, setAnswers] = useState({}); // questionId -> selectedChoice
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 mins for Mini Mock
 
-  // Select 5 Listening, 10 Part 5, and 5 Part 7 questions to make a balanced 20-question Mini Mock Test
+  // Select strictly 20 complete text questions from Part 5 (12 items) and Part 7 (8 items)
   const activeQuestions = (() => {
-    const listening = questions.filter(q => q.part >= 1 && q.part <= 4).slice(0, 5);
-    const part5 = questions.filter(q => q.part === 5).slice(0, 10);
-    const part7 = questions.filter(q => q.part === 7).slice(0, 5);
-    return [...listening, ...part5, ...part7];
+    const validQuestions = questions.filter(q => 
+      q && 
+      q.id &&
+      q.question && 
+      q.choices && 
+      Object.keys(q.choices).length >= 4 && // Standard multiple-choice
+      q.correctAnswer && 
+      q.explanation &&
+      (q.part === 5 || q.part === 7) // Pure text questions, ignore listening parts 1-4
+    );
+
+    const part5 = validQuestions.filter(q => q.part === 5);
+    const part7 = validQuestions.filter(q => q.part === 7);
+
+    // Try to get 12 from Part 5 and 8 from Part 7
+    let selectedPart5 = part5.slice(0, 12);
+    let selectedPart7 = part7.slice(0, 8);
+
+    // Robust fallback: if one part has fewer questions, take more from the other part to make total 20
+    if (selectedPart5.length < 12) {
+      const extraNeeded = 12 - selectedPart5.length;
+      selectedPart7 = part7.slice(0, 8 + extraNeeded);
+    } else if (selectedPart7.length < 8) {
+      const extraNeeded = 8 - selectedPart7.length;
+      selectedPart5 = part5.slice(0, 12 + extraNeeded);
+    }
+
+    const combined = [...selectedPart5, ...selectedPart7];
+    return combined.slice(0, 20); // Cap at strictly 20 questions
   })();
 
   const submitExam = () => {
     let correctCount = 0;
-    let listeningCorrect = 0;
-    let listeningTotal = 0;
-    let readingCorrect = 0;
-    let readingTotal = 0;
     const wrongList = [];
 
     activeQuestions.forEach(q => {
       const userAns = answers[q.id] || '';
       const isCorrect = userAns === q.correctAnswer;
-      const isListening = q.part >= 1 && q.part <= 4;
-      
-      if (isListening) {
-        listeningTotal++;
-        if (isCorrect) listeningCorrect++;
-      } else {
-        readingTotal++;
-        if (isCorrect) readingCorrect++;
-      }
 
       if (isCorrect) {
         correctCount++;
@@ -56,23 +68,23 @@ export default function ActiveMockTest({ setCurrentPage, onMockExamSubmitted, qu
     const totalCount = activeQuestions.length;
     const timeSpent = 15 * 60 - timeLeft;
 
-    // Simulate authentic Listening and Reading scaled scores (5 to 495 each)
-    const lPercent = listeningTotal > 0 ? listeningCorrect / listeningTotal : 0;
-    const rPercent = readingTotal > 0 ? readingCorrect / readingTotal : 0;
+    // Scale score out of 990 purely on reading correct percentages
+    // score = Math.round((correctCount / totalQuestions) * 980 + 10)
+    // rounded to standard 5-point intervals
+    const totalQuestions = totalCount || 1;
+    let rawScore = Math.round((correctCount / totalQuestions) * 980 + 10);
+    let score = Math.round(rawScore / 5) * 5;
     
-    let lScore = Math.round(lPercent * 490 + 5);
-    let rScore = Math.round(rPercent * 490 + 5);
-    
-    // Round to standard 5-point intervals
-    lScore = Math.round(lScore / 5) * 5;
-    rScore = Math.round(rScore / 5) * 5;
-    
-    if (lScore > 495) lScore = 495;
-    if (lScore < 5) lScore = 5;
-    if (rScore > 495) rScore = 495;
-    if (rScore < 5) rScore = 5;
-    
-    const score = lScore + rScore;
+    if (score > 990) score = 990;
+    if (score < 10) score = 10;
+
+    // This is a pure reading text mock, so lScore is 0 (or minimum 5), rScore represents the full scaled reading score
+    const lScore = 0;
+    const rScore = score;
+    const listeningCorrect = 0;
+    const listeningTotal = 0;
+    const readingCorrect = correctCount;
+    const readingTotal = totalQuestions;
 
     const questionOutcomes = activeQuestions.map(q => {
       const userAns = answers[q.id] || '';

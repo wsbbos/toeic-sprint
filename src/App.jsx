@@ -11,7 +11,7 @@ import ActiveMockTest from './pages/ActiveMockTest';
 import Result from './pages/Result';
 import WrongBook from './pages/WrongBook';
 import RetakePractice from './pages/RetakePractice';
-import Statistics from './pages/Statistics';
+import Home from './pages/Home';
 import Friends from './pages/Friends';
 import Settings from './pages/Settings';
 
@@ -39,7 +39,7 @@ export default function App() {
     return getUsers();
   });
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
-  const [currentPage, setCurrentPage] = useState(() => getCurrentUser() ? 'dashboard' : 'login'); // Router State
+  const [currentPage, setCurrentPage] = useState(() => getCurrentUser() ? 'home' : 'login'); // Router State
   const [practiceFilter, setPracticeFilter] = useState('');
   const [activeMockResult, setActiveMockResult] = useState(null);
   const [retakeList, setRetakeList] = useState([]);
@@ -69,7 +69,7 @@ export default function App() {
       });
       setCurrentUser(updated);
       setUsers(getUsers());
-      setCurrentPage('dashboard');
+      setCurrentPage('home');
     }
   };
 
@@ -95,7 +95,7 @@ export default function App() {
     });
     setCurrentUser(updated);
     setUsers(getUsers());
-    setCurrentPage('dashboard');
+    setCurrentPage('home');
   };
 
   const handleLogout = () => {
@@ -483,10 +483,10 @@ export default function App() {
               />
             )}
 
-            {currentPage === 'statistics' && (
-              <Statistics 
+            {currentPage === 'home' && (
+              <Home 
                 currentUser={currentUser}
-                todayRecord={todayRecord}
+                setCurrentPage={setCurrentPage}
               />
             )}
 
