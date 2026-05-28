@@ -195,47 +195,65 @@ export default function Friends({ currentUser }) {
         inviteCode += chars.charAt(Math.floor(Math.random() * chars.length));
       }
 
-      // 2. Insert study group record
-      const { data: groupData, error: groupErr } = await supabase
-        .from('study_groups')
-        .insert({
-          name: newGroupName.trim(),
-          invite_code: inviteCode,
-          owner_id: currentUser.id
-        })
-        .select()
-        .single();
+      // 2. Call Supabase RPC to create study group and members in one transaction (RLS bypassed)
+      const { data: groupData, error: groupErr } = await supabase.rpc('create_study_group', {
+        p_name: newGroupName.trim(),
+        p_invite_code: inviteCode
+      });
 
       if (groupErr) {
-        console.error('Error creating study group:', groupErr);
-        alert(`❌ 建立小隊失敗：${groupErr.message}`);
+        console.error('Error creating study group via RPC:', groupErr);
+        let friendlyMsg = '請確認您是否有足夠的連線權限。';
+        if (groupErr.message.includes('RLS') || groupErr.message.includes('security') || groupErr.message.includes('policy')) {
+          friendlyMsg = '安全權限受限，已改用安全通道，但仍受到資料庫規則約束，請確認您的帳號狀態。';
+        } else if (groupErr.message.includes('duplicate') || groupErr.code === '23505') {
+          friendlyMsg = '此邀請碼已被使用，請重新嘗試以生成新邀請碼。';
+        } else {
+          friendlyMsg = groupErr.message || '未知錯誤。';
+        }
+        alert(`❌ 建立小隊失敗：${friendlyMsg}`);
         setIsCreating(false);
         return;
       }
 
-      // 3. Add creator as owner in group members
-      const { error: memberErr } = await supabase
-        .from('group_members')
-        .insert({
-          group_id: groupData.id,
-          user_id: currentUser.id,
-          display_name: currentUser.username || currentUser.email.split('@')[0],
-          role: 'owner'
-        });
-
-      if (memberErr) {
-        console.error('Error creating owner membership:', memberErr);
-      }
-
-      // 4. Set successes, refresh list and switch select
+      // 3. Set successes, refresh list and switch active group
       setCreatedInviteCode(inviteCode);
       setCreatedGroupName(newGroupName.trim());
       setNewGroupName('');
       
       await fetchGroups();
-      setActiveGroupId(groupData.id);
       
-      alert('🎉 讀書小隊建立成功！邀請碼已生成。');
+      // Auto select the newly created group
+      let nextActiveId = null;
+      if (groupData) {
+        if (typeof groupData === 'string') {
+          nextActiveId = groupData;
+        } else if (groupData.id) {
+          nextActiveId = groupData.id;
+        }
+      }
+      
+      // Fallback: Query by invite code to find the new group ID if RPC returned void
+      if (!nextActiveId) {
+        try {
+          const { data: foundGroup } = await supabase
+            .from('study_groups')
+            .select('id')
+            .eq('invite_code', inviteCode)
+            .maybeSingle();
+          if (foundGroup) {
+            nextActiveId = foundGroup.id;
+          }
+        } catch (e) {
+          console.error('Fallback query error:', e);
+        }
+      }
+
+      if (nextActiveId) {
+        setActiveGroupId(nextActiveId);
+      }
+      
+      alert('🎉 讀書小隊建立成功！邀請碼已生成，您已自動加入該小隊。');
     } catch (err) {
       console.error('Exception during group creation:', err);
       alert('❌ 建立小隊時發生系統錯誤，請重試！');
