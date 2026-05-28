@@ -187,14 +187,32 @@ export default function Friends({ currentUser }) {
 
   // Create new study group
   const handleCreateGroup = async () => {
-    console.log('REAL CREATE GROUP BUTTON HANDLER FIRED');
+    const groupName = newGroupName;
+
+    console.log('STEP 1: handler fired');
+    console.log('STEP 2: currentUser =', currentUser);
+    console.log('STEP 3: supabase =', supabase);
+    console.log('STEP 4: typeof supabase.rpc =', typeof supabase?.rpc);
+    console.log('STEP 5: groupName =', groupName);
 
     if (!currentUser) {
+      console.error('STOP: currentUser missing');
       alert('請先登入');
       return;
     }
 
-    const groupName = newGroupName;
+    if (!supabase) {
+      console.error('STOP: supabase client missing');
+      alert('Supabase 尚未初始化');
+      return;
+    }
+
+    if (typeof supabase.rpc !== 'function') {
+      console.error('STOP: supabase.rpc is not a function');
+      alert('Supabase RPC 尚未初始化');
+      return;
+    }
+
     if (!groupName.trim() || groupName.trim().length < 2) {
       alert('小隊名稱至少需要 2 個字');
       return;
@@ -207,25 +225,28 @@ export default function Friends({ currentUser }) {
       p_invite_code: inviteCode
     };
 
-    console.log('Before actual supabase.rpc call', params);
-
-    setIsCreatingGroup(true);
-    setCreatedInviteCode('');
-    setCreatedGroupName('');
-    setCreatedGroupId('');
+    console.log('STEP 6: Before actual supabase.rpc call', params);
 
     try {
-      const { data, error } = await supabase.rpc('create_study_group', params);
+      setIsCreatingGroup(true);
+      setCreatedInviteCode('');
+      setCreatedGroupName('');
+      setCreatedGroupId('');
 
-      console.log('After actual supabase.rpc call');
-      console.log('RPC data:', data);
-      console.log('RPC error:', error);
+      const result = await supabase.rpc('create_study_group', params);
+
+      console.log('STEP 7: After actual supabase.rpc call');
+      console.log('STEP 8: Raw RPC result =', result);
+
+      const { data, error } = result;
 
       if (error) {
+        console.error('RPC error:', error);
         alert('建立小隊失敗：' + error.message);
         return;
       }
 
+      console.log('RPC success data:', data);
       const createdGroup = data && data[0] ? data[0] : (data || {});
       setCreatedInviteCode(inviteCode);
       setCreatedGroupName(groupName.trim());
@@ -237,6 +258,7 @@ export default function Friends({ currentUser }) {
       console.error('Create group exception:', err);
       alert('建立小隊發生例外：' + err.message);
     } finally {
+      console.log('STEP 9: finally reset loading');
       setIsCreatingGroup(false);
     }
   };
