@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 export default function Friends({ currentUser }) {
   // Joined Groups States
   const [groups, setGroups] = useState([]);
-  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
   const [activeGroupId, setActiveGroupId] = useState(null);
 
   // Leaderboard States
@@ -15,16 +15,16 @@ export default function Friends({ currentUser }) {
 
   // Form States
   const [newGroupName, setNewGroupName] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [createdInviteCode, setCreatedInviteCode] = useState('');
   const [createdGroupName, setCreatedGroupName] = useState('');
 
   const [inviteCodeInput, setInviteCodeInput] = useState('');
-  const [isJoining, setIsJoining] = useState(false);
+  const [isJoiningGroup, setIsJoiningGroup] = useState(false);
 
   // Query study groups user belongs to
   const fetchGroups = useCallback(async () => {
-    setLoadingGroups(true);
+    setIsLoadingGroups(true);
     try {
       const { data, error } = await supabase
         .from('group_members')
@@ -43,14 +43,14 @@ export default function Friends({ currentUser }) {
       if (error) {
         console.error('Error fetching joined groups:', error);
         alert('❌ 小隊列表讀取失敗，請重試！');
-        setLoadingGroups(false);
+        setIsLoadingGroups(false);
         return;
       }
 
       if (!data || data.length === 0) {
         setGroups([]);
         setActiveGroupId(null);
-        setLoadingGroups(false);
+        setIsLoadingGroups(false);
         return;
       }
 
@@ -90,7 +90,7 @@ export default function Friends({ currentUser }) {
       console.error('Exception during groups fetch:', err);
       alert('❌ 小隊列表讀取失敗，請重試！');
     } finally {
-      setLoadingGroups(false);
+      setIsLoadingGroups(false);
     }
   }, [currentUser.id]);
 
@@ -163,11 +163,12 @@ export default function Friends({ currentUser }) {
 
   // Load Groups on Mount
   useEffect(() => {
-    if (currentUser) {
-      Promise.resolve().then(() => {
+    Promise.resolve().then(() => {
+      setIsCreatingGroup(false); // Safeguard: Force reset to prevent stale state loading locks on mount
+      if (currentUser) {
         fetchGroups();
-      });
-    }
+      }
+    });
   }, [currentUser, fetchGroups]);
 
   // Load Leaderboard when Active Group or Sorting changes
@@ -186,11 +187,17 @@ export default function Friends({ currentUser }) {
   // Create new study group
   const handleCreateGroup = async (e) => {
     e.preventDefault();
+    console.log('Create group button clicked'); // Failsafe click log at the very first line
     if (!newGroupName.trim()) return;
 
-    setIsCreating(true);
+    setIsCreatingGroup(true);
     setCreatedInviteCode('');
     setCreatedGroupName('');
+
+    // Setup 15 seconds Timeout Promise as a failsafe safeguard
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+    );
 
     try {
       // 1. Generate 6-char uppercase alphanumeric invite code
@@ -211,8 +218,11 @@ export default function Friends({ currentUser }) {
       console.log('RPC Name:', rpcName);
       console.log('RPC Params:', rpcParams);
 
-      // 2. Call Supabase RPC to create study group and members in one transaction (RLS bypassed)
-      const { data: groupData, error: groupErr } = await supabase.rpc(rpcName, rpcParams);
+      // 2. Call Supabase RPC to create study group and members in one transaction with timeout race
+      const { data: groupData, error: groupErr } = await Promise.race([
+        supabase.rpc(rpcName, rpcParams),
+        timeoutPromise
+      ]);
 
       console.log('RPC Returned Data:', groupData);
       console.log('RPC Returned Error:', groupErr);
@@ -228,7 +238,7 @@ export default function Friends({ currentUser }) {
           friendlyMsg = groupErr.message || '未知錯誤。';
         }
         alert(`❌ 建立小隊失敗：${friendlyMsg}`);
-        setIsCreating(false);
+        setIsCreatingGroup(false);
         return;
       }
 
@@ -272,9 +282,13 @@ export default function Friends({ currentUser }) {
       alert('🎉 讀書小隊建立成功！邀請碼已生成，您已自動加入該小隊。');
     } catch (err) {
       console.error('Exception during group creation:', err);
-      alert('❌ 建立小隊時發生系統錯誤，請重試！');
+      if (err.message === 'TIMEOUT') {
+        alert('❌ 建立小隊逾時，請重新整理後再試！');
+      } else {
+        alert('❌ 建立小隊時發生系統錯誤，請重試！');
+      }
     } finally {
-      setIsCreating(false);
+      setIsCreatingGroup(false);
     }
   };
 
@@ -283,7 +297,7 @@ export default function Friends({ currentUser }) {
     e.preventDefault();
     if (!inviteCodeInput.trim()) return;
 
-    setIsJoining(true);
+    setIsJoiningGroup(true);
     try {
       // Invoke new RPC join_study_group function using only 'code' as the parameter key
       const { error } = await supabase.rpc('join_study_group', {
@@ -329,7 +343,7 @@ export default function Friends({ currentUser }) {
       console.error('Exception during group join:', err);
       alert('❌ 加入小隊時發生系統錯誤，請重試！');
     } finally {
-      setIsJoining(false);
+      setIsJoiningGroup(false);
     }
   };
 
@@ -427,10 +441,10 @@ export default function Friends({ currentUser }) {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isCreating || !newGroupName.trim()}
+              disabled={isCreatingGroup || !newGroupName.trim()}
               style={{ width: '100%', marginTop: '0.25rem' }}
             >
-              {isCreating ? '🛠️ 建立中...' : '建立小隊'}
+              {isCreatingGroup ? '🛠️ 建立中...' : '建立小隊'}
             </button>
           </form>
 
@@ -485,10 +499,10 @@ export default function Friends({ currentUser }) {
             <button
               type="submit"
               className="btn btn-secondary"
-              disabled={isJoining || !inviteCodeInput.trim()}
+              disabled={isJoiningGroup || !inviteCodeInput.trim()}
               style={{ width: '100%', marginTop: '0.25rem' }}
             >
-              {isJoining ? '🏃 加入中...' : '加入小隊'}
+              {isJoiningGroup ? '🏃 加入中...' : '加入小隊'}
             </button>
           </form>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)', marginTop: '0.75rem', lineHeight: '1.4' }}>
@@ -504,7 +518,7 @@ export default function Friends({ currentUser }) {
           🏢 我的小隊列表
         </h3>
 
-        {loadingGroups ? (
+        {isLoadingGroups ? (
           <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-sub)' }}>
             🔄 正在載入您的小隊列表...
           </div>
