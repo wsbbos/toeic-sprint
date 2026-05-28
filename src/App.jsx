@@ -14,7 +14,7 @@ import RetakePractice from './pages/RetakePractice';
 import Home from './pages/Home';
 import Friends from './pages/Friends';
 import Settings from './pages/Settings';
-import { supabase } from './lib/supabase';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { getTodayRecord, updateTodayRecord } from './utils/storage';
 import { vocabularyData } from './data/vocabulary';
 import { questionsData } from './data/questions';
@@ -158,6 +158,7 @@ export default function App() {
 
   // Handle Supabase Auth state changes
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
     // 1. Get current active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -182,6 +183,74 @@ export default function App() {
       subscription.unsubscribe();
     };
   }, []);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#f3f4f6',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        padding: '2rem'
+      }}>
+        <div className="card" style={{
+          maxWidth: '500px',
+          width: '100%',
+          backgroundColor: '#ffffff',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          padding: '2.5rem',
+          textAlign: 'center'
+        }}>
+          <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '1rem' }}>⚠️</span>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.75rem' }}>
+            Supabase 環境變數尚未設定
+          </h2>
+          <p style={{ color: '#4b5563', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+            本系統雲端版需要配置必要的 API 連線金鑰。請前往您的 <strong>Vercel 專案設定 (Environment Variables)</strong> 配置以下環境變數，並重新部署專案：
+          </p>
+          <div style={{
+            backgroundColor: '#f9fafb',
+            border: '1px solid #e5e7eb',
+            borderRadius: '6px',
+            padding: '1rem',
+            textAlign: 'left',
+            fontFamily: 'monospace',
+            fontSize: '0.85rem',
+            color: '#374151',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem'
+          }}>
+            <div>• VITE_SUPABASE_URL</div>
+            <div>• VITE_SUPABASE_ANON_KEY</div>
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            style={{
+              backgroundColor: '#4f46e5',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '0.75rem 1.5rem',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#4338ca'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#4f46e5'}
+          >
+            🔄 重新整理網頁
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Cloud Sync Writer
   const syncWithCloud = async (updatedUser) => {
