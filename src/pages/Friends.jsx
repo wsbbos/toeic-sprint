@@ -200,16 +200,34 @@ export default function Friends({ currentUser }) {
       return;
     }
 
-    if (!newGroupName.trim()) return;
+    // Failsafe: Check if local storage session has expired to bypass Supabase client auto-refresh deadlocks
+    try {
+      const authKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+      if (authKey) {
+        const authData = JSON.parse(localStorage.getItem(authKey));
+        if (authData && authData.expires_at) {
+          const now = Math.floor(Date.now() / 1000);
+          if (authData.expires_at < now) {
+            console.warn('Expired auth session token found in localStorage. Purging stale keys to release client locks.');
+            localStorage.removeItem(authKey);
+            localStorage.removeItem('toeic_sprint_cloud_user');
+            await supabase.auth.signOut();
+            alert('❌ 您的登入狀態已失效，請重新登入！');
+            window.location.reload();
+            return;
+          }
+        }
+      }
+    } catch (errCheck) {
+      console.error('Error during active session check:', errCheck);
+    }
+
+    const groupName = newGroupName;
+    if (!groupName.trim()) return;
 
     setIsCreatingGroup(true);
     setCreatedInviteCode('');
     setCreatedGroupName('');
-
-    // Setup 15 seconds Timeout Promise as a failsafe safeguard
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('TIMEOUT')), 15000)
-    );
 
     try {
       // 1. Generate 6-char uppercase alphanumeric invite code
@@ -219,38 +237,37 @@ export default function Friends({ currentUser }) {
         inviteCode += chars.charAt(Math.floor(Math.random() * chars.length));
       }
 
-      const rpcName = 'create_study_group';
-      const rpcParams = {
-        p_name: newGroupName.trim(),
+      const params = {
+        p_name: groupName.trim(),
         p_invite_code: inviteCode
-      };
+      }
 
-      // Diagnostic logs as requested
-      console.log('--- RPC Call Debugging: Create Group ---');
-      console.log('RPC Name:', rpcName);
-      console.log('RPC Params:', rpcParams);
+      console.log('Before actual supabase.rpc call', params)
 
-      console.log('Before actual supabase.rpc call');
+      const rpcPromise = supabase.rpc('create_study_group', params)
 
-      // 2. Call Supabase RPC to create study group and members in one transaction with timeout race
-      const { data: groupData, error: groupErr } = await Promise.race([
-        supabase.rpc(rpcName, rpcParams),
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+      )
+
+      const { data, error } = await Promise.race([
+        rpcPromise,
         timeoutPromise
-      ]);
+      ])
 
-      console.log('After actual supabase.rpc call');
-      console.log('RPC data:', groupData);
-      console.log('RPC error:', groupErr);
+      console.log('After actual supabase.rpc call')
+      console.log('RPC data:', data)
+      console.log('RPC error:', error)
 
-      if (groupErr) {
-        console.error('Error creating study group via RPC:', groupErr);
+      if (error) {
+        console.error('Error creating study group via RPC:', error);
         let friendlyMsg = '請確認您是否有足夠的連線權限。';
-        if (groupErr.message.includes('RLS') || groupErr.message.includes('security') || groupErr.message.includes('policy')) {
+        if (error.message.includes('RLS') || error.message.includes('security') || error.message.includes('policy')) {
           friendlyMsg = '安全權限受限，已改用安全通道，但仍受到資料庫規則約束，請確認您的帳號狀態。';
-        } else if (groupErr.message.includes('duplicate') || groupErr.code === '23505') {
+        } else if (error.message.includes('duplicate') || error.code === '23505') {
           friendlyMsg = '此邀請碼已被使用，請重新嘗試以生成新邀請碼。';
         } else {
-          friendlyMsg = groupErr.message || '未知錯誤。';
+          friendlyMsg = error.message || '未知錯誤。';
         }
         alert(`❌ 建立小隊失敗：${friendlyMsg}`);
         setIsCreatingGroup(false);
@@ -259,18 +276,18 @@ export default function Friends({ currentUser }) {
 
       // 3. Set successes, refresh list and switch active group
       setCreatedInviteCode(inviteCode);
-      setCreatedGroupName(newGroupName.trim());
+      setCreatedGroupName(groupName.trim());
       setNewGroupName('');
       
       await fetchGroups();
       
       // Auto select the newly created group
       let nextActiveId = null;
-      if (groupData) {
-        if (typeof groupData === 'string') {
-          nextActiveId = groupData;
-        } else if (groupData.id) {
-          nextActiveId = groupData.id;
+      if (data) {
+        if (typeof data === 'string') {
+          nextActiveId = data;
+        } else if (data.id) {
+          nextActiveId = data.id;
         }
       }
       
