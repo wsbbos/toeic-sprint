@@ -18,6 +18,7 @@ export default function Friends({ currentUser }) {
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [createdInviteCode, setCreatedInviteCode] = useState('');
   const [createdGroupName, setCreatedGroupName] = useState('');
+  const [createdGroupId, setCreatedGroupId] = useState('');
 
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [isJoiningGroup, setIsJoiningGroup] = useState(false);
@@ -187,138 +188,58 @@ export default function Friends({ currentUser }) {
   // Create new study group
   const handleCreateGroup = async (e) => {
     e.preventDefault();
-    console.log('Create group button clicked'); // Failsafe click log at the very first line
-
-    if (!supabase) {
-      alert('❌ Supabase 尚未初始化，請配置 API 連線金鑰後再試！');
-      console.error('Supabase client is null or uninitialized.');
-      return;
-    }
+    console.log('Create group button clicked');
 
     if (!currentUser) {
-      alert('❌ 請先登入帳號後再執行建立讀書小隊！');
+      alert('請先登入');
       return;
     }
 
-    // Failsafe: Check if local storage session has expired to bypass Supabase client auto-refresh deadlocks
-    try {
-      const authKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
-      if (authKey) {
-        const authData = JSON.parse(localStorage.getItem(authKey));
-        if (authData && authData.expires_at) {
-          const now = Math.floor(Date.now() / 1000);
-          if (authData.expires_at < now) {
-            console.warn('Expired auth session token found in localStorage. Purging stale keys to release client locks.');
-            localStorage.removeItem(authKey);
-            localStorage.removeItem('toeic_sprint_cloud_user');
-            await supabase.auth.signOut();
-            alert('❌ 您的登入狀態已失效，請重新登入！');
-            window.location.reload();
-            return;
-          }
-        }
-      }
-    } catch (errCheck) {
-      console.error('Error during active session check:', errCheck);
+    if (!supabase) {
+      alert('Supabase 尚未初始化');
+      return;
     }
 
-    const groupName = newGroupName;
-    if (!groupName.trim()) return;
+    if (newGroupName.trim().length < 2) {
+      alert('小隊名稱長度至少需為 2 個字元！');
+      return;
+    }
+
+    // Generate 6-char uppercase alphanumeric invite code
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let inviteCode = '';
+    for (let i = 0; i < 6; i++) {
+      inviteCode += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
 
     setIsCreatingGroup(true);
     setCreatedInviteCode('');
     setCreatedGroupName('');
+    setCreatedGroupId('');
 
     try {
-      // 1. Generate 6-char uppercase alphanumeric invite code
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let inviteCode = '';
-      for (let i = 0; i < 6; i++) {
-        inviteCode += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-
-      const params = {
-        p_name: groupName.trim(),
+      console.log('Before actual supabase.rpc call');
+      const { data, error } = await supabase.rpc('create_study_group', {
+        p_name: newGroupName.trim(),
         p_invite_code: inviteCode
-      }
-
-      console.log('Before actual supabase.rpc call', params)
-
-      const rpcPromise = supabase.rpc('create_study_group', params)
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
-      )
-
-      const { data, error } = await Promise.race([
-        rpcPromise,
-        timeoutPromise
-      ])
-
-      console.log('After actual supabase.rpc call')
-      console.log('RPC data:', data)
-      console.log('RPC error:', error)
+      });
+      console.log('After actual supabase.rpc call');
+      console.log('RPC data:', data);
+      console.log('RPC error:', error);
 
       if (error) {
         console.error('Error creating study group via RPC:', error);
-        let friendlyMsg = '請確認您是否有足夠的連線權限。';
-        if (error.message.includes('RLS') || error.message.includes('security') || error.message.includes('policy')) {
-          friendlyMsg = '安全權限受限，已改用安全通道，但仍受到資料庫規則約束，請確認您的帳號狀態。';
-        } else if (error.message.includes('duplicate') || error.code === '23505') {
-          friendlyMsg = '此邀請碼已被使用，請重新嘗試以生成新邀請碼。';
-        } else {
-          friendlyMsg = error.message || '未知錯誤。';
-        }
-        alert(`❌ 建立小隊失敗：${friendlyMsg}`);
-        setIsCreatingGroup(false);
-        return;
+        alert(`❌ 建立小隊失敗：${error.message || '未知錯誤'}`);
+      } else {
+        const createdGroup = data && data[0] ? data[0] : (data || {});
+        setCreatedInviteCode(inviteCode);
+        setCreatedGroupName(newGroupName.trim());
+        setCreatedGroupId(createdGroup.id || createdGroup.group_id || (typeof createdGroup === 'string' ? createdGroup : JSON.stringify(createdGroup)));
+        setNewGroupName('');
       }
-
-      // 3. Set successes, refresh list and switch active group
-      setCreatedInviteCode(inviteCode);
-      setCreatedGroupName(groupName.trim());
-      setNewGroupName('');
-      
-      await fetchGroups();
-      
-      // Auto select the newly created group
-      let nextActiveId = null;
-      if (data) {
-        if (typeof data === 'string') {
-          nextActiveId = data;
-        } else if (data.id) {
-          nextActiveId = data.id;
-        }
-      }
-      
-      // Fallback: Query by invite code to find the new group ID if RPC returned void
-      if (!nextActiveId) {
-        try {
-          const { data: foundGroup } = await supabase
-            .from('study_groups')
-            .select('id')
-            .eq('invite_code', inviteCode)
-            .maybeSingle();
-          if (foundGroup) {
-            nextActiveId = foundGroup.id;
-          }
-        } catch (e) {
-          console.error('Fallback query error:', e);
-        }
-      }
-
-      if (nextActiveId) {
-        setActiveGroupId(nextActiveId);
-      }
-      
-      alert('🎉 讀書小隊建立成功！邀請碼已生成，您已自動加入該小隊。');
     } catch (err) {
       console.error('Exception during group creation:', err);
-      if (err.message === 'TIMEOUT') {
-        alert('❌ 建立小隊逾時，請重新整理後再試！');
-      } else {
-        alert('❌ 建立小隊時發生系統錯誤，請重試！');
-      }
+      alert('❌ 建立小隊時發生系統錯誤，請重試！');
     } finally {
       setIsCreatingGroup(false);
     }
@@ -494,6 +415,9 @@ export default function Friends({ currentUser }) {
               </span>
               <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'hsl(140, 50%, 25%)', margin: '0.25rem 0', letterSpacing: '2px' }}>
                 {createdInviteCode}
+              </div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', margin: '0.25rem 0' }}>
+                ID: {createdGroupId}
               </div>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', display: 'block', marginBottom: '0.5rem' }}>
                 請分享此邀請碼給朋友，讓他們加入您的小隊。
