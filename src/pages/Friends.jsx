@@ -265,14 +265,13 @@ export default function Friends({ currentUser }) {
   // Join group via RPC join function
   const handleJoinGroup = async (e) => {
     e.preventDefault();
-    const cleanCode = inviteCodeInput.trim().toUpperCase();
-    if (!cleanCode) return;
+    if (!inviteCodeInput.trim()) return;
 
     setIsJoining(true);
     try {
-      // Explicitly invoke RPC join function using exact parameter key 'invite_code' (no p_invite_code or code)
+      // Explicitly invoke RPC join function using exact parameter key 'invite_code' to match the database schema
       const { error } = await supabase.rpc('join_group_by_invite_code', {
-        invite_code: cleanCode
+        invite_code: inviteCodeInput.trim().toUpperCase()
       });
 
       if (error) {
@@ -290,6 +289,9 @@ export default function Friends({ currentUser }) {
       }
 
       alert('🎉 成功加入讀書小隊！');
+      
+      // Keep a reference to the uppercase code before resetting the input
+      const joinedInviteCode = inviteCodeInput.trim().toUpperCase();
       setInviteCodeInput('');
       
       await fetchGroups();
@@ -298,7 +300,7 @@ export default function Friends({ currentUser }) {
       const { data: joinedGroup } = await supabase
         .from('study_groups')
         .select('id')
-        .eq('invite_code', cleanCode)
+        .eq('invite_code', joinedInviteCode)
         .maybeSingle();
       
       if (joinedGroup) {
