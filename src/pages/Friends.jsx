@@ -186,31 +186,28 @@ export default function Friends({ currentUser }) {
   }, [activeGroupId, sortBy, fetchLeaderboard]);
 
   // Create new study group
-  const handleCreateGroup = async (e) => {
-    e.preventDefault();
-    console.log('Create group button clicked');
+  const handleCreateGroup = async () => {
+    console.log('REAL CREATE GROUP BUTTON HANDLER FIRED');
 
     if (!currentUser) {
       alert('請先登入');
       return;
     }
 
-    if (!supabase) {
-      alert('Supabase 尚未初始化');
+    const groupName = newGroupName;
+    if (!groupName.trim() || groupName.trim().length < 2) {
+      alert('小隊名稱至少需要 2 個字');
       return;
     }
 
-    if (newGroupName.trim().length < 2) {
-      alert('小隊名稱長度至少需為 2 個字元！');
-      return;
-    }
+    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    // Generate 6-char uppercase alphanumeric invite code
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let inviteCode = '';
-    for (let i = 0; i < 6; i++) {
-      inviteCode += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    const params = {
+      p_name: groupName.trim(),
+      p_invite_code: inviteCode
+    };
+
+    console.log('Before actual supabase.rpc call', params);
 
     setIsCreatingGroup(true);
     setCreatedInviteCode('');
@@ -218,28 +215,27 @@ export default function Friends({ currentUser }) {
     setCreatedGroupId('');
 
     try {
-      console.log('Before actual supabase.rpc call');
-      const { data, error } = await supabase.rpc('create_study_group', {
-        p_name: newGroupName.trim(),
-        p_invite_code: inviteCode
-      });
+      const { data, error } = await supabase.rpc('create_study_group', params);
+
       console.log('After actual supabase.rpc call');
       console.log('RPC data:', data);
       console.log('RPC error:', error);
 
       if (error) {
-        console.error('Error creating study group via RPC:', error);
-        alert(`❌ 建立小隊失敗：${error.message || '未知錯誤'}`);
-      } else {
-        const createdGroup = data && data[0] ? data[0] : (data || {});
-        setCreatedInviteCode(inviteCode);
-        setCreatedGroupName(newGroupName.trim());
-        setCreatedGroupId(createdGroup.id || createdGroup.group_id || (typeof createdGroup === 'string' ? createdGroup : JSON.stringify(createdGroup)));
-        setNewGroupName('');
+        alert('建立小隊失敗：' + error.message);
+        return;
       }
+
+      const createdGroup = data && data[0] ? data[0] : (data || {});
+      setCreatedInviteCode(inviteCode);
+      setCreatedGroupName(groupName.trim());
+      setCreatedGroupId(createdGroup.id || createdGroup.group_id || (typeof createdGroup === 'string' ? createdGroup : JSON.stringify(createdGroup)));
+      setNewGroupName('');
+
+      alert('建立成功，邀請碼：' + inviteCode);
     } catch (err) {
-      console.error('Exception during group creation:', err);
-      alert('❌ 建立小隊時發生系統錯誤，請重試！');
+      console.error('Create group exception:', err);
+      alert('建立小隊發生例外：' + err.message);
     } finally {
       setIsCreatingGroup(false);
     }
@@ -378,7 +374,7 @@ export default function Friends({ currentUser }) {
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             👑 建立讀書小隊
           </h3>
-          <form onSubmit={handleCreateGroup} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <form onSubmit={(e) => { e.preventDefault(); handleCreateGroup(); }} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">小隊名稱</label>
               <input
@@ -392,7 +388,8 @@ export default function Friends({ currentUser }) {
               />
             </div>
             <button
-              type="submit"
+              type="button"
+              onClick={handleCreateGroup}
               className="btn btn-primary"
               disabled={isCreatingGroup || !newGroupName.trim()}
               style={{ width: '100%', marginTop: '0.25rem' }}
