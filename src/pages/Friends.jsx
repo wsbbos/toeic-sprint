@@ -188,6 +188,18 @@ export default function Friends({ currentUser }) {
   const handleCreateGroup = async (e) => {
     e.preventDefault();
     console.log('Create group button clicked'); // Failsafe click log at the very first line
+
+    if (!supabase) {
+      alert('❌ Supabase 尚未初始化，請配置 API 連線金鑰後再試！');
+      console.error('Supabase client is null or uninitialized.');
+      return;
+    }
+
+    if (!currentUser) {
+      alert('❌ 請先登入帳號後再執行建立讀書小隊！');
+      return;
+    }
+
     if (!newGroupName.trim()) return;
 
     setIsCreatingGroup(true);
@@ -218,14 +230,17 @@ export default function Friends({ currentUser }) {
       console.log('RPC Name:', rpcName);
       console.log('RPC Params:', rpcParams);
 
+      console.log('Before actual supabase.rpc call');
+
       // 2. Call Supabase RPC to create study group and members in one transaction with timeout race
       const { data: groupData, error: groupErr } = await Promise.race([
         supabase.rpc(rpcName, rpcParams),
         timeoutPromise
       ]);
 
-      console.log('RPC Returned Data:', groupData);
-      console.log('RPC Returned Error:', groupErr);
+      console.log('After actual supabase.rpc call');
+      console.log('RPC data:', groupData);
+      console.log('RPC error:', groupErr);
 
       if (groupErr) {
         console.error('Error creating study group via RPC:', groupErr);
