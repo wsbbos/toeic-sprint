@@ -1,8 +1,7 @@
 // src/pages/Settings.jsx
 import { useState } from 'react';
-import { hashPassword } from '../utils/crypto';
 
-export default function Settings({ currentUser, onSaveGoals, onClearData, onDeleteAccount, onImportData, users }) {
+export default function Settings({ currentUser, onSaveGoals, onClearData, onDeleteAccount, syncStatus = 'synced' }) {
   const [targetScore, setTargetScore] = useState(currentUser?.goals?.targetScore || 700);
   const [examDate, setExamDate] = useState(currentUser?.goals?.examDate || '');
   const [dailyVocabularyGoal, setDailyVocabularyGoal] = useState(currentUser?.goals?.dailyVocabularyGoal || 30);
@@ -18,98 +17,55 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
       dailyQuestionGoal: Number(dailyQuestionGoal),
       dailyStudyMinutesGoal: Number(dailyStudyMinutesGoal)
     });
-    alert('設定成功！已更新個人學習計畫。');
   };
 
-  const handleExport = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(users, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `toeic_sprint_backup_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+  const getSyncStatusText = (status) => {
+    switch (status) {
+      case 'syncing':
+        return { text: '🔄 同步中...', color: 'var(--primary)', bg: 'var(--primary-light)' };
+      case 'failed':
+        return { text: '❌ 同步失敗', color: 'var(--danger)', bg: 'var(--danger-light)' };
+      case 'synced':
+      default:
+        return { text: '✨ 已同步到雲端', color: 'var(--success)', bg: 'var(--success-light)' };
+    }
   };
 
-  const handleImport = (e) => {
-    const fileReader = new FileReader();
-    const file = e.target.files[0];
-    if (!file) return;
+  const syncInfo = getSyncStatusText(syncStatus);
 
-    fileReader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target.result);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].username) {
-          onImportData(parsed);
-          alert('備份資料匯入成功！系統已更新。');
-        } else {
-          alert('匯入格式有誤，請使用本系統導出的 JSON 備份檔！');
-        }
-      } catch (err) {
-        console.error('JSON Import Failed:', err);
-        alert('解析 JSON 備份檔失敗！');
-      }
-    };
-    fileReader.readAsText(file);
-  };
-
-  // Secure Wiping of current user logs
+  // Wiping of current user logs (Cloud data clear)
   const handleClearClick = async () => {
     if (!currentUser) return;
 
-    if (currentUser.passwordHash) {
-      const password = prompt("⚠️ 請輸入您的帳號密碼以確認清空所有歷史資料：");
-      if (password === null) return; // cancelled
-      if (!password) {
-        alert("❌ 密碼不能為空！");
-        return;
-      }
-
-      try {
-        const computedHash = await hashPassword(password, currentUser.salt);
-        if (computedHash !== currentUser.passwordHash) {
-          alert("❌ 密碼錯誤，拒絕清空歷史資料！");
-          return;
-        }
-      } catch (err) {
-        console.error(err);
-        alert("❌ 加密驗證失敗！");
-        return;
-      }
+    const emailConfirm = prompt(`⚠️ 本操作將抹除此帳號在雲端及本機的所有做題、單字與模擬考歷史記錄。\n確定要清除嗎？請輸入您的帳號 E-mail (${currentUser.email}) 以確認清除：`);
+    if (emailConfirm === null) return; // cancelled
+    
+    if (emailConfirm.trim().toLowerCase() !== currentUser.email.toLowerCase()) {
+      alert("❌ 輸入的 E-mail 不符合，拒絕清空歷史資料！");
+      return;
     }
 
-    if (confirm('警告！這將清除您目前帳號的所有作答歷史、單字熟練度以及錯題記錄，重設為初始狀態。確定要繼續嗎？')) {
-      onClearData();
+    if (confirm('警告！這將清除您雲端及本機的所有作答歷史、單字熟練度以及錯題記錄，重設為初始狀態。確定要繼續嗎？')) {
+      await onClearData();
+      alert('🧹 雲端與本機數據已成功清空！');
     }
   };
 
-  // Secure account deletion
+  // Secure account deletion (Wipe cloud data and logout)
   const handleDeleteClick = async () => {
     if (!currentUser) return;
 
-    if (currentUser.passwordHash) {
-      const password = prompt("⚠️ 請輸入您的帳號密碼以確認「徹底刪除」此帳號：");
-      if (password === null) return; // cancelled
-      if (!password) {
-        alert("❌ 密碼不能為空！");
-        return;
-      }
+    const emailConfirm = prompt(`🚨 徹底刪除帳號警告 🚨\n這將永久刪除您的此雲端帳號及所有相關學習紀錄，不可撤銷！\n確定要刪除嗎？請輸入您的帳號 E-mail (${currentUser.email}) 以確認徹底刪除：`);
+    if (emailConfirm === null) return; // cancelled
 
-      try {
-        const computedHash = await hashPassword(password, currentUser.salt);
-        if (computedHash !== currentUser.passwordHash) {
-          alert("❌ 密碼錯誤，拒絕刪除帳號！");
-          return;
-        }
-      } catch (err) {
-        console.error(err);
-        alert("❌ 加密驗證失敗！");
-        return;
-      }
+    if (emailConfirm.trim().toLowerCase() !== currentUser.email.toLowerCase()) {
+      alert("❌ 輸入的 E-mail 不符合，拒絕刪除帳號！");
+      return;
     }
 
-    if (confirm('警告！！！這將「永久刪除」您的此學習帳號，且無法撤銷。確定要刪除帳號嗎？\n此操作會永久刪除此帳號的所有學習紀錄，無法復原。')) {
-      onDeleteAccount();
+    if (confirm('警告！！！這將「永久刪除」您的雲端帳號學習檔案，且無法撤銷。確定要徹底刪除嗎？')) {
+      await onDeleteAccount();
+      alert('🗑️ 帳號數據已成功清空，帳號已完成登出！');
     }
   };
 
@@ -117,21 +73,42 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
     <div className="flex flex-col gap-3 practice-container">
       <div style={{ marginBottom: '1rem' }}>
         <h1 style={{ fontSize: '1.8rem', marginBottom: '0.25rem' }}>⚙️ 學習計畫與系統設定</h1>
-        <p style={{ color: 'var(--text-sub)' }}>在此調整您的 TOEIC 目標分數，或對本地學習數據進行備份與匯入。</p>
+        <p style={{ color: 'var(--text-sub)' }}>在此調整您的 TOEIC 目標分數與每日目標，並查看雲端同步狀態。</p>
       </div>
 
-      {/* Security Disclaimer Panel */}
+      {/* Cloud Status Panel */}
       <div className="card" style={{ 
         borderLeft: '5px solid var(--secondary)', 
         backgroundColor: 'var(--secondary-light)',
-        padding: '1rem 1.25rem'
+        padding: '1.25rem 1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem'
       }}>
-        <h3 style={{ fontSize: '1rem', color: 'var(--secondary)', marginBottom: '0.25rem', fontWeight: 700 }}>
-          🛡️ 本地安全儲存說明
+        <h3 style={{ fontSize: '1.1rem', color: 'var(--secondary)', fontWeight: 700, margin: 0 }}>
+          ☁️ 雲端同步狀態 (V2.1 Cloud)
         </h3>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: '1.5' }}>
-          目前 V1.2 使用本機儲存資料，密碼僅用於保護同一台裝置上的帳號切換。若未來要跨裝置同步，需要正式雲端登入系統。
-        </p>
+        <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <div>
+            <strong>登入帳號：</strong><span style={{ fontFamily: 'monospace' }}>{currentUser?.email || '未知雲端用戶'}</span>
+          </div>
+          <div>
+            <strong>暱稱稱呼：</strong><span>{currentUser?.username || '未設定'}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+            <strong>同步狀態：</strong>
+            <span style={{ 
+              fontSize: '0.8rem', 
+              fontWeight: 700, 
+              padding: '0.25rem 0.5rem', 
+              borderRadius: 'var(--radius-sm)',
+              color: syncInfo.color,
+              backgroundColor: syncInfo.bg
+            }}>
+              {syncInfo.text}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Adjust Target Goals Form */}
@@ -171,42 +148,16 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-            💾 儲存並更新計畫
+            💾 儲存並更新雲端計畫
           </button>
         </form>
-      </div>
-
-      {/* Data portability panel */}
-      <div className="card">
-        <h2 style={{ fontSize: '1.2rem', marginBottom: '0.75rem' }}>💾 資料備份與還原 (Data Portability)</h2>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginBottom: '1.25rem' }}>
-          本系統採用本機儲存 (localStorage)，為了防止瀏覽器快取被清空時資料丟失，建議定期匯出備份 JSON。
-        </p>
-        <div className="flex gap-2">
-          <button className="btn btn-secondary" style={{ flex: 1 }} onClick={handleExport}>
-            📤 匯出本機資料 JSON
-          </button>
-          
-          <div style={{ flex: 1, position: 'relative' }}>
-            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => document.getElementById('import-file-btn').click()}>
-              📥 匯入資料備份 JSON
-            </button>
-            <input 
-              id="import-file-btn" 
-              type="file" 
-              accept=".json" 
-              style={{ display: 'none' }} 
-              onChange={handleImport}
-            />
-          </div>
-        </div>
       </div>
 
       {/* Danger Zone */}
       <div className="card" style={{ border: '1px solid var(--danger-light)' }}>
         <h2 style={{ fontSize: '1.2rem', color: 'var(--danger)', marginBottom: '0.75rem' }}>⚠️ 危險區域 (Danger Zone)</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginBottom: '1.25rem' }}>
-          以下操作將直接影響您的本機儲存資料，請務必謹慎執行！需要密碼以確保安全。
+          以下操作將會清空或抹除您的學習紀錄，將同步更新於本機緩存與 Supabase 雲端資料庫。
         </p>
         <div className="flex gap-2">
           <button 
@@ -214,7 +165,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
             style={{ flex: 1, color: 'var(--danger)', borderColor: 'var(--danger)' }}
             onClick={handleClearClick}
           >
-            🧹 清除目前帳號資料
+            🧹 清空雲端/本機紀錄
           </button>
           
           <button 
@@ -222,7 +173,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
             style={{ flex: 1 }}
             onClick={handleDeleteClick}
           >
-            🗑️ 徹底刪除此帳號
+            🗑️ 抹除雲端資料並登出
           </button>
         </div>
       </div>
