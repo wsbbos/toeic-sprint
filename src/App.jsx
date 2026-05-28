@@ -31,25 +31,47 @@ export default function App() {
   
   // Cloud Sync States
   const [syncStatus, setSyncStatus] = useState('synced'); // synced | syncing | failed
+  const [syncError, setSyncError] = useState(null); // { message, code, details }
   const [showImportModal, setShowImportModal] = useState(false);
   const [legacyLocalUsers, setLegacyLocalUsers] = useState([]);
-  const [selectedLegacyUserToImport, setSelectedLegacyUserToImport] = useState('');
-
-  const handleSessionChange = async (session, customUsername = null) => {
+  const [selectedLegacyUserToImport, setSelectedLegacyUserToImport] = useState('');  const handleSessionChange = async (session, customUsername = null) => {
     if (session) {
       const { user } = session;
       setSyncStatus('syncing');
+      setSyncError(null);
       
       try {
-        // Fetch cloud user data
+        // 1. Safe Profiles Sync (Non-blocking)
+        try {
+          const profileUsername = customUsername || user.email.split('@')[0];
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: user.id, // Must equal auth user id
+              username: profileUsername,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+          if (profileError) {
+            console.error('Non-blocking Profiles Sync Error:', profileError);
+          }
+        } catch (profileErr) {
+          console.error('Profiles exception (non-blocking):', profileErr);
+        }
+
+        // 2. Fetch cloud user data
         const { data, error } = await supabase
           .from('user_data')
           .select('app_data')
-          .eq('id', user.id)
+          .eq('user_id', user.id)
           .maybeSingle();
 
         if (error) {
           console.error('Error fetching cloud data:', error);
+          setSyncError({
+            message: error.message || '無法從雲端讀取學習資料',
+            code: error.code || 'UNKNOWN_CODE',
+            details: error.details || '無詳細資訊'
+          });
           setSyncStatus('failed');
         }
 
@@ -62,7 +84,10 @@ export default function App() {
             username: data.app_data.username || user.email.split('@')[0],
             ...data.app_data
           };
-          setSyncStatus('synced');
+          if (!error) {
+            setSyncStatus('synced');
+            setSyncError(null);
+          }
         } else {
           // Cloud profile does not exist! Create a default profile
           const defaultProfile = {
@@ -94,16 +119,22 @@ export default function App() {
           const { error: insertError } = await supabase
             .from('user_data')
             .upsert({
-              id: user.id,
+              user_id: user.id,
               app_data: defaultProfile,
               updated_at: new Date().toISOString()
-            });
+            }, { onConflict: 'user_id' });
 
           if (insertError) {
             console.error('Error inserting default cloud data:', insertError);
+            setSyncError({
+              message: insertError.message || '初始化雲端學習資料失敗',
+              code: insertError.code || 'UNKNOWN_CODE',
+              details: insertError.details || '無詳細資訊'
+            });
             setSyncStatus('failed');
           } else {
             setSyncStatus('synced');
+            setSyncError(null);
           }
 
           cloudUser = {
@@ -142,6 +173,11 @@ export default function App() {
         }
       } catch (err) {
         console.error('Exception during session fetch:', err);
+        setSyncError({
+          message: err.message || '連線至雲端資料庫時發生異常',
+          code: 'EXCEPTION',
+          details: err.toString()
+        });
         setSyncStatus('failed');
       }
     } else {
@@ -370,6 +406,7 @@ export default function App() {
   const syncWithCloud = async (updatedUser) => {
     if (!updatedUser || !updatedUser.id) return;
     setSyncStatus('syncing');
+    setSyncError(null);
     try {
       const appData = { ...updatedUser };
       const { id } = appData;
@@ -378,19 +415,30 @@ export default function App() {
       const { error } = await supabase
         .from('user_data')
         .upsert({
-          id: id,
+          user_id: id,
           app_data: appData,
           updated_at: new Date().toISOString()
-        });
+        }, { onConflict: 'user_id' });
       
       if (error) {
         console.error('Cloud sync failed:', error);
+        setSyncError({
+          message: error.message || '無法同步變更至雲端',
+          code: error.code || 'UNKNOWN_CODE',
+          details: error.details || '無詳細資訊'
+        });
         setSyncStatus('failed');
       } else {
         setSyncStatus('synced');
+        setSyncError(null);
       }
     } catch (err) {
       console.error('Cloud sync exception:', err);
+      setSyncError({
+        message: err.message || '同步發生系統異常',
+        code: 'EXCEPTION',
+        details: err.toString()
+      });
       setSyncStatus('failed');
     }
   };
@@ -416,6 +464,7 @@ export default function App() {
     }
 
     setSyncStatus('syncing');
+    setSyncError(null);
     try {
       const mergedUser = {
         ...currentUser,
@@ -436,17 +485,23 @@ export default function App() {
       const { error } = await supabase
         .from('user_data')
         .upsert({
-          id: id,
+          user_id: id,
           app_data: appData,
           updated_at: new Date().toISOString()
-        });
+        }, { onConflict: 'user_id' });
 
       if (error) {
         console.error('Failed to import data to cloud:', error);
+        setSyncError({
+          message: error.message || '匯入本機舊資料至雲端失敗',
+          code: error.code || 'UNKNOWN_CODE',
+          details: error.details || '無詳細資訊'
+        });
         setSyncStatus('failed');
         alert(`❌ 匯入雲端失敗：${error.message}`);
       } else {
         setSyncStatus('synced');
+        setSyncError(null);
         setCurrentUser(mergedUser);
         localStorage.setItem('toeic_sprint_cloud_user', JSON.stringify(mergedUser));
         localStorage.setItem(`toeic_sprint_imported_for_${currentUser.id}`, 'true');
@@ -455,8 +510,112 @@ export default function App() {
       }
     } catch (err) {
       console.error('Exception during import:', err);
+      setSyncError({
+        message: err.message || '匯入舊資料系統異常',
+        code: 'EXCEPTION',
+        details: err.toString()
+      });
       setSyncStatus('failed');
       alert('❌ 匯入資料時發生系統錯誤，請重試！');
+    }
+  };
+
+  // Manual Trigger for Cloud Re-sync
+  const handleManualSync = async () => {
+    const sessionResult = await supabase.auth.getSession();
+    const session = sessionResult.data?.session;
+    if (!session) {
+      alert('🔒 請先登入帳號後再執行同步！');
+      return;
+    }
+    
+    setSyncStatus('syncing');
+    setSyncError(null);
+    
+    try {
+      const { user } = session;
+      
+      // 1. Safe Profiles Sync (Non-blocking)
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            username: currentUser?.username || user.email.split('@')[0],
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' });
+        if (profileError) {
+          console.error('Non-blocking Profiles Sync Error during manual trigger:', profileError);
+        }
+      } catch (profileErr) {
+        console.error('Profiles exception during manual trigger:', profileErr);
+      }
+
+      // 2. Fetch latest app_data
+      const { data, error } = await supabase
+        .from('user_data')
+        .select('app_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Manual sync fetch failed:', error);
+        setSyncError({
+          message: error.message || '手動同步讀取雲端失敗',
+          code: error.code || 'UNKNOWN_CODE',
+          details: error.details || '無詳細資訊'
+        });
+        setSyncStatus('failed');
+        return;
+      }
+
+      // 3. Sync payload upsert
+      let currentAppData = null;
+      if (currentUser) {
+        currentAppData = { ...currentUser };
+        delete currentAppData.id;
+        delete currentAppData.email;
+      } else {
+        currentAppData = data?.app_data || {};
+      }
+
+      const { error: upsertError } = await supabase
+        .from('user_data')
+        .upsert({
+          user_id: user.id,
+          app_data: currentAppData,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (upsertError) {
+        console.error('Manual sync upsert failed:', upsertError);
+        setSyncError({
+          message: upsertError.message || '手動同步寫入雲端失敗',
+          code: upsertError.code || 'UNKNOWN_CODE',
+          details: upsertError.details || '無詳細資訊'
+        });
+        setSyncStatus('failed');
+      } else {
+        setSyncStatus('synced');
+        setSyncError(null);
+        const refreshedUser = {
+          id: user.id,
+          email: user.email,
+          ...(currentUser || {}),
+          ...currentAppData
+        };
+        setCurrentUser(refreshedUser);
+        localStorage.setItem('toeic_sprint_cloud_user', JSON.stringify(refreshedUser));
+        alert('✨ 雲端同步完成！您的最新學習資料已安全儲存。');
+      }
+    } catch (err) {
+      console.error('Manual sync exception:', err);
+      setSyncError({
+        message: err.message || '手動同步發生系統異常',
+        code: 'EXCEPTION',
+        details: err.toString()
+      });
+      setSyncStatus('failed');
     }
   };
 
@@ -852,6 +1011,8 @@ export default function App() {
                 onClearData={handleClearData}
                 onDeleteAccount={handleDeleteAccount}
                 syncStatus={syncStatus}
+                syncError={syncError}
+                onManualSync={handleManualSync}
               />
             )}
           </>

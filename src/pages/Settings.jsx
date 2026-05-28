@@ -1,7 +1,7 @@
 // src/pages/Settings.jsx
 import { useState } from 'react';
 
-export default function Settings({ currentUser, onSaveGoals, onClearData, onDeleteAccount, syncStatus = 'synced' }) {
+export default function Settings({ currentUser, onSaveGoals, onClearData, onDeleteAccount, syncStatus = 'synced', syncError = null, onManualSync }) {
   const [targetScore, setTargetScore] = useState(currentUser?.goals?.targetScore || 700);
   const [examDate, setExamDate] = useState(currentUser?.goals?.examDate || '');
   const [dailyVocabularyGoal, setDailyVocabularyGoal] = useState(currentUser?.goals?.dailyVocabularyGoal || 30);
@@ -107,6 +107,57 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
             }}>
               {syncInfo.text}
             </span>
+          </div>
+
+          {/* Sync Error Diagnostic Summary */}
+          {syncStatus === 'failed' && syncError && (
+            <div style={{
+              marginTop: '0.75rem',
+              padding: '0.75rem 1rem',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fee2e2',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              color: '#991b1b'
+            }}>
+              <strong style={{ display: 'block', marginBottom: '0.25rem' }}>🔍 錯誤診斷摘要：</strong>
+              <div style={{ fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <div>• 訊息: {syncError.message}</div>
+                <div>• 代碼: {syncError.code}</div>
+                <div>• 細節: {syncError.details}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Manual Re-sync Button */}
+          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={onManualSync}
+              disabled={syncStatus === 'syncing'}
+              style={{
+                backgroundColor: 'var(--secondary)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                padding: '0.5rem 1rem',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: syncStatus === 'syncing' ? 'not-allowed' : 'pointer',
+                opacity: syncStatus === 'syncing' ? 0.7 : 1,
+                transition: 'background-color 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+              onMouseOver={(e) => {
+                if (syncStatus !== 'syncing') e.currentTarget.style.backgroundColor = '#1e3a8a';
+              }}
+              onMouseOut={(e) => {
+                if (syncStatus !== 'syncing') e.currentTarget.style.backgroundColor = 'var(--secondary)';
+              }}
+            >
+              {syncStatus === 'syncing' ? '🔄 同步中...' : '☁️ 重新同步資料'}
+            </button>
           </div>
         </div>
       </div>
