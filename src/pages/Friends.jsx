@@ -270,6 +270,7 @@ export default function Friends({ currentUser }) {
 
     setIsJoining(true);
     try {
+      // Explicitly invoke RPC join function using exact parameter key 'invite_code' (no p_invite_code or code)
       const { error } = await supabase.rpc('join_group_by_invite_code', {
         invite_code: cleanCode
       });
