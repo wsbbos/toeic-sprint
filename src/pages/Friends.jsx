@@ -42,6 +42,7 @@ export default function Friends({ currentUser }) {
 
       if (error) {
         console.error('Error fetching joined groups:', error);
+        alert('❌ 小隊列表讀取失敗，請重試！');
         setLoadingGroups(false);
         return;
       }
@@ -78,16 +79,20 @@ export default function Friends({ currentUser }) {
 
       setGroups(groupList);
       
-      // Default to select first group if none active
-      if (groupList.length > 0 && !activeGroupId) {
-        setActiveGroupId(groupList[0].id);
-      }
+      // Default to select first group if none active using functional updater to avoid dependency loop
+      setActiveGroupId(prev => {
+        if (!prev && groupList.length > 0) {
+          return groupList[0].id;
+        }
+        return prev;
+      });
     } catch (err) {
       console.error('Exception during groups fetch:', err);
+      alert('❌ 小隊列表讀取失敗，請重試！');
     } finally {
       setLoadingGroups(false);
     }
-  }, [currentUser.id, activeGroupId]);
+  }, [currentUser.id]);
 
   // Query active group leaderboard stats from user_public_stats
   const fetchLeaderboard = useCallback(async (groupId) => {
@@ -195,11 +200,22 @@ export default function Friends({ currentUser }) {
         inviteCode += chars.charAt(Math.floor(Math.random() * chars.length));
       }
 
-      // 2. Call Supabase RPC to create study group and members in one transaction (RLS bypassed)
-      const { data: groupData, error: groupErr } = await supabase.rpc('create_study_group', {
+      const rpcName = 'create_study_group';
+      const rpcParams = {
         p_name: newGroupName.trim(),
         p_invite_code: inviteCode
-      });
+      };
+
+      // Diagnostic logs as requested
+      console.log('--- RPC Call Debugging: Create Group ---');
+      console.log('RPC Name:', rpcName);
+      console.log('RPC Params:', rpcParams);
+
+      // 2. Call Supabase RPC to create study group and members in one transaction (RLS bypassed)
+      const { data: groupData, error: groupErr } = await supabase.rpc(rpcName, rpcParams);
+
+      console.log('RPC Returned Data:', groupData);
+      console.log('RPC Returned Error:', groupErr);
 
       if (groupErr) {
         console.error('Error creating study group via RPC:', groupErr);
