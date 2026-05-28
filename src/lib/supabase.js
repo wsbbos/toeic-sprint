@@ -20,3 +20,14 @@ if (!isSupabaseConfigured) {
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+
+export const getSupabaseDebugInfo = () => {
+  return {
+    mode: import.meta.env.MODE || 'unknown',
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey,
+    urlPrefixOk: supabaseUrl ? supabaseUrl.startsWith('https://') : false,
+    isSbPublishable: supabaseAnonKey ? supabaseAnonKey.startsWith('sb_publishable_') : false,
+    isJwtFormat: supabaseAnonKey ? supabaseAnonKey.startsWith('eyJ') : false
+  };
+};

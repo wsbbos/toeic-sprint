@@ -14,7 +14,7 @@ import RetakePractice from './pages/RetakePractice';
 import Home from './pages/Home';
 import Friends from './pages/Friends';
 import Settings from './pages/Settings';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { supabase, isSupabaseConfigured, getSupabaseDebugInfo } from './lib/supabase';
 import { getTodayRecord, updateTodayRecord } from './utils/storage';
 import { vocabularyData } from './data/vocabulary';
 import { questionsData } from './data/questions';
@@ -185,6 +185,7 @@ export default function App() {
   }, []);
 
   if (!isSupabaseConfigured) {
+    const debugInfo = getSupabaseDebugInfo();
     return (
       <div style={{
         display: 'flex',
@@ -196,16 +197,17 @@ export default function App() {
         padding: '2rem'
       }}>
         <div className="card" style={{
-          maxWidth: '500px',
+          maxWidth: '550px',
           width: '100%',
           backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          borderRadius: '16px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
           padding: '2.5rem',
-          textAlign: 'center'
+          textAlign: 'center',
+          border: '1px solid #e5e7eb'
         }}>
-          <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '1rem' }}>⚠️</span>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.75rem' }}>
+          <span style={{ fontSize: '3.5rem', display: 'block', marginBottom: '1.25rem' }}>⚠️</span>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.75rem', letterSpacing: '-0.025em' }}>
             Supabase 環境變數尚未設定
           </h2>
           <p style={{ color: '#4b5563', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
@@ -214,39 +216,151 @@ export default function App() {
           <div style={{
             backgroundColor: '#f9fafb',
             border: '1px solid #e5e7eb',
-            borderRadius: '6px',
-            padding: '1rem',
+            borderRadius: '8px',
+            padding: '1.25rem',
             textAlign: 'left',
             fontFamily: 'monospace',
-            fontSize: '0.85rem',
+            fontSize: '0.9rem',
             color: '#374151',
             marginBottom: '1.5rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)'
           }}>
-            <div>• VITE_SUPABASE_URL</div>
-            <div>• VITE_SUPABASE_ANON_KEY</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #e5e7eb', paddingBottom: '0.35rem' }}>
+              <span style={{ fontWeight: 'bold', color: '#4f46e5' }}>• VITE_SUPABASE_URL</span>
+              <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>(Supabase API 網址)</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.15rem' }}>
+              <span style={{ fontWeight: 'bold', color: '#4f46e5' }}>• VITE_SUPABASE_ANON_KEY</span>
+              <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>(公開 Anon 金鑰)</span>
+            </div>
           </div>
-          <button 
-            onClick={() => window.location.reload()} 
-            style={{
-              backgroundColor: '#4f46e5',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '0.75rem 1.5rem',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#4338ca'}
-            onMouseOut={(e) => e.target.style.backgroundColor = '#4f46e5'}
-          >
-            🔄 重新整理網頁
-          </button>
+
+          {/* Secure Environment Debug Panel */}
+          <div style={{
+            textAlign: 'left',
+            backgroundColor: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            marginBottom: '1.5rem',
+            fontSize: '0.85rem'
+          }}>
+            <h3 style={{ 
+              fontSize: '0.9rem', 
+              fontWeight: 700, 
+              color: '#334155', 
+              marginBottom: '0.75rem', 
+              marginTop: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              🛠️ 安全偵錯資訊 (Secure Debug Panel)
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', fontFamily: 'monospace' }}>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#64748b' }}>MODE (編譯模式):</span>
+                <span style={{ 
+                  fontWeight: 600, 
+                  color: '#0f172a',
+                  backgroundColor: '#f1f5f9',
+                  padding: '2px 6px',
+                  borderRadius: '4px'
+                }}>{debugInfo.mode}</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#64748b' }}>has VITE_SUPABASE_URL:</span>
+                <span style={{ 
+                  fontWeight: 600, 
+                  color: debugInfo.hasUrl ? '#16a34a' : '#dc2626',
+                  backgroundColor: debugInfo.hasUrl ? '#f0fdf4' : '#fef2f2',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: `1px solid ${debugInfo.hasUrl ? '#bbf7d0' : '#fecaca'}`
+                }}>{debugInfo.hasUrl ? 'true' : 'false'}</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#64748b' }}>has VITE_SUPABASE_ANON_KEY:</span>
+                <span style={{ 
+                  fontWeight: 600, 
+                  color: debugInfo.hasKey ? '#16a34a' : '#dc2626',
+                  backgroundColor: debugInfo.hasKey ? '#f0fdf4' : '#fef2f2',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: `1px solid ${debugInfo.hasKey ? '#bbf7d0' : '#fecaca'}`
+                }}>{debugInfo.hasKey ? 'true' : 'false'}</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#64748b' }}>URL prefix 是否為 https://:</span>
+                <span style={{ 
+                  fontWeight: 600, 
+                  color: debugInfo.urlPrefixOk ? '#16a34a' : '#dc2626',
+                  backgroundColor: debugInfo.urlPrefixOk ? '#f0fdf4' : '#fef2f2',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: `1px solid ${debugInfo.urlPrefixOk ? '#bbf7d0' : '#fecaca'}`
+                }}>{debugInfo.urlPrefixOk ? 'true' : 'false'}</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#64748b' }}>key prefix 是否為 sb_publishable_:</span>
+                <span style={{ 
+                  fontWeight: 600, 
+                  color: debugInfo.isSbPublishable ? '#16a34a' : '#94a3b8',
+                  backgroundColor: debugInfo.isSbPublishable ? '#f0fdf4' : '#f8fafc',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: `1px solid ${debugInfo.isSbPublishable ? '#bbf7d0' : '#e2e8f0'}`
+                }}>{debugInfo.isSbPublishable ? 'true' : 'false'}</span>
+              </div>
+
+              {debugInfo.hasKey && !debugInfo.isSbPublishable && (
+                <div style={{ 
+                  fontSize: '0.75rem', 
+                  color: '#64748b', 
+                  borderTop: '1px solid #e2e8f0', 
+                  paddingTop: '0.5rem',
+                  marginTop: '0.25rem',
+                  lineHeight: '1.4'
+                }}>
+                  💡 偵測到金鑰格式為 <strong>{debugInfo.isJwtFormat ? '標準 JWT (eyJ...)' : '其他格式'}</strong>。舊款/標準 Supabase 專案的金鑰通常是 `eyJ` 開頭的 JWT，這也是完全正常的，但請確保在 Vercel 設定時沒有複製到前後空格或換行字元。
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button 
+              onClick={() => window.location.reload()} 
+              style={{
+                backgroundColor: '#4f46e5',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0.75rem 1.5rem',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                transition: 'background-color 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#4338ca'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#4f46e5'}
+            >
+              🔄 重新整理網頁
+            </button>
+          </div>
         </div>
       </div>
     );
