@@ -269,22 +269,25 @@ export default function Friends({ currentUser }) {
 
     setIsJoining(true);
     try {
-      // Explicitly invoke RPC join function using exact parameter key 'invite_code' to match the database schema
-      const { error } = await supabase.rpc('join_group_by_invite_code', {
-        invite_code: inviteCodeInput.trim().toUpperCase()
+      // Invoke new RPC join_study_group function using only 'code' as the parameter key
+      const { error } = await supabase.rpc('join_study_group', {
+        code: inviteCodeInput.trim().toUpperCase()
       });
 
       if (error) {
-        console.error('Join group RPC error details:', error);
+        console.error('error.message:', error.message);
+        console.error('error.code:', error.code);
+        console.error('error.details:', error.details);
         
-        // Match specific PostgreSQL/application-level errors
+        let chineseError = '❌ 加入讀書小隊失敗，請重試！';
         if (error.message.includes('not found') || error.message.includes('invalid') || error.code === 'P0002') {
-          alert('❌ 邀請碼不存在，請重新確認！');
-        } else if (error.message.includes('already') || error.message.includes('unique') || error.code === '23505') {
-          alert('❌ 你已在此小隊中，無需重複加入！');
+          chineseError = '❌ 邀請碼不存在，請重新確認！';
+        } else if (error.message.includes('already') || error.message.includes('unique') || error.message.includes('member') || error.code === '23505') {
+          chineseError = '❌ 你已在此小隊中，無需重複加入！';
         } else {
-          alert(`❌ 加入失敗：${error.message}`);
+          chineseError = `❌ 加入失敗：${error.message}`;
         }
+        alert(chineseError);
         return;
       }
 
