@@ -1,18 +1,308 @@
 // src/pages/Friends.jsx
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
 
 export default function Friends({ currentUser }) {
-  const [subscribed, setSubscribed] = useState(false);
+  // Joined Groups States
+  const [groups, setGroups] = useState([]);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [activeGroupId, setActiveGroupId] = useState(null);
+
+  // Leaderboard States
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  const [sortBy, setSortBy] = useState('today_completion_rate'); // today_completion_rate | streak_days | total_questions_answered | mock_high_score
+
+  // Form States
+  const [newGroupName, setNewGroupName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [createdInviteCode, setCreatedInviteCode] = useState('');
+  const [createdGroupName, setCreatedGroupName] = useState('');
+
+  const [inviteCodeInput, setInviteCodeInput] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+
+  // Query study groups user belongs to
+  const fetchGroups = useCallback(async () => {
+    setLoadingGroups(true);
+    try {
+      const { data, error } = await supabase
+        .from('group_members')
+        .select(`
+          group_id,
+          role,
+          study_groups (
+            id,
+            name,
+            invite_code,
+            owner_id
+          )
+        `)
+        .eq('user_id', currentUser.id);
+
+      if (error) {
+        console.error('Error fetching joined groups:', error);
+        setLoadingGroups(false);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setGroups([]);
+        setActiveGroupId(null);
+        setLoadingGroups(false);
+        return;
+      }
+
+      // Map joined groups and fetch their aggregate member counts
+      const groupList = data
+        .filter(m => m.study_groups) // safeguard
+        .map(m => ({
+          id: m.study_groups.id,
+          name: m.study_groups.name,
+          invite_code: m.study_groups.invite_code,
+          owner_id: m.study_groups.owner_id,
+          myRole: m.role || 'member',
+          memberCount: 0
+        }));
+
+      for (let g of groupList) {
+        const { count, error: countErr } = await supabase
+          .from('group_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('group_id', g.id);
+        
+        if (!countErr) {
+          g.memberCount = count || 0;
+        }
+      }
+
+      setGroups(groupList);
+      
+      // Default to select first group if none active
+      if (groupList.length > 0 && !activeGroupId) {
+        setActiveGroupId(groupList[0].id);
+      }
+    } catch (err) {
+      console.error('Exception during groups fetch:', err);
+    } finally {
+      setLoadingGroups(false);
+    }
+  }, [currentUser.id, activeGroupId]);
+
+  // Query active group leaderboard stats from user_public_stats
+  const fetchLeaderboard = useCallback(async (groupId) => {
+    setLoadingLeaderboard(true);
+    try {
+      // 1. Fetch group members
+      const { data: members, error: membersErr } = await supabase
+        .from('group_members')
+        .select('user_id, display_name, role')
+        .eq('group_id', groupId);
+
+      if (membersErr) {
+        console.error('Error fetching group members:', membersErr);
+        setLoadingLeaderboard(false);
+        return;
+      }
+
+      if (!members || members.length === 0) {
+        setGroupMembers([]);
+        setLoadingLeaderboard(false);
+        return;
+      }
+
+      // 2. Fetch public stats for those member IDs
+      const memberIds = members.map(m => m.user_id);
+      const { data: stats, error: statsErr } = await supabase
+        .from('user_public_stats')
+        .select('user_id, display_name, streak_days, today_completion_rate, total_questions_answered, total_wrong_count, mock_high_score, updated_at')
+        .in('user_id', memberIds);
+
+      if (statsErr) {
+        console.error('Error fetching public stats:', statsErr);
+      }
+
+      // 3. Combine statistics
+      const combined = members.map(m => {
+        const userStats = stats?.find(s => s.user_id === m.user_id) || {
+          streak_days: 0,
+          today_completion_rate: 0,
+          total_questions_answered: 0,
+          total_wrong_count: 0,
+          mock_high_score: 0,
+          updated_at: null
+        };
+
+        return {
+          user_id: m.user_id,
+          display_name: m.display_name || userStats.display_name || '匿名戰友',
+          role: m.role || 'member',
+          ...userStats
+        };
+      });
+
+      // 4. Sort dynamically
+      const sorted = [...combined].sort((a, b) => {
+        const valA = Number(a[sortBy]) || 0;
+        const valB = Number(b[sortBy]) || 0;
+        return valB - valA; // Descending
+      });
+
+      setGroupMembers(sorted);
+    } catch (err) {
+      console.error('Exception during leaderboard fetch:', err);
+    } finally {
+      setLoadingLeaderboard(false);
+    }
+  }, [sortBy]);
+
+  // Load Groups on Mount
+  useEffect(() => {
+    if (currentUser) {
+      Promise.resolve().then(() => {
+        fetchGroups();
+      });
+    }
+  }, [currentUser, fetchGroups]);
+
+  // Load Leaderboard when Active Group or Sorting changes
+  useEffect(() => {
+    if (activeGroupId) {
+      Promise.resolve().then(() => {
+        fetchLeaderboard(activeGroupId);
+      });
+    } else {
+      Promise.resolve().then(() => {
+        setGroupMembers([]);
+      });
+    }
+  }, [activeGroupId, sortBy, fetchLeaderboard]);
+
+  // Create new study group
+  const handleCreateGroup = async (e) => {
+    e.preventDefault();
+    if (!newGroupName.trim()) return;
+
+    setIsCreating(true);
+    setCreatedInviteCode('');
+    setCreatedGroupName('');
+
+    try {
+      // 1. Generate 6-char uppercase alphanumeric invite code
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let inviteCode = '';
+      for (let i = 0; i < 6; i++) {
+        inviteCode += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      // 2. Insert study group record
+      const { data: groupData, error: groupErr } = await supabase
+        .from('study_groups')
+        .insert({
+          name: newGroupName.trim(),
+          invite_code: inviteCode,
+          owner_id: currentUser.id
+        })
+        .select()
+        .single();
+
+      if (groupErr) {
+        console.error('Error creating study group:', groupErr);
+        alert(`❌ 建立小隊失敗：${groupErr.message}`);
+        setIsCreating(false);
+        return;
+      }
+
+      // 3. Add creator as owner in group members
+      const { error: memberErr } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: groupData.id,
+          user_id: currentUser.id,
+          display_name: currentUser.username || currentUser.email.split('@')[0],
+          role: 'owner'
+        });
+
+      if (memberErr) {
+        console.error('Error creating owner membership:', memberErr);
+      }
+
+      // 4. Set successes, refresh list and switch select
+      setCreatedInviteCode(inviteCode);
+      setCreatedGroupName(newGroupName.trim());
+      setNewGroupName('');
+      
+      await fetchGroups();
+      setActiveGroupId(groupData.id);
+      
+      alert('🎉 讀書小隊建立成功！邀請碼已生成。');
+    } catch (err) {
+      console.error('Exception during group creation:', err);
+      alert('❌ 建立小隊時發生系統錯誤，請重試！');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Join group via RPC join function
+  const handleJoinGroup = async (e) => {
+    e.preventDefault();
+    const cleanCode = inviteCodeInput.trim().toUpperCase();
+    if (!cleanCode) return;
+
+    setIsJoining(true);
+    try {
+      const { error } = await supabase.rpc('join_group_by_invite_code', {
+        invite_code: cleanCode
+      });
+
+      if (error) {
+        console.error('Join group RPC error details:', error);
+        
+        // Match specific PostgreSQL/application-level errors
+        if (error.message.includes('not found') || error.message.includes('invalid') || error.code === 'P0002') {
+          alert('❌ 邀請碼不存在，請重新確認！');
+        } else if (error.message.includes('already') || error.message.includes('unique') || error.code === '23505') {
+          alert('❌ 你已在此小隊中，無需重複加入！');
+        } else {
+          alert(`❌ 加入失敗：${error.message}`);
+        }
+        return;
+      }
+
+      alert('🎉 成功加入讀書小隊！');
+      setInviteCodeInput('');
+      
+      await fetchGroups();
+      
+      // Auto switch to joined group leaderboard
+      const { data: joinedGroup } = await supabase
+        .from('study_groups')
+        .select('id')
+        .eq('invite_code', cleanCode)
+        .maybeSingle();
+      
+      if (joinedGroup) {
+        setActiveGroupId(joinedGroup.id);
+      }
+    } catch (err) {
+      console.error('Exception during group join:', err);
+      alert('❌ 加入小隊時發生系統錯誤，請重試！');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    alert(`📋 邀請碼「${code}」已複製至剪貼簿！`);
+  };
 
   if (!currentUser) return null;
 
   // Extract active user statistics safely
   const streak = currentUser.progress?.streakDays || 0;
   const totalAnswered = currentUser.progress?.totalQuestionsAnswered || 0;
-  const totalCorrect = currentUser.progress?.totalCorrect || 0;
-  const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-  const vocabMastered = currentUser.progress?.learnedVocabularyCount || 0;
-  const targetScore = currentUser.goals?.targetScore || 700;
 
   const mockTestHistory = currentUser.mockTestHistory || [];
   const mockHighScore = mockTestHistory.length > 0
@@ -36,50 +326,34 @@ export default function Friends({ currentUser }) {
   const sP = Math.min((todayRecord.studyMinutes / studyGoal) * 100, 100);
   const completionRate = Math.round((wP + qP + sP) / 3);
 
+  const activeGroup = groups.find(g => g.id === activeGroupId);
+
   return (
-    <div className="flex flex-col gap-3 practice-container" style={{ maxWidth: '850px', margin: '0 auto' }}>
+    <div className="flex flex-col gap-3 practice-container" style={{ maxWidth: '950px', margin: '0 auto' }}>
       
-      {/* Cloud Announcement Header Banner */}
-      <div className="card" style={{ 
-        borderLeft: '5px solid var(--secondary)', 
-        backgroundColor: 'var(--secondary-light)',
-        padding: '1.5rem',
-        borderRadius: 'var(--radius-md)'
-      }}>
-        <span className="badge badge-review" style={{ marginBottom: '0.5rem', backgroundColor: 'var(--secondary-light)', color: 'var(--secondary)' }}>
-          CLOUD ACCUMULATION COOP 👥
-        </span>
-        <h1 style={{ fontSize: '1.8rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>
-          🤝 雲端互相監督系統
-        </h1>
-        <div style={{ fontSize: '0.95rem', color: 'var(--text-main)', fontWeight: 600, marginTop: '0.5rem' }}>
-          📢 狀態聲明：目前跨裝置互相監督功能正在進行雲端重構，系統已停止顯示舊版「本機假帳號排行榜」以確保學習數據真實度。
-        </div>
-        <p style={{ color: 'var(--text-sub)', fontSize: '0.875rem', marginTop: '0.5rem', lineHeight: '1.5' }}>
-          <strong>下一版將支援建立讀書小隊、邀請朋友加入、查看彼此真實學習進度。</strong> 我們正全力打造多租戶 Supabase RLS 安全社交組隊機制，讓您能邀請真人考友一同組隊，互相監督衝刺進度！
-        </p>
-      </div>
-
-      {/* Active User's Own Cloud Study Summary */}
-      <div className="card" style={{ padding: '2rem' }}>
-        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
-          <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', margin: 0 }}>
-            👤 我的雲端學習摘要 (My Cloud Profile)
-          </h2>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>帳號信箱: {currentUser.email}</span>
+      {/* Cloud Profile Header Summary */}
+      <div className="card" style={{ padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
+        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', color: 'var(--text-main)', margin: 0 }}>
+              👤 我的雲端學習摘要 (My Cloud Profile)
+            </h1>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>信箱: {currentUser.email}</span>
+          </div>
+          <span className="badge badge-success">雲端連線正常</span>
         </div>
 
-        <div className="grid grid-cols-4 gap-2" style={{ marginBottom: '1.5rem' }}>
+        <div className="grid grid-cols-4 gap-2" style={{ marginBottom: '1rem' }}>
           <div className="card" style={{ padding: '0.75rem', textAlign: 'center', backgroundColor: 'hsl(220, 10%, 98%)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 600 }}>連續學習</div>
             <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--warning)', marginTop: '0.25rem' }}>🔥 {streak} 天</div>
           </div>
           <div className="card" style={{ padding: '0.75rem', textAlign: 'center', backgroundColor: 'hsl(220, 10%, 98%)' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 600 }}>今日任務</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 600 }}>今日進度</div>
             <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)', marginTop: '0.25rem' }}>🎯 {completionRate}%</div>
           </div>
           <div className="card" style={{ padding: '0.75rem', textAlign: 'center', backgroundColor: 'hsl(220, 10%, 98%)' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 600 }}>累積答題數</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', fontWeight: 600 }}>累積答題</div>
             <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--success)', marginTop: '0.25rem' }}>✏️ {totalAnswered} 題</div>
           </div>
           <div className="card" style={{ padding: '0.75rem', textAlign: 'center', backgroundColor: 'hsl(220, 10%, 98%)' }}>
@@ -87,96 +361,320 @@ export default function Friends({ currentUser }) {
             <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--danger)', marginTop: '0.25rem' }}>🏆 {mockHighScore > 0 ? `${mockHighScore}分` : '尚未測驗'}</div>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-3" style={{ fontSize: '0.875rem', color: 'var(--text-main)', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
-          <div>
-            <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>👉 今日任務進度統計：</strong>
-            • 核心單字已學：{todayRecord.wordsLearned} 字 (目標 {wordsGoal} 字)<br />
-            • 答題訓練已做：{todayRecord.questionsAnswered} 題 (目標 {questionsGoal} 題)<br />
-            • 專注讀書時間：{todayRecord.studyMinutes} 分鐘 (目標 {studyGoal} 分鐘)
-          </div>
-          <div>
-            <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>👉 個人學習目標設定：</strong>
-            • 當前目標 TOEIC 分數：<strong>{targetScore} 分</strong><br />
-            • 整體累計做題正確率：<strong>{accuracy}%</strong><br />
-            • 已標記掌握核心單字：<strong>{vocabMastered} 字</strong>
-          </div>
-        </div>
       </div>
 
-      {/* Premium Mockup/Preview Box of Cloud Teams Feature */}
-      <div className="card" style={{ 
-        position: 'relative', 
-        padding: '2.5rem 2rem', 
-        textAlign: 'center',
-        background: 'linear-gradient(135deg, hsl(220, 15%, 96%), hsl(220, 10%, 91%))',
-        border: '1px dashed var(--border-color)'
-      }}>
-        {/* Subtle Watermark Blur Backdrop */}
-        <div style={{ 
-          fontSize: '4.5rem', 
-          display: 'block', 
-          marginBottom: '0.5rem',
-          filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.05))',
-          animation: 'float 3.5s ease-in-out infinite' 
-        }}>
-          🔒
-        </div>
+      {/* Group Management Dashboard (Create / Join Panel) */}
+      <div className="grid grid-cols-2 gap-3">
         
-        <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-          👥 讀書小隊雲端排行榜 (Preview)
+        {/* Create Group Panel */}
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            👑 建立讀書小隊
+          </h3>
+          <form onSubmit={handleCreateGroup} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">小隊名稱</label>
+              <input
+                type="text"
+                placeholder="例如：金色證書衝刺班 / TOEIC 每日打卡群"
+                className="form-input"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                maxLength={30}
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isCreating || !newGroupName.trim()}
+              style={{ width: '100%', marginTop: '0.25rem' }}
+            >
+              {isCreating ? '🛠️ 建立中...' : '建立小隊'}
+            </button>
+          </form>
+
+          {createdInviteCode && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              backgroundColor: 'hsl(140, 30%, 96%)',
+              border: '1px dashed hsl(140, 50%, 50%)',
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <span style={{ fontSize: '0.8rem', color: 'hsl(140, 50%, 30%)', display: 'block', fontWeight: 600 }}>
+                🎉 小隊「{createdGroupName}」建立成功！
+              </span>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'hsl(140, 50%, 25%)', margin: '0.25rem 0', letterSpacing: '2px' }}>
+                {createdInviteCode}
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)', display: 'block', marginBottom: '0.5rem' }}>
+                請分享此邀請碼給朋友，讓他們加入您的小隊。
+              </span>
+              <button
+                onClick={() => handleCopyCode(createdInviteCode)}
+                className="btn btn-outline btn-sm"
+                style={{ backgroundColor: '#ffffff' }}
+              >
+                📋 複製邀請碼
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Join Group Panel */}
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            👥 加入已建立的小隊
+          </h3>
+          <form onSubmit={handleJoinGroup} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">輸入小隊邀請碼</label>
+              <input
+                type="text"
+                placeholder="輸入 6 位英文/數字邀請碼"
+                className="form-input"
+                value={inviteCodeInput}
+                onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
+                maxLength={10}
+                required
+                style={{ textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-secondary"
+              disabled={isJoining || !inviteCodeInput.trim()}
+              style={{ width: '100%', marginTop: '0.25rem' }}
+            >
+              {isJoining ? '🏃 加入中...' : '加入小隊'}
+            </button>
+          </form>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)', marginTop: '0.75rem', lineHeight: '1.4' }}>
+            💡 加入讀書小隊後，您可以隨時在排行榜中看到隊友真實的學習統計數據與進度。
+          </div>
+        </div>
+
+      </div>
+
+      {/* My Joined Groups List */}
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 1rem 0' }}>
+          🏢 我的小隊列表
         </h3>
-        
-        <p style={{ 
-          fontSize: '0.875rem', 
-          color: 'var(--text-sub)', 
-          maxWidth: '520px', 
-          margin: '0 auto 1.5rem auto',
-          lineHeight: '1.6' 
-        }}>
-          未來的讀書小隊頁面將為您呈現組隊考友的每日實時數據排行榜！小隊隊友上線打卡、完成每日目標、或是模擬考取得金色證書，您都能第一時間同步掌握，同舟共濟衝刺高分。
-        </p>
 
-        {/* Locked Placeholder List Mockup */}
-        <div style={{ 
-          opacity: 0.35, 
-          maxWidth: '450px', 
-          margin: '0 auto 1.5rem auto', 
-          pointerEvents: 'none',
-          filter: 'blur(1.5px)',
-          border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: 'white',
-          padding: '1rem'
-        }}>
-          <div style={{ display: 'flex', justify: 'space-between', borderBottom: '1px solid #ddd', paddingBottom: '0.4rem', fontSize: '0.8rem', fontWeight: 'bold' }}>
-            <span>排名</span>
-            <span>隊友</span>
-            <span>今日進度</span>
+        {loadingGroups ? (
+          <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-sub)' }}>
+            🔄 正在載入您的小隊列表...
           </div>
-          <div style={{ display: 'flex', justify: 'space-between', paddingTop: '0.5rem' }}>
-            <span>🥇 1</span>
-            <span>Alex (戰友)</span>
-            <span>95% (🔥12天)</span>
+        ) : groups.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '2.5rem 1.5rem',
+            color: 'var(--text-sub)',
+            border: '1px dashed var(--border-color)',
+            borderRadius: '12px',
+            backgroundColor: '#fafafa'
+          }}>
+            <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.5rem' }}>🏚️</span>
+            <strong>你尚未加入任何小隊。</strong>
+            <div style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
+              請在上方建立您的小隊，或是輸入朋友的邀請碼加入，開始跨裝置真實互相監督！
+            </div>
           </div>
-          <div style={{ display: 'flex', justify: 'space-between', paddingTop: '0.5rem' }}>
-            <span>🥈 2</span>
-            <span>Sarah (戰友)</span>
-            <span>80% (🔥25天)</span>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            {groups.map(g => {
+              const isActive = g.id === activeGroupId;
+              return (
+                <div
+                  key={g.id}
+                  onClick={() => setActiveGroupId(g.id)}
+                  className="card"
+                  style={{
+                    padding: '1rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    border: isActive ? '2px solid var(--secondary)' : '1px solid var(--border-color)',
+                    backgroundColor: isActive ? 'var(--secondary-light)' : '#ffffff',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      padding: '0.15rem 0.4rem',
+                      borderRadius: '4px',
+                      color: g.myRole === 'owner' ? '#b45309' : '#047857',
+                      backgroundColor: g.myRole === 'owner' ? '#fef3c7' : '#d1fae5'
+                    }}>
+                      {g.myRole === 'owner' ? '👑 隊長' : '👤 隊員'}
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: 600 }}>
+                      👥 {g.memberCount} 人
+                    </span>
+                  </div>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {g.name}
+                  </h4>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '0.5rem' }}>
+                    <span>邀請碼: <strong style={{ color: 'var(--text-main)', fontFamily: 'monospace' }}>{g.invite_code}</strong></span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyCode(g.invite_code);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--secondary)',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        padding: '2px'
+                      }}
+                    >
+                      複製
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
-
-        <button 
-          className="btn btn-primary btn-sm" 
-          onClick={() => {
-            setSubscribed(true);
-            alert('🔔 訂閱成功！感謝您的期待，我們將在下一個版本（V2.2）優先發布真人社交組隊小隊機制！');
-          }}
-          disabled={subscribed}
-        >
-          {subscribed ? '✓ 已訂閱新功能通知' : '🔔 搶先訂閱小隊功能發布通知'}
-        </button>
+        )}
       </div>
+
+      {/* Leaderboard Section */}
+      {activeGroupId && activeGroup && (
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            borderBottom: '1px solid var(--border-color)', 
+            paddingBottom: '0.75rem', 
+            margin: '0 0 1rem 0' 
+          }}>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', margin: 0 }}>
+                🏆 「{activeGroup.name}」好友排行榜
+              </h2>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
+                同舟共濟，即時查看隊友真實進度（每小時更新）
+              </span>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}>
+              <span style={{ fontWeight: 600, color: 'var(--text-sub)' }}>排序依據：</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-main)',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <option value="today_completion_rate">今日任務完成率 🎯</option>
+                <option value="streak_days">連續學習天數 🔥</option>
+                <option value="total_questions_answered">累積做題數量 ✏️</option>
+                <option value="mock_high_score">模擬考最高分 🏆</option>
+              </select>
+            </div>
+          </div>
+
+          {loadingLeaderboard ? (
+            <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-sub)' }}>
+              🔄 正在拉取小隊成員最新雲端數據...
+            </div>
+          ) : groupMembers.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-light)' }}>
+              沒有成員數據。
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: '0.9rem',
+                textAlign: 'left'
+              }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-light)' }}>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>排名</th>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>隊友暱稱</th>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>今日進度 🎯</th>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>連續天數 🔥</th>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>總答題數 ✏️</th>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>錯題數 📓</th>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600, textAlign: 'center' }}>模擬考最高分 🏆</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupMembers.map((member, index) => {
+                    const isSelf = member.user_id === currentUser.id;
+                    const rank = index + 1;
+                    let rankBadge = `${rank}`;
+                    if (rank === 1) rankBadge = '🥇';
+                    else if (rank === 2) rankBadge = '🥈';
+                    else if (rank === 3) rankBadge = '🥉';
+
+                    return (
+                      <tr
+                        key={member.user_id}
+                        style={{
+                          borderBottom: '1px solid rgba(0,0,0,0.05)',
+                          backgroundColor: isSelf ? 'hsl(220, 30%, 97%)' : 'transparent',
+                          fontWeight: isSelf ? 700 : 'normal',
+                          transition: 'background-color 0.15s'
+                        }}
+                      >
+                        <td style={{ padding: '0.75rem 0.5rem', fontSize: rank <= 3 ? '1.25rem' : '0.9rem', textAlign: 'center', width: '60px' }}>
+                          {rankBadge}
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: isSelf ? 'var(--secondary)' : 'var(--text-main)' }}>
+                          <span>{member.display_name}</span>
+                          {member.role === 'owner' && (
+                            <span style={{ fontSize: '0.7rem', backgroundColor: '#fef3c7', color: '#b45309', padding: '1px 4px', borderRadius: '4px' }}>
+                              隊長
+                            </span>
+                          )}
+                          {isSelf && (
+                            <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--primary)', color: '#ffffff', padding: '1px 6px', borderRadius: '4px' }}>
+                              你
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: sortBy === 'today_completion_rate' ? 800 : 'inherit', color: 'var(--primary)' }}>
+                          {member.today_completion_rate}%
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: sortBy === 'streak_days' ? 800 : 'inherit', color: 'var(--warning)' }}>
+                          {member.streak_days} 天
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: sortBy === 'total_questions_answered' ? 800 : 'inherit' }}>
+                          {member.total_questions_answered} 題
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', color: 'var(--text-light)' }}>
+                          {member.total_wrong_count}
+                        </td>
+                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: sortBy === 'mock_high_score' ? 800 : 'inherit', color: member.mock_high_score > 0 ? 'var(--danger)' : 'var(--text-light)' }}>
+                          {member.mock_high_score > 0 ? `${member.mock_high_score}分` : '尚未測驗'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
     </div>
   );

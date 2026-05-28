@@ -146,6 +146,7 @@ export default function App() {
 
         setCurrentUser(cloudUser);
         localStorage.setItem('toeic_sprint_cloud_user', JSON.stringify(cloudUser));
+        await syncPublicStats(cloudUser);
         
         // If goals are unset, go to onboarding, else to home
         if (cloudUser.goals && !cloudUser.goals.examDate) {
@@ -218,7 +219,7 @@ export default function App() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isSupabaseConfigured) {
     const debugInfo = getSupabaseDebugInfo();
@@ -402,6 +403,60 @@ export default function App() {
     );
   }
 
+  // Helper to synchronize user stats to user_public_stats table (non-blocking)
+  async function syncPublicStats(updatedUser) {
+    if (!updatedUser || !updatedUser.id) return;
+    try {
+      const id = updatedUser.id;
+      const display_name = updatedUser.username || updatedUser.email?.split('@')[0] || '未知用戶';
+      const streak = updatedUser.progress?.streakDays || 0;
+      
+      // Calculate today completion rate
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayRecord = updatedUser.dailyRecords?.find(r => r.date === todayStr) || {
+        wordsLearned: 0,
+        questionsAnswered: 0,
+        studyMinutes: 0
+      };
+      
+      const wordsGoal = updatedUser.goals?.dailyVocabularyGoal || 30;
+      const questionsGoal = updatedUser.goals?.dailyQuestionGoal || 50;
+      const studyGoal = updatedUser.goals?.dailyStudyMinutesGoal || 60;
+      
+      const wP = Math.min((todayRecord.wordsLearned / wordsGoal) * 100, 100);
+      const qP = Math.min((todayRecord.questionsAnswered / questionsGoal) * 100, 100);
+      const sP = Math.min((todayRecord.studyMinutes / studyGoal) * 100, 100);
+      const completionRate = Math.round((wP + qP + sP) / 3);
+      
+      const totalAnswered = updatedUser.progress?.totalQuestionsAnswered || 0;
+      const wrongCount = updatedUser.wrongBook ? updatedUser.wrongBook.length : 0;
+      
+      const mockTestHistory = updatedUser.mockTestHistory || [];
+      const mockHighScore = mockTestHistory.length > 0
+        ? Math.max(...mockTestHistory.map(h => h.score))
+        : 0;
+
+      const { error } = await supabase
+        .from('user_public_stats')
+        .upsert({
+          user_id: id,
+          display_name: display_name,
+          streak_days: Number(streak),
+          today_completion_rate: Number(completionRate),
+          total_questions_answered: Number(totalAnswered),
+          total_wrong_count: Number(wrongCount),
+          mock_high_score: Number(mockHighScore),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('Non-blocking user_public_stats sync error:', error);
+      }
+    } catch (err) {
+      console.error('Non-blocking user_public_stats sync exception:', err);
+    }
+  }
+
   // Cloud Sync Writer
   const syncWithCloud = async (updatedUser) => {
     if (!updatedUser || !updatedUser.id) return;
@@ -431,6 +486,7 @@ export default function App() {
       } else {
         setSyncStatus('synced');
         setSyncError(null);
+        await syncPublicStats(updatedUser);
       }
     } catch (err) {
       console.error('Cloud sync exception:', err);
@@ -606,6 +662,7 @@ export default function App() {
         };
         setCurrentUser(refreshedUser);
         localStorage.setItem('toeic_sprint_cloud_user', JSON.stringify(refreshedUser));
+        await syncPublicStats(refreshedUser);
         alert('✨ 雲端同步完成！您的最新學習資料已安全儲存。');
       }
     } catch (err) {
