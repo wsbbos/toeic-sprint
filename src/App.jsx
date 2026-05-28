@@ -34,7 +34,64 @@ export default function App() {
   const [syncError, setSyncError] = useState(null); // { message, code, details }
   const [showImportModal, setShowImportModal] = useState(false);
   const [legacyLocalUsers, setLegacyLocalUsers] = useState([]);
-  const [selectedLegacyUserToImport, setSelectedLegacyUserToImport] = useState('');  const handleSessionChange = async (session, customUsername = null) => {
+  const [selectedLegacyUserToImport, setSelectedLegacyUserToImport] = useState('');
+
+  // Stale Session Recovery & Error Masking States
+  const [isHandlingStaleSession, setIsHandlingStaleSession] = useState(false);
+
+  const sanitizeError = (err) => {
+    if (!err) return null;
+    const str = (val) => {
+      if (!val) return '';
+      let s = typeof val === 'object' ? JSON.stringify(val) : String(val);
+      s = s.replace(/ey[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*/g, '[PROTECTED_JWT]');
+      s = s.replace(/https:\/\/[A-Za-z0-9-]+\.supabase\.co/g, '[PROTECTED_SUPABASE_URL]');
+      return s;
+    };
+    return {
+      message: str(err.message || err.error_description || '未知錯誤'),
+      code: str(err.code || 'UNKNOWN_CODE'),
+      details: str(err.details || '無詳細資訊')
+    };
+  };
+
+  const handleStaleSession = async (error) => {
+    if (!error) return false;
+    const errMsg = String(error.message || error.error_description || error || '');
+    const errCode = String(error.code || '');
+
+    const isStale = 
+      errMsg.includes('Invalid Refresh Token') ||
+      errMsg.includes('Refresh Token Not Found') ||
+      errMsg.includes('refresh_token_not_found') ||
+      errMsg.includes('invalid_grant') ||
+      errMsg.toLowerCase().includes('refresh token') ||
+      errCode === 'refresh_token_not_found';
+
+    if (isStale) {
+      if (isHandlingStaleSession) return true;
+      setIsHandlingStaleSession(true);
+      console.warn('Stale session detected, logging out:', error);
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error('Sign out error during stale session recovery:', e);
+      }
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') || key === 'toeic_sprint_cloud_user') {
+          localStorage.removeItem(key);
+        }
+      });
+      setCurrentUser(null);
+      setCurrentPage('login');
+      alert('登入狀態已失效，請重新登入。');
+      setIsHandlingStaleSession(false);
+      return true;
+    }
+    return false;
+  };
+
+  const handleSessionChange = async (session, customUsername = null) => {
     if (session) {
       const { user } = session;
       setSyncStatus('syncing');
@@ -48,11 +105,13 @@ export default function App() {
             .from('profiles')
             .upsert({
               id: user.id, // Must equal auth user id
+              email: user.email,
               username: profileUsername,
               updated_at: new Date().toISOString()
             }, { onConflict: 'id' });
           if (profileError) {
             console.error('Non-blocking Profiles Sync Error:', profileError);
+            await handleStaleSession(profileError);
           }
         } catch (profileErr) {
           console.error('Profiles exception (non-blocking):', profileErr);
@@ -67,12 +126,11 @@ export default function App() {
 
         if (error) {
           console.error('Error fetching cloud data:', error);
-          setSyncError({
-            message: error.message || '無法從雲端讀取學習資料',
-            code: error.code || 'UNKNOWN_CODE',
-            details: error.details || '無詳細資訊'
-          });
-          setSyncStatus('failed');
+          const isStale = await handleStaleSession(error);
+          if (!isStale) {
+            setSyncError(sanitizeError(error));
+            setSyncStatus('failed');
+          }
         }
 
         let cloudUser = null;
@@ -126,12 +184,11 @@ export default function App() {
 
           if (insertError) {
             console.error('Error inserting default cloud data:', insertError);
-            setSyncError({
-              message: insertError.message || '初始化雲端學習資料失敗',
-              code: insertError.code || 'UNKNOWN_CODE',
-              details: insertError.details || '無詳細資訊'
-            });
-            setSyncStatus('failed');
+            const isStale = await handleStaleSession(insertError);
+            if (!isStale) {
+              setSyncError(sanitizeError(insertError));
+              setSyncStatus('failed');
+            }
           } else {
             setSyncStatus('synced');
             setSyncError(null);
@@ -174,12 +231,11 @@ export default function App() {
         }
       } catch (err) {
         console.error('Exception during session fetch:', err);
-        setSyncError({
-          message: err.message || '連線至雲端資料庫時發生異常',
-          code: 'EXCEPTION',
-          details: err.toString()
-        });
-        setSyncStatus('failed');
+        const isStale = await handleStaleSession(err);
+        if (!isStale) {
+          setSyncError(sanitizeError(err));
+          setSyncStatus('failed');
+        }
       }
     } else {
       // Logged out
@@ -196,20 +252,35 @@ export default function App() {
   // Handle Supabase Auth state changes
   useEffect(() => {
     if (!isSupabaseConfigured) return;
+    let active = true;
+
     // 1. Get current active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (!active) return;
+      if (error) {
+        await handleStaleSession(error);
+        return;
+      }
       if (session) {
-        handleSessionChange(session);
+        await handleSessionChange(session);
       } else {
         setCurrentUser(null);
         setCurrentPage('login');
       }
+    }).catch(async (err) => {
+      if (active) {
+        await handleStaleSession(err);
+      }
     });
 
     // 2. Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        handleSessionChange(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!active) return;
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        setCurrentPage('login');
+      } else if (session) {
+        await handleSessionChange(session);
       } else {
         setCurrentUser(null);
         setCurrentPage('login');
@@ -217,6 +288,7 @@ export default function App() {
     });
 
     return () => {
+      active = false;
       subscription.unsubscribe();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -405,9 +477,15 @@ export default function App() {
 
   // Helper to synchronize user stats to user_public_stats table (non-blocking)
   async function syncPublicStats(updatedUser) {
-    if (!updatedUser || !updatedUser.id) return;
+    if (!updatedUser) return;
     try {
-      const id = updatedUser.id;
+      const sessionResult = await supabase.auth.getSession();
+      const sessionUser = sessionResult.data?.session?.user;
+      const id = sessionUser?.id || updatedUser.id;
+      if (!id) {
+        console.warn('Cannot sync user_public_stats: no valid user ID found.');
+        return;
+      }
       const display_name = updatedUser.username || updatedUser.email?.split('@')[0] || '未知用戶';
       const streak = updatedUser.progress?.streakDays || 0;
       
@@ -451,6 +529,7 @@ export default function App() {
 
       if (error) {
         console.error('Non-blocking user_public_stats sync error:', error);
+        await handleStaleSession(error);
       }
     } catch (err) {
       console.error('Non-blocking user_public_stats sync exception:', err);
@@ -477,12 +556,11 @@ export default function App() {
       
       if (error) {
         console.error('Cloud sync failed:', error);
-        setSyncError({
-          message: error.message || '無法同步變更至雲端',
-          code: error.code || 'UNKNOWN_CODE',
-          details: error.details || '無詳細資訊'
-        });
-        setSyncStatus('failed');
+        const isStale = await handleStaleSession(error);
+        if (!isStale) {
+          setSyncError(sanitizeError(error));
+          setSyncStatus('failed');
+        }
       } else {
         setSyncStatus('synced');
         setSyncError(null);
@@ -490,12 +568,11 @@ export default function App() {
       }
     } catch (err) {
       console.error('Cloud sync exception:', err);
-      setSyncError({
-        message: err.message || '同步發生系統異常',
-        code: 'EXCEPTION',
-        details: err.toString()
-      });
-      setSyncStatus('failed');
+      const isStale = await handleStaleSession(err);
+      if (!isStale) {
+        setSyncError(sanitizeError(err));
+        setSyncStatus('failed');
+      }
     }
   };
 
@@ -548,13 +625,12 @@ export default function App() {
 
       if (error) {
         console.error('Failed to import data to cloud:', error);
-        setSyncError({
-          message: error.message || '匯入本機舊資料至雲端失敗',
-          code: error.code || 'UNKNOWN_CODE',
-          details: error.details || '無詳細資訊'
-        });
-        setSyncStatus('failed');
-        alert(`❌ 匯入雲端失敗：${error.message}`);
+        const isStale = await handleStaleSession(error);
+        if (!isStale) {
+          setSyncError(sanitizeError(error));
+          setSyncStatus('failed');
+          alert(`❌ 匯入雲端失敗：${error.message}`);
+        }
       } else {
         setSyncStatus('synced');
         setSyncError(null);
@@ -566,13 +642,12 @@ export default function App() {
       }
     } catch (err) {
       console.error('Exception during import:', err);
-      setSyncError({
-        message: err.message || '匯入舊資料系統異常',
-        code: 'EXCEPTION',
-        details: err.toString()
-      });
-      setSyncStatus('failed');
-      alert('❌ 匯入資料時發生系統錯誤，請重試！');
+      const isStale = await handleStaleSession(err);
+      if (!isStale) {
+        setSyncError(sanitizeError(err));
+        setSyncStatus('failed');
+        alert('❌ 匯入資料時發生系統錯誤，請重試！');
+      }
     }
   };
 
@@ -597,11 +672,13 @@ export default function App() {
           .from('profiles')
           .upsert({
             id: user.id,
+            email: user.email,
             username: currentUser?.username || user.email.split('@')[0],
             updated_at: new Date().toISOString()
           }, { onConflict: 'id' });
         if (profileError) {
           console.error('Non-blocking Profiles Sync Error during manual trigger:', profileError);
+          await handleStaleSession(profileError);
         }
       } catch (profileErr) {
         console.error('Profiles exception during manual trigger:', profileErr);
@@ -616,12 +693,11 @@ export default function App() {
 
       if (error) {
         console.error('Manual sync fetch failed:', error);
-        setSyncError({
-          message: error.message || '手動同步讀取雲端失敗',
-          code: error.code || 'UNKNOWN_CODE',
-          details: error.details || '無詳細資訊'
-        });
-        setSyncStatus('failed');
+        const isStale = await handleStaleSession(error);
+        if (!isStale) {
+          setSyncError(sanitizeError(error));
+          setSyncStatus('failed');
+        }
         return;
       }
 
@@ -645,12 +721,11 @@ export default function App() {
 
       if (upsertError) {
         console.error('Manual sync upsert failed:', upsertError);
-        setSyncError({
-          message: upsertError.message || '手動同步寫入雲端失敗',
-          code: upsertError.code || 'UNKNOWN_CODE',
-          details: upsertError.details || '無詳細資訊'
-        });
-        setSyncStatus('failed');
+        const isStale = await handleStaleSession(upsertError);
+        if (!isStale) {
+          setSyncError(sanitizeError(upsertError));
+          setSyncStatus('failed');
+        }
       } else {
         setSyncStatus('synced');
         setSyncError(null);
@@ -667,12 +742,11 @@ export default function App() {
       }
     } catch (err) {
       console.error('Manual sync exception:', err);
-      setSyncError({
-        message: err.message || '手動同步發生系統異常',
-        code: 'EXCEPTION',
-        details: err.toString()
-      });
-      setSyncStatus('failed');
+      const isStale = await handleStaleSession(err);
+      if (!isStale) {
+        setSyncError(sanitizeError(err));
+        setSyncStatus('failed');
+      }
     }
   };
 
