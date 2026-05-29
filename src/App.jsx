@@ -24,6 +24,7 @@ export default function App() {
     const cached = localStorage.getItem('toeic_sprint_cloud_user');
     return cached ? JSON.parse(cached) : null;
   });
+  const [currentSession, setCurrentSession] = useState(null);
   const [currentPage, setCurrentPage] = useState('login'); // Router State
   const [practiceFilter, setPracticeFilter] = useState('');
   const [activeMockResult, setActiveMockResult] = useState(null);
@@ -92,6 +93,7 @@ export default function App() {
   };
 
   const handleSessionChange = async (session, customUsername = null) => {
+    setCurrentSession(session);
     if (session) {
       const { user } = session;
       setSyncStatus('syncing');
@@ -240,6 +242,7 @@ export default function App() {
     } else {
       // Logged out
       setCurrentUser(null);
+      setCurrentSession(null);
       localStorage.removeItem('toeic_sprint_cloud_user');
       setCurrentPage('login');
     }
@@ -262,8 +265,10 @@ export default function App() {
         return;
       }
       if (session) {
+        setCurrentSession(session);
         await handleSessionChange(session);
       } else {
+        setCurrentSession(null);
         setCurrentUser(null);
         setCurrentPage('login');
       }
@@ -277,11 +282,14 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!active) return;
       if (event === 'SIGNED_OUT') {
+        setCurrentSession(null);
         setCurrentUser(null);
         setCurrentPage('login');
       } else if (session) {
+        setCurrentSession(session);
         await handleSessionChange(session);
       } else {
+        setCurrentSession(null);
         setCurrentUser(null);
         setCurrentPage('login');
       }
@@ -766,14 +774,38 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    console.log('SAFE LOGOUT START', currentSession);
+
     try {
-      await supabase.auth.signOut();
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('SIGNOUT_TIMEOUT')), 5000)
+        )
+      ]);
     } catch (err) {
-      console.error('Logout Exception:', err);
+      console.warn('Supabase signOut failed or timeout, fallback to local cleanup:', err);
     }
+
+    try {
+      Object.keys(localStorage)
+        .filter(k =>
+          k.startsWith('sb-') ||
+          k.includes('supabase') ||
+          k.includes('auth')
+        )
+        .forEach(k => localStorage.removeItem(k));
+
+      sessionStorage.clear();
+    } catch (err) {
+      console.warn('Local auth cleanup failed:', err);
+    }
+
     setCurrentUser(null);
-    localStorage.removeItem('toeic_sprint_cloud_user');
-    setCurrentPage('login');
+    setCurrentSession(null);
+
+    alert('已登出，請重新登入');
+    window.location.href = '/';
   };
 
   const handleClearData = async () => {
