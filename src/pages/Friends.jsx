@@ -187,79 +187,116 @@ export default function Friends({ currentUser }) {
 
   // Create new study group
   const handleCreateGroup = async () => {
-    const groupName = newGroupName;
-
-    console.log('STEP 1: handler fired');
-    console.log('STEP 2: currentUser =', currentUser);
-    console.log('STEP 3: supabase =', supabase);
-    console.log('STEP 4: typeof supabase.rpc =', typeof supabase?.rpc);
-    console.log('STEP 5: groupName =', groupName);
+    console.log('REAL CREATE GROUP BUTTON HANDLER FIRED')
 
     if (!currentUser) {
-      console.error('STOP: currentUser missing');
-      alert('請先登入');
+      alert('請先登入')
       return;
     }
 
     if (!supabase) {
-      console.error('STOP: supabase client missing');
-      alert('Supabase 尚未初始化');
+      alert('Supabase 尚未初始化')
       return;
     }
 
-    if (typeof supabase.rpc !== 'function') {
-      console.error('STOP: supabase.rpc is not a function');
-      alert('Supabase RPC 尚未初始化');
+    const groupName = newGroupName;
+    if (groupName.trim().length < 2) {
+      alert('小隊名稱至少需要 2 個字')
       return;
     }
 
-    if (!groupName.trim() || groupName.trim().length < 2) {
-      alert('小隊名稱至少需要 2 個字');
-      return;
-    }
+    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase()
 
-    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setIsCreatingGroup(true)
 
-    const params = {
-      p_name: groupName.trim(),
-      p_invite_code: inviteCode
-    };
-
-    console.log('STEP 6: Before actual supabase.rpc call', params);
+    console.log('STEP A: before getSession')
 
     try {
-      setIsCreatingGroup(true);
-      setCreatedInviteCode('');
-      setCreatedGroupName('');
-      setCreatedGroupId('');
+      const sessionResult = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('GET_SESSION_TIMEOUT')), 8000)
+        )
+      ])
 
-      const result = await supabase.rpc('create_study_group', params);
+      console.log('STEP B: after getSession', sessionResult)
 
-      console.log('STEP 7: After actual supabase.rpc call');
-      console.log('STEP 8: Raw RPC result =', result);
+      const session = sessionResult?.data?.session
 
-      const { data, error } = result;
-
-      if (error) {
-        console.error('RPC error:', error);
-        alert('建立小隊失敗：' + error.message);
-        return;
+      if (!session?.access_token) {
+        console.error('No access token found', sessionResult)
+        alert('登入狀態失效，請重新登入')
+        await supabase.auth.signOut()
+        return
       }
 
-      console.log('RPC success data:', data);
-      const createdGroup = data && data[0] ? data[0] : (data || {});
-      setCreatedInviteCode(inviteCode);
-      setCreatedGroupName(groupName.trim());
-      setCreatedGroupId(createdGroup.id || createdGroup.group_id || (typeof createdGroup === 'string' ? createdGroup : JSON.stringify(createdGroup)));
-      setNewGroupName('');
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-      alert('建立成功，邀請碼：' + inviteCode);
-    } catch (err) {
-      console.error('Create group exception:', err);
-      alert('建立小隊發生例外：' + err.message);
+      const params = {
+        p_name: groupName.trim(),
+        p_invite_code: inviteCode
+      }
+
+      console.log('STEP C: raw fetch url', `${supabaseUrl}/rest/v1/rpc/create_study_group`)
+      console.log('STEP D: raw fetch body', params)
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 12000)
+
+      try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/rpc/create_study_group`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify(params),
+          signal: controller.signal
+        })
+
+        clearTimeout(timeoutId)
+
+        const text = await response.text()
+
+        console.log('STEP E: raw fetch response status', response.status)
+        console.log('STEP F: raw fetch response text', text)
+
+        if (!response.ok) {
+          alert('建立小隊失敗：' + text)
+          return
+        }
+
+        let parsedData = null;
+        try {
+          parsedData = JSON.parse(text);
+        } catch (parseErr) {
+          console.warn('Response was not JSON:', parseErr);
+        }
+        const createdGroup = parsedData && parsedData[0] ? parsedData[0] : (parsedData || {});
+        setCreatedInviteCode(inviteCode);
+        setCreatedGroupName(groupName.trim());
+        setCreatedGroupId(createdGroup.id || createdGroup.group_id || (typeof createdGroup === 'string' ? createdGroup : JSON.stringify(createdGroup)));
+        setNewGroupName('');
+
+        alert('建立成功，邀請碼：' + inviteCode);
+      } catch (err) {
+        clearTimeout(timeoutId)
+        console.error('Raw fetch exception:', err)
+
+        if (err.name === 'AbortError') {
+          alert('RPC 請求逾時')
+        } else {
+          alert('建立小隊發生錯誤：' + err.message)
+        }
+      }
+    } catch (sessionErr) {
+      console.error('Session retrieval failed or timed out:', sessionErr)
+      alert('無法取得使用者登入階段資訊：' + sessionErr.message)
     } finally {
-      console.log('STEP 9: finally reset loading');
-      setIsCreatingGroup(false);
+      console.log('STEP G: finally reset loading')
+      setIsCreatingGroup(false)
     }
   };
 
