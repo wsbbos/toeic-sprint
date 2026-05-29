@@ -1164,6 +1164,7 @@ export default function App() {
             {currentPage === 'friends' && (
               <Friends 
                 currentUser={currentUser}
+                currentSession={currentSession}
               />
             )}
 

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
-export default function Friends({ currentUser }) {
+export default function Friends({ currentUser, currentSession }) {
   // Joined Groups States
   const [groups, setGroups] = useState([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
@@ -311,53 +311,115 @@ export default function Friends({ currentUser }) {
   // Join group via RPC join function
   const handleJoinGroup = async (e) => {
     e.preventDefault();
-    if (!inviteCodeInput.trim()) return;
+    const inviteCode = inviteCodeInput.trim().toUpperCase();
+
+    console.log('JOIN STEP 1: handler fired');
+    console.log('JOIN STEP 2: inviteCode =', inviteCode);
+
+    if (inviteCode.length < 6) {
+      alert('請輸入 6 位邀請碼');
+      return;
+    }
 
     setIsJoiningGroup(true);
+
+    // Retrieve active access token safely
+    let accessToken = currentSession?.access_token || '';
+    let tokenSource = 'currentSession';
+
+    if (!accessToken) {
+      tokenSource = 'localStorage';
+      try {
+        const authKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+        if (authKey) {
+          const parsed = JSON.parse(localStorage.getItem(authKey));
+          accessToken = parsed?.access_token || '';
+        }
+      } catch (err) {
+        console.warn('Error reading localStorage token:', err);
+      }
+    }
+
+    console.log('JOIN STEP 3: accessToken source =', tokenSource);
+
+    if (!accessToken) {
+      alert('登入狀態失效，請重新登入');
+      setIsJoiningGroup(false);
+      return;
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const params = {
+      p_invite_code: inviteCode
+    };
+
+    console.log('JOIN STEP 4: before raw fetch', params);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
     try {
-      // Invoke new RPC join_study_group function using only 'code' as the parameter key
-      const { error } = await supabase.rpc('join_study_group', {
-        code: inviteCodeInput.trim().toUpperCase()
+      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/join_group_by_invite_code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(params),
+        signal: controller.signal
       });
 
-      if (error) {
-        console.error('error.message:', error.message);
-        console.error('error.code:', error.code);
-        console.error('error.details:', error.details);
-        
-        let chineseError = '❌ 加入讀書小隊失敗，請重試！';
-        if (error.message.includes('not found') || error.message.includes('invalid') || error.code === 'P0002') {
-          chineseError = '❌ 找不到此邀請碼，請重新確認！';
-        } else if (error.message.includes('already') || error.message.includes('unique') || error.message.includes('member') || error.code === '23505') {
-          chineseError = '❌ 你已經在這個小隊，無需重複加入！';
-        } else {
-          chineseError = `❌ 加入失敗：${error.message}`;
+      clearTimeout(timeoutId);
+
+      const text = await response.text();
+
+      console.log('JOIN STEP 5: response status', response.status);
+      console.log('JOIN STEP 6: response text', text);
+
+      if (!response.ok) {
+        let chineseError = '❌ 加入失敗：' + text;
+        if (text.includes('not found') || text.includes('invalid') || text.includes('P0002') || text.includes('P0001') || response.status === 400 || response.status === 404) {
+          chineseError = '❌ 找不到此邀請碼';
+        } else if (text.includes('already') || text.includes('unique') || text.includes('member') || text.includes('23505')) {
+          chineseError = '❌ 你已經在這個小隊';
         }
         alert(chineseError);
         return;
       }
 
       alert('🎉 成功加入讀書小隊！');
-      
-      // Keep a reference to the uppercase code before resetting the input
-      const joinedInviteCode = inviteCodeInput.trim().toUpperCase();
       setInviteCodeInput('');
-      
-      await fetchGroups();
-      
-      // Auto switch to joined group leaderboard
-      const { data: joinedGroup } = await supabase
-        .from('study_groups')
-        .select('id')
-        .eq('invite_code', joinedInviteCode)
-        .maybeSingle();
-      
-      if (joinedGroup) {
-        setActiveGroupId(joinedGroup.id);
+
+      // Refresh list and select group leaderboard
+      try {
+        await fetchGroups();
+
+        // Switch to joined group leaderboard
+        const { data: joinedGroup } = await supabase
+          .from('study_groups')
+          .select('id')
+          .eq('invite_code', inviteCode)
+          .maybeSingle();
+
+        if (joinedGroup) {
+          setActiveGroupId(joinedGroup.id);
+        }
+      } catch (refreshErr) {
+        console.error('List refresh failed after joining:', refreshErr);
+        alert('加入成功，但列表刷新失敗，請重新整理');
       }
+
     } catch (err) {
-      console.error('Exception during group join:', err);
-      alert('❌ 加入小隊時發生系統錯誤，請重試！');
+      clearTimeout(timeoutId);
+      console.error('Join group exception:', err);
+      if (err.name === 'AbortError') {
+        alert('RPC 請求逾時');
+      } else {
+        alert('加入小隊發生錯誤：' + err.message);
+      }
     } finally {
       setIsJoiningGroup(false);
     }
