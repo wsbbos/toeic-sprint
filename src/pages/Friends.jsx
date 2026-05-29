@@ -23,6 +23,63 @@ export default function Friends({ currentUser, currentSession }) {
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [isJoiningGroup, setIsJoiningGroup] = useState(false);
 
+  const getStoredSupabaseAccessToken = () => {
+    try {
+      const authKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+      if (!authKey) return '';
+
+      const storedAuth = JSON.parse(localStorage.getItem(authKey) || '{}');
+      return storedAuth?.access_token
+        || storedAuth?.currentSession?.access_token
+        || storedAuth?.session?.access_token
+        || '';
+    } catch (err) {
+      console.warn('Error reading localStorage token:', err);
+      return '';
+    }
+  };
+
+  const getJoinGroupErrorMessage = (response, responseText) => {
+    const errorPayload = (() => {
+      try {
+        return responseText ? JSON.parse(responseText) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    const errorText = [
+      errorPayload?.code,
+      errorPayload?.message,
+      errorPayload?.details,
+      errorPayload?.hint,
+      responseText
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    if (
+      errorText.includes('already')
+      || errorText.includes('duplicate')
+      || errorText.includes('unique')
+      || errorText.includes('member')
+      || errorText.includes('23505')
+    ) {
+      return '你已經在這個小隊';
+    }
+
+    if (
+      response.status === 404
+      || errorText.includes('not found')
+      || errorText.includes('invalid invite')
+      || errorText.includes('invite code')
+      || errorText.includes('p0001')
+      || errorText.includes('p0002')
+    ) {
+      return '找不到此邀請碼';
+    }
+
+    return `加入失敗：${errorPayload?.message || responseText || `HTTP ${response.status}`}`;
+  };
+
   // Query study groups user belongs to
   const fetchGroups = useCallback(async () => {
     setIsLoadingGroups(true);
@@ -322,49 +379,40 @@ export default function Friends({ currentUser, currentSession }) {
     }
 
     setIsJoiningGroup(true);
-
-    // Retrieve active access token safely
-    let accessToken = currentSession?.access_token || '';
-    let tokenSource = 'currentSession';
-
-    if (!accessToken) {
-      tokenSource = 'localStorage';
-      try {
-        const authKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
-        if (authKey) {
-          const parsed = JSON.parse(localStorage.getItem(authKey));
-          accessToken = parsed?.access_token || '';
-        }
-      } catch (err) {
-        console.warn('Error reading localStorage token:', err);
-      }
-    }
-
-    console.log('JOIN STEP 3: accessToken source =', tokenSource);
-
-    if (!accessToken) {
-      alert('登入狀態失效，請重新登入');
-      setIsJoiningGroup(false);
-      return;
-    }
-
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    const params = {
-      p_invite_code: inviteCode
-    };
-
-    console.log('JOIN STEP 4: before raw fetch', params);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    let timeoutId = null;
 
     try {
+      // Do not call supabase.auth.getSession() here; it can hang in stale auth states.
+      const accessToken = currentSession?.access_token || getStoredSupabaseAccessToken();
+      console.log('JOIN STEP 3: has accessToken =', Boolean(accessToken));
+
+      if (!accessToken) {
+        alert('登入狀態失效，請重新登入');
+        return;
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        alert('Supabase 設定不完整，請檢查環境變數');
+        return;
+      }
+
+      const params = {
+        p_invite_code: inviteCode
+      };
+
+      console.log('JOIN STEP 4: before raw fetch', params);
+
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 12000);
+
       const response = await fetch(`${supabaseUrl}/rest/v1/rpc/join_group_by_invite_code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'apikey': supabaseAnonKey,
           'Authorization': `Bearer ${accessToken}`
         },
@@ -372,21 +420,13 @@ export default function Friends({ currentUser, currentSession }) {
         signal: controller.signal
       });
 
-      clearTimeout(timeoutId);
-
       const text = await response.text();
 
       console.log('JOIN STEP 5: response status', response.status);
       console.log('JOIN STEP 6: response text', text);
 
       if (!response.ok) {
-        let chineseError = '❌ 加入失敗：' + text;
-        if (text.includes('not found') || text.includes('invalid') || text.includes('P0002') || text.includes('P0001') || response.status === 400 || response.status === 404) {
-          chineseError = '❌ 找不到此邀請碼';
-        } else if (text.includes('already') || text.includes('unique') || text.includes('member') || text.includes('23505')) {
-          chineseError = '❌ 你已經在這個小隊';
-        }
-        alert(chineseError);
+        alert(getJoinGroupErrorMessage(response, text));
         return;
       }
 
@@ -406,6 +446,7 @@ export default function Friends({ currentUser, currentSession }) {
 
         if (joinedGroup) {
           setActiveGroupId(joinedGroup.id);
+          await fetchLeaderboard(joinedGroup.id);
         }
       } catch (refreshErr) {
         console.error('List refresh failed after joining:', refreshErr);
@@ -413,7 +454,6 @@ export default function Friends({ currentUser, currentSession }) {
       }
 
     } catch (err) {
-      clearTimeout(timeoutId);
       console.error('Join group exception:', err);
       if (err.name === 'AbortError') {
         alert('RPC 請求逾時');
@@ -421,6 +461,9 @@ export default function Friends({ currentUser, currentSession }) {
         alert('加入小隊發生錯誤：' + err.message);
       }
     } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       setIsJoiningGroup(false);
     }
   };
