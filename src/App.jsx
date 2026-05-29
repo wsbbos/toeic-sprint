@@ -74,16 +74,29 @@ export default function App() {
       setIsHandlingStaleSession(true);
       console.warn('Stale session detected, logging out:', error);
       try {
-        await supabase.auth.signOut();
+        await Promise.race([
+          supabase.auth.signOut({ scope: 'local' }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('SIGNOUT_TIMEOUT')), 3000)
+          )
+        ]);
       } catch (e) {
-        console.error('Sign out error during stale session recovery:', e);
+        console.warn('Sign out timeout or failed during stale session recovery:', e);
       }
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sb-') || key === 'toeic_sprint_cloud_user') {
+        if (
+          key.startsWith('sb-') ||
+          key.includes('supabase') ||
+          key.includes('auth') ||
+          key === 'toeic_sprint_cloud_user' ||
+          key.startsWith('toeic_sprint_imported_for_')
+        ) {
           localStorage.removeItem(key);
         }
       });
+      sessionStorage.clear();
       setCurrentUser(null);
+      setCurrentSession(null);
       setCurrentPage('login');
       alert('登入狀態已失效，請重新登入。');
       setIsHandlingStaleSession(false);
@@ -773,18 +786,18 @@ export default function App() {
     setCurrentPage('home');
   };
 
-  const handleLogout = async () => {
-    console.log('SAFE LOGOUT START', currentSession);
+  const safeLogout = async () => {
+    console.log('SAFE LOGOUT START');
 
     try {
       await Promise.race([
-        supabase.auth.signOut(),
+        supabase.auth.signOut({ scope: 'local' }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('SIGNOUT_TIMEOUT')), 5000)
+          setTimeout(() => reject(new Error('SIGNOUT_TIMEOUT')), 3000)
         )
       ]);
     } catch (err) {
-      console.warn('Supabase signOut failed or timeout, fallback to local cleanup:', err);
+      console.warn('signOut timeout or failed, continue local cleanup:', err);
     }
 
     try {
@@ -792,19 +805,22 @@ export default function App() {
         .filter(k =>
           k.startsWith('sb-') ||
           k.includes('supabase') ||
-          k.includes('auth')
+          k.includes('auth') ||
+          k === 'toeic_sprint_cloud_user' ||
+          k.startsWith('toeic_sprint_imported_for_')
         )
         .forEach(k => localStorage.removeItem(k));
 
       sessionStorage.clear();
     } catch (err) {
-      console.warn('Local auth cleanup failed:', err);
+      console.warn('local cleanup failed:', err);
     }
 
     setCurrentUser(null);
-    setCurrentSession(null);
+    if (typeof setCurrentSession === 'function') {
+      setCurrentSession(null);
+    }
 
-    alert('已登出，請重新登入');
     window.location.href = '/';
   };
 
@@ -831,7 +847,7 @@ export default function App() {
     // Clear cloud user database details first
     await handleClearData();
     // Then log out
-    await handleLogout();
+    await safeLogout();
   };
 
   // Practice Engine Answer Submission Handler
@@ -1060,7 +1076,7 @@ export default function App() {
         setCurrentPage={setCurrentPage} 
         currentUser={currentUser}
         users={[]}
-        onLogout={handleLogout}
+        onLogout={safeLogout}
       />
       
       <main className="main-content">
