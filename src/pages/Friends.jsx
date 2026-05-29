@@ -275,10 +275,18 @@ export default function Friends({ currentUser }) {
           console.warn('Response was not JSON:', parseErr);
         }
         const createdGroup = parsedData && parsedData[0] ? parsedData[0] : (parsedData || {});
+        const createdId = createdGroup.id || createdGroup.group_id || (typeof createdGroup === 'string' ? createdGroup : null);
+
         setCreatedInviteCode(inviteCode);
         setCreatedGroupName(groupName.trim());
-        setCreatedGroupId(createdGroup.id || createdGroup.group_id || (typeof createdGroup === 'string' ? createdGroup : JSON.stringify(createdGroup)));
+        setCreatedGroupId(createdId || JSON.stringify(createdGroup));
         setNewGroupName('');
+
+        // Auto refresh the group list and select the newly created group
+        await fetchGroups();
+        if (createdId) {
+          setActiveGroupId(createdId);
+        }
 
         alert('建立成功，邀請碼：' + inviteCode);
       } catch (err) {
@@ -319,9 +327,9 @@ export default function Friends({ currentUser }) {
         
         let chineseError = '❌ 加入讀書小隊失敗，請重試！';
         if (error.message.includes('not found') || error.message.includes('invalid') || error.code === 'P0002') {
-          chineseError = '❌ 邀請碼不存在，請重新確認！';
+          chineseError = '❌ 找不到此邀請碼，請重新確認！';
         } else if (error.message.includes('already') || error.message.includes('unique') || error.message.includes('member') || error.code === '23505') {
-          chineseError = '❌ 你已在此小隊中，無需重複加入！';
+          chineseError = '❌ 你已經在這個小隊，無需重複加入！';
         } else {
           chineseError = `❌ 加入失敗：${error.message}`;
         }
