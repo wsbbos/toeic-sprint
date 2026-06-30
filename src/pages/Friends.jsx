@@ -39,47 +39,6 @@ export default function Friends({ currentUser, currentSession }) {
     }
   };
 
-  const getJoinGroupErrorMessage = (response, responseText) => {
-    const errorPayload = (() => {
-      try {
-        return responseText ? JSON.parse(responseText) : null;
-      } catch {
-        return null;
-      }
-    })();
-
-    const errorText = [
-      errorPayload?.code,
-      errorPayload?.message,
-      errorPayload?.details,
-      errorPayload?.hint,
-      responseText
-    ].filter(Boolean).join(' ').toLowerCase();
-
-    if (
-      errorText.includes('already')
-      || errorText.includes('duplicate')
-      || errorText.includes('unique')
-      || errorText.includes('member')
-      || errorText.includes('23505')
-    ) {
-      return '你已經在這個小隊';
-    }
-
-    if (
-      response.status === 404
-      || errorText.includes('not found')
-      || errorText.includes('invalid invite')
-      || errorText.includes('invite code')
-      || errorText.includes('p0001')
-      || errorText.includes('p0002')
-    ) {
-      return '找不到此邀請碼';
-    }
-
-    return `加入失敗：${errorPayload?.message || responseText || `HTTP ${response.status}`}`;
-  };
-
   // Query study groups user belongs to
   const fetchGroups = useCallback(async () => {
     setIsLoadingGroups(true);
@@ -365,13 +324,13 @@ export default function Friends({ currentUser, currentSession }) {
     }
   };
 
-  // Join group via RPC join function
+  // Join group by invite code
   const handleJoinGroup = async (e) => {
     e.preventDefault();
-    const inviteCode = inviteCodeInput.trim().toUpperCase();
+    const inviteCode = inviteCodeInput.trim().replace(/\s+/g, '').toUpperCase();
 
     console.log('JOIN STEP 1: handler fired');
-    console.log('JOIN STEP 2: inviteCode =', inviteCode);
+    console.log('JOIN normalized invite code:', inviteCode);
 
     if (inviteCode.length < 6) {
       alert('請輸入 6 位邀請碼');
@@ -379,7 +338,6 @@ export default function Friends({ currentUser, currentSession }) {
     }
 
     setIsJoiningGroup(true);
-    let timeoutId = null;
 
     try {
       // Do not call supabase.auth.getSession() here; it can hang in stale auth states.
@@ -391,42 +349,88 @@ export default function Friends({ currentUser, currentSession }) {
         return;
       }
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      console.log('JOIN query table:', 'study_groups');
+      console.log('JOIN query field:', 'invite_code');
 
-      if (!supabaseUrl || !supabaseAnonKey) {
-        alert('Supabase 設定不完整，請檢查環境變數');
+      const knownGroup = groups.find(group => group.invite_code?.toUpperCase() === inviteCode);
+      const { data: inviteMatches, error: groupError } = knownGroup
+        ? { data: [knownGroup], error: null }
+        : await supabase
+          .from('study_groups')
+          .select('id, name, invite_code, owner_id')
+          .eq('invite_code', inviteCode);
+
+      console.log('JOIN query result count:', inviteMatches?.length || 0);
+      console.log('JOIN error message:', groupError?.message || '');
+
+      if (groupError) {
+        alert('加入小隊發生錯誤：' + groupError.message);
         return;
       }
 
-      const params = {
-        p_invite_code: inviteCode
-      };
+      if (!inviteMatches || inviteMatches.length === 0) {
+        alert('找不到此邀請碼');
+        return;
+      }
 
-      console.log('JOIN STEP 4: before raw fetch', params);
+      const targetGroup = inviteMatches[0];
+      const { data: existingMembers, error: memberCheckError } = await supabase
+        .from('group_members')
+        .select('group_id')
+        .eq('group_id', targetGroup.id)
+        .eq('user_id', currentUser.id);
 
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 12000);
+      console.log('JOIN query table:', 'group_members');
+      console.log('JOIN query result count:', existingMembers?.length || 0);
+      console.log('JOIN error message:', memberCheckError?.message || '');
 
-      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/join_group_by_invite_code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify(params),
-        signal: controller.signal
-      });
+      if (memberCheckError) {
+        alert('加入小隊發生錯誤：' + memberCheckError.message);
+        return;
+      }
 
-      const text = await response.text();
+      if (existingMembers && existingMembers.length > 0) {
+        alert('你已經在這個小隊');
+        setActiveGroupId(targetGroup.id);
+        await fetchLeaderboard(targetGroup.id);
+        return;
+      }
 
-      console.log('JOIN STEP 5: response status', response.status);
-      console.log('JOIN STEP 6: response text', text);
+      const { error: insertError } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: targetGroup.id,
+          user_id: currentUser.id,
+          display_name: currentUser.username || currentUser.email?.split('@')[0] || '匿名戰友',
+          role: 'member'
+        });
 
-      if (!response.ok) {
-        alert(getJoinGroupErrorMessage(response, text));
+      console.log('JOIN query table:', 'group_members');
+      console.log('JOIN query result count:', insertError ? 0 : 1);
+      console.log('JOIN error message:', insertError?.message || '');
+
+      if (insertError) {
+        const errorText = [
+          insertError.code,
+          insertError.message,
+          insertError.details,
+          insertError.hint
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        if (
+          errorText.includes('already')
+          || errorText.includes('duplicate')
+          || errorText.includes('unique')
+          || errorText.includes('member')
+          || errorText.includes('23505')
+        ) {
+          alert('你已經在這個小隊');
+          setActiveGroupId(targetGroup.id);
+          await fetchLeaderboard(targetGroup.id);
+          return;
+        }
+
+        alert('加入小隊發生錯誤：' + insertError.message);
         return;
       }
 
@@ -436,18 +440,8 @@ export default function Friends({ currentUser, currentSession }) {
       // Refresh list and select group leaderboard
       try {
         await fetchGroups();
-
-        // Switch to joined group leaderboard
-        const { data: joinedGroup } = await supabase
-          .from('study_groups')
-          .select('id')
-          .eq('invite_code', inviteCode)
-          .maybeSingle();
-
-        if (joinedGroup) {
-          setActiveGroupId(joinedGroup.id);
-          await fetchLeaderboard(joinedGroup.id);
-        }
+        setActiveGroupId(targetGroup.id);
+        await fetchLeaderboard(targetGroup.id);
       } catch (refreshErr) {
         console.error('List refresh failed after joining:', refreshErr);
         alert('加入成功，但列表刷新失敗，請重新整理');
@@ -455,19 +449,11 @@ export default function Friends({ currentUser, currentSession }) {
 
     } catch (err) {
       console.error('Join group exception:', err);
-      if (err.name === 'AbortError') {
-        alert('RPC 請求逾時');
-      } else {
-        alert('加入小隊發生錯誤：' + err.message);
-      }
+      alert('加入小隊發生錯誤：' + err.message);
     } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
       setIsJoiningGroup(false);
     }
   };
-
   const handleCopyCode = (code) => {
     navigator.clipboard.writeText(code);
     alert(`📋 邀請碼「${code}」已複製至剪貼簿！`);
