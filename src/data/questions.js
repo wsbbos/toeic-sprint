@@ -1,4 +1,5 @@
 import { listeningQuestionBank } from './listeningQuestionBank';
+import { part5QuestionBank } from './part5QuestionBank';
 
 // src/data/questions.js
 
@@ -684,5 +685,21 @@ const parsedListening = listeningQuestionBank.map(q => ({
   tags: q.tags || [],
   estimatedTime: q.estimatedTime || 45
 }));
+// Compile structured Part 5 question bank into the unified question shape.
+const parsedPart5Bank = part5QuestionBank.map(q => ({
+  id: q.id,
+  part: 5,
+  type: 'Incomplete Sentences',
+  question: q.question,
+  choices: q.choices,
+  correctAnswer: q.answer,
+  answer: q.answer,
+  explanation: q.explanation,
+  grammarPoint: q.grammarPoint,
+  difficulty: q.difficulty,
+  tags: q.tags || [],
+  estimatedTime: q.estimatedTime || 45
+}));
+
 // Export unified questions database array
-export const questionsData = [...parsedPart5, ...parsedPart7, ...parsedListening];
+export const questionsData = [...parsedPart5Bank, ...parsedPart7, ...parsedListening];
