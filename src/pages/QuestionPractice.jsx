@@ -23,14 +23,28 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
     return () => stopSpeaking();
   }, []);
 
-  // Filter questions based on part/type
-  const activeQuestions = questions.filter(q => {
-    if (!practiceFilter) return true;
-    if (practiceFilter === '5') return q.part === 5;
-    if (practiceFilter === '7') return q.part === 7;
-    if (practiceFilter === 'listening') return q.part === 1 || q.part === 2 || q.part === 3 || q.part === 4;
-    return true;
+  const isListeningPractice = practiceFilter === 'listening' || practiceFilter?.type === 'listening';
+  const requestedListeningCount = isListeningPractice && typeof practiceFilter === 'object' ? practiceFilter.count : null;
+  const listeningCandidates = questions.filter(q => {
+    if (q.part < 1 || q.part > 4) return false;
+    if (q.part !== 1) return true;
+    return Boolean(q.imageUrl || q.image || q.photo);
   });
+
+  // Filter questions based on part/type. Part 1 without a photo is not a valid practice item.
+  const activeQuestions = (() => {
+    if (!practiceFilter) return questions;
+    if (practiceFilter === '5') return questions.filter(q => q.part === 5);
+    if (practiceFilter === '7') return questions.filter(q => q.part === 7);
+    if (isListeningPractice) {
+      return listeningCandidates.slice(0, requestedListeningCount || listeningCandidates.length);
+    }
+    return questions;
+  })();
+
+  const listeningShortageMessage = isListeningPractice && requestedListeningCount && listeningCandidates.length < requestedListeningCount
+    ? `目前 Listening 題庫只有 ${listeningCandidates.length} 題，已使用全部可用題目`
+    : '';
 
   const currentQuestion = activeQuestions[currentIdx];
   const isListeningQuestion = currentQuestion?.part >= 1 && currentQuestion?.part <= 4;
@@ -125,6 +139,11 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
         <div className="progress-bar-fill" style={{ width: `${progressPercent}%`, background: 'var(--secondary)' }} />
       </div>
 
+      {listeningShortageMessage && (
+        <div className="card" style={{ padding: '0.9rem 1rem', marginBottom: '1.25rem', color: 'var(--warning)', fontWeight: 700, fontSize: '0.9rem' }}>
+          {listeningShortageMessage}
+        </div>
+      )}
       {/* Main Question Card */}
       <div className="card" style={{ 
         padding: focusMode ? '3rem 4rem' : '2.5rem', 
@@ -209,7 +228,7 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={{ fontSize: '2rem', animation: isPlaying ? 'float 2s ease-in-out infinite' : 'none' }}>🗣️</span>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>Listening TTS 模擬語音 Demo</div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>{currentQuestion.isDemo ? 'Listening TTS 模擬語音 Demo' : 'Listening 音訊練習'}</div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: '600', marginTop: '0.25rem', lineHeight: '1.4' }}>
                   ⚠️ 聲明：本功能採用瀏覽器語音合成（TTS）技術進行模擬，並非正式 TOEIC 聽力考試官方原檔音訊，僅供日常英聽語感輔助練習。
                 </div>
@@ -232,7 +251,7 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
                       </button>
                       <button className="btn btn-primary btn-sm" onClick={() => {
                         setIsPlaying(true);
-                        speakText(extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false));
+                        speakText(currentQuestion.audioText || currentQuestion.transcript || extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false));
                       }}>
                         🔄 重播
                       </button>
@@ -240,7 +259,7 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
                   ) : (
                     <button className="btn btn-primary btn-sm" onClick={() => {
                       setIsPlaying(true);
-                      speakText(extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false));
+                      speakText(currentQuestion.audioText || currentQuestion.transcript || extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false));
                     }}>
                       🔊 播放模擬語音
                     </button>

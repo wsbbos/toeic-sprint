@@ -1,3 +1,5 @@
+import { listeningQuestionBank } from './listeningQuestionBank';
+
 // src/data/questions.js
 
 // Compact handcrafted base data for Part 5 (100 questions in total)
@@ -662,78 +664,25 @@ const rawPart7Data = [
   }
 ];
 
-// Existing Listening Questions (keep the 5 listening demo questions, q31-q35)
-const rawListeningData = [
-  ["q31|Look at the mock photo. [Audio transcript: (A) A man is working on a laptop computer. (B) A man is standing near a whiteboard. (C) A man is organizing documents in a cabinet. (D) A man is repairing a photocopier.] Choose the best description.|A man is working on a laptop computer.|A man is standing near a whiteboard.|A man is organizing documents in a cabinet.|A man is repairing a photocopier.|A|聽力音檔描述：(A) 男子正在筆記型電腦上工作。這與照片中男子在辦公桌前專注用電腦的景象完全吻合，因此選 A。|聽力照片描述|1|Easy|聽力Part 1,照片描述"],
-  ["q32|Listen to the question. [Audio transcript: When is the final marketing report due?] Choose the best response.|To the advertising department on the third floor.|By next Friday afternoon at 5:00 PM.|Yes, I read the report yesterday morning.|Mr. Davis is managing that campaign.|B|聽力問題：行銷報告期限是什麼時候 (When)？(B)「下週五下午五點前」是回答時間截止期的正確答案，選 B。|聽力應答|2|Easy|聽力Part 2,應答問題"],
-  ["q33|Listen to the conversation. [Audio transcript: W: Hi, John. Did you book a flight to Chicago for the sales convention yet? M: Not yet, Sarah. I was waiting for approval from the CFO for travel funds. She signed off on the budget this morning. W: Great! Please book the flight quickly, as ticket prices are expected to rise tomorrow.] What is the man waiting for?|A passenger flight ticket refund|Approval for corporate travel budget funds|A promotional discount code|Chicago hotel recommendations|B|聽力對話中約約翰提及：'I was waiting for approval from the CFO for travel funds'。因此約翰在等待經費核准，選 B。|聽力簡短對話|3|Medium|聽力Part 3,對話細節"],
-  ["q34|Listen to the conversation. [Audio transcript: W: Hi, John. Did you book a flight to Chicago for the sales convention yet? M: Not yet, Sarah. I was waiting for approval from the CFO for travel funds. She signed off on the budget this morning. W: Great! Please book the flight quickly, as ticket prices are expected to rise tomorrow.] What does the woman suggest the man do next?|Email the meeting minutes to the directors|Reserve the flight tickets immediately|Negotiate a budget plan with the supplier|Postpone the business trip to next week|B|對話結尾女士建議：'Please book the flight quickly'，'Reserve flight tickets immediately' 為其同義改寫。選 B。|聽力簡短對話|3|Medium|聽力Part 3,行動建議"],
-  ["q35|Listen to the announcement. [Audio transcript: Attention passengers of Flight UA-388 to San Francisco. Our departure has been delayed by approximately forty minutes due to incoming airport congestion. We apologize for this inconvenience. Boarding will now commence at Gate 14 at 2:15 PM instead of the original gate.] What is the reason for the flight delay?|Mechanical maintenance issues|Incoming airport traffic congestion|Severe winter snowstorms|Flight crew members scheduling conflict|B|獨白中提及：'delayed by approximately forty minutes due to incoming airport congestion'。選 B。|聽力簡短獨白|4|Medium|聽力Part 4,獨白細節"]
-];
-
-// Parser function to compile raw Part 5 piped questions into standard objects
-const parsedPart5 = rawPart5Data.map(item => {
-  const [id, question, choiceA, choiceB, choiceC, choiceD, correctAnswer, explanation, type, difficulty, tagString] = item[0].split('|');
-  return {
-    id,
-    part: 5,
-    type,
-    question,
-    choices: {
-      A: choiceA,
-      B: choiceB,
-      C: choiceC,
-      D: choiceD
-    },
-    correctAnswer,
-    explanation,
-    difficulty,
-    tags: tagString.split(','),
-    estimatedTime: difficulty === 'Easy' ? 25 : difficulty === 'Medium' ? 35 : 50
-  };
-});
-
-// Parser function to compile raw Part 7 passages & subquestions into standard objects
-const parsedPart7 = [];
-rawPart7Data.forEach(p => {
-  p.questions.forEach(q => {
-    parsedPart7.push({
-      id: q.id,
-      part: 7,
-      type: q.type,
-      passage: p.passage,
-      question: q.question,
-      choices: q.choices,
-      correctAnswer: q.correctAnswer,
-      explanation: q.explanation,
-      difficulty: q.difficulty,
-      tags: q.tags,
-      estimatedTime: q.type === '主旨' ? 45 : q.type === '細節' ? 60 : 80
-    });
-  });
-});
-
-// Parser function to compile raw Listening piped questions into standard objects
-const parsedListening = rawListeningData.map(item => {
-  const [id, question, choiceA, choiceB, choiceC, choiceD, correctAnswer, explanation, type, partVal, difficulty, tagString] = item[0].split('|');
-  return {
-    id,
-    part: Number(partVal),
-    type,
-    question,
-    choices: {
-      A: choiceA,
-      B: choiceB,
-      C: choiceC,
-      D: choiceD
-    },
-    correctAnswer,
-    explanation,
-    difficulty,
-    tags: tagString.split(','),
-    estimatedTime: 45
-  };
-});
-
-// Export unified questions database array (Total: 100 Part 5 + 30 Part 7 + 5 Listening = 135 questions)
+// Compile structured Listening question bank into the unified question shape.
+const parsedListening = listeningQuestionBank.map(q => ({
+  id: q.id,
+  part: q.part,
+  type: q.type,
+  question: q.question,
+  choices: q.choices,
+  correctAnswer: q.answer,
+  answer: q.answer,
+  explanation: q.explanation,
+  difficulty: q.difficulty,
+  transcript: q.transcript,
+  audioText: q.audioText || q.transcript,
+  imageUrl: q.imageUrl,
+  image: q.image,
+  photo: q.photo,
+  isDemo: q.isDemo,
+  tags: q.tags || [],
+  estimatedTime: q.estimatedTime || 45
+}));
+// Export unified questions database array
 export const questionsData = [...parsedPart5, ...parsedPart7, ...parsedListening];
