@@ -33,6 +33,14 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
   });
 
   const currentQuestion = activeQuestions[currentIdx];
+  const isListeningQuestion = currentQuestion?.part >= 1 && currentQuestion?.part <= 4;
+  const isPartOneQuestion = currentQuestion?.part === 1;
+  const partOneImageUrl = currentQuestion?.imageUrl || currentQuestion?.image || currentQuestion?.photo || '';
+  const isPartOneMissingPhoto = isPartOneQuestion && !partOneImageUrl;
+  const questionWithoutTranscript = currentQuestion?.question?.replace(/\s*\[Audio transcript:\s*[^\]]+\]\s*/i, ' ').replace(/\s+/g, ' ').trim();
+  const displayedQuestionText = isPartOneQuestion
+    ? (partOneImageUrl ? 'Look at the photo and choose the best description.' : '此 Part 1 題目缺少圖片，請先補上圖片素材')
+    : (isListeningQuestion ? questionWithoutTranscript : currentQuestion?.question);
 
   const handleSelect = (choice) => {
     if (submitted) return;
@@ -153,8 +161,41 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
           </div>
         )}
 
+        {isPartOneQuestion && partOneImageUrl && (
+          <div style={{
+            marginBottom: '1.5rem',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            overflow: 'hidden',
+            backgroundColor: '#ffffff'
+          }}>
+            <img
+              src={partOneImageUrl}
+              alt="TOEIC Part 1 prompt"
+              style={{ width: '100%', display: 'block', maxHeight: focusMode ? '420px' : '320px', objectFit: 'contain' }}
+            />
+          </div>
+        )}
+
+        {isPartOneMissingPhoto && (
+          <div style={{
+            padding: '1.25rem',
+            marginBottom: '1.5rem',
+            border: '1px solid var(--warning)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'hsl(45, 100%, 96%)',
+            color: 'var(--text-main)',
+            lineHeight: '1.6'
+          }}>
+            <strong style={{ display: 'block', marginBottom: '0.35rem' }}>此 Part 1 題目缺少圖片，請先補上圖片素材</strong>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-sub)' }}>
+              TOEIC Part 1 必須看照片選描述；作答前不會顯示 audio transcript，避免破壞練習效果。
+            </span>
+          </div>
+        )}
+
         {/* Listening Mock Audio Control */}
-        {(currentQuestion.part >= 1 && currentQuestion.part <= 4) && (
+        {(currentQuestion.part >= 1 && currentQuestion.part <= 4 && !isPartOneMissingPhoto) && (
           <div className="audio-player-mock" style={{ 
             padding: '1.25rem', 
             backgroundColor: 'var(--primary-light)', 
@@ -220,10 +261,11 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
           color: 'var(--text-main)',
           transition: 'font-size 0.4s ease'
         }}>
-          {currentQuestion.question}
+          {displayedQuestionText}
         </h3>
 
-        <div className="choice-container" style={{ gap: focusMode ? '1rem' : '0.75rem' }}>
+        {!isPartOneMissingPhoto && (
+          <div className="choice-container" style={{ gap: focusMode ? '1rem' : '0.75rem' }}>
           {Object.entries(currentQuestion.choices || {}).map(([key, value]) => {
             let btnClass = 'choice-btn';
             if (submitted) {
@@ -251,9 +293,10 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
               </button>
             );
           })}
-        </div>
+          </div>
+        )}
 
-        {submitted && (
+        {!isPartOneMissingPhoto && submitted && (
           <div className={`explanation-box ${selectedChoice === currentQuestion.correctAnswer ? '' : 'incorrect'}`} style={{ marginTop: '2rem' }}>
             <h4 style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '0.5rem', color: selectedChoice === currentQuestion.correctAnswer ? 'var(--success)' : 'var(--danger)' }}>
               {selectedChoice === currentQuestion.correctAnswer ? '🎉 恭喜你！答對了！' : '❌ 答錯了，再接再厲！'}
@@ -267,8 +310,25 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
           </div>
         )}
 
-        <div className="flex justify-between" style={{ marginTop: '2.5rem' }}>
-          {!submitted ? (
+        <div className="flex justify-between" style={{ marginTop: '2.5rem', gap: '0.75rem' }}>
+          {isPartOneMissingPhoto ? (
+            <>
+              <button
+                className="btn btn-outline"
+                style={{ flex: 1, padding: '1rem', fontSize: '1rem' }}
+                onClick={() => setCurrentPage('practice-center')}
+              >
+                返回練習中心
+              </button>
+              <button
+                className="btn btn-accent"
+                style={{ flex: 1, padding: '1rem', fontSize: '1rem' }}
+                onClick={handleNext}
+              >
+                {currentIdx + 1 === activeQuestions.length ? '結束練習' : '跳過此題'}
+              </button>
+            </>
+          ) : !submitted ? (
             <button 
               className="btn btn-primary" 
               style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }}
