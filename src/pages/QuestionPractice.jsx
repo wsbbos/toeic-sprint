@@ -23,6 +23,9 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
     return () => stopSpeaking();
   }, []);
 
+  const isPart5Practice = practiceFilter === '5' || practiceFilter?.type === 'part5';
+  const requestedPart5Count = isPart5Practice && typeof practiceFilter === 'object' ? practiceFilter.count : null;
+  const part5Candidates = questions.filter(q => q.part === 5);
   const isListeningPractice = practiceFilter === 'listening' || practiceFilter?.type === 'listening';
   const requestedListeningCount = isListeningPractice && typeof practiceFilter === 'object' ? practiceFilter.count : null;
   const listeningCandidates = questions.filter(q => {
@@ -34,7 +37,9 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
   // Filter questions based on part/type. Part 1 without a photo is not a valid practice item.
   const activeQuestions = (() => {
     if (!practiceFilter) return questions;
-    if (practiceFilter === '5') return questions.filter(q => q.part === 5);
+    if (isPart5Practice) {
+      return part5Candidates.slice(0, requestedPart5Count || part5Candidates.length);
+    }
     if (practiceFilter === '7') return questions.filter(q => q.part === 7);
     if (isListeningPractice) {
       return listeningCandidates.slice(0, requestedListeningCount || listeningCandidates.length);
@@ -44,6 +49,10 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
 
   const listeningShortageMessage = isListeningPractice && requestedListeningCount && listeningCandidates.length < requestedListeningCount
     ? `目前 Listening 題庫只有 ${listeningCandidates.length} 題，已使用全部可用題目`
+    : '';
+
+  const part5ShortageMessage = isPart5Practice && requestedPart5Count && part5Candidates.length < requestedPart5Count
+    ? `目前 Part 5 題庫只有 ${part5Candidates.length} 題，已使用全部可用題目`
     : '';
 
   const currentQuestion = activeQuestions[currentIdx];
@@ -144,7 +153,11 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
           {listeningShortageMessage}
         </div>
       )}
-      {/* Main Question Card */}
+      {part5ShortageMessage && (
+        <div className="card" style={{ padding: '0.9rem 1rem', marginBottom: '1.25rem', color: 'var(--warning)', fontWeight: 700, fontSize: '0.9rem' }}>
+          {part5ShortageMessage}
+        </div>
+      )}      {/* Main Question Card */}
       <div className="card" style={{ 
         padding: focusMode ? '3rem 4rem' : '2.5rem', 
         border: focusMode ? '2px solid var(--primary)' : '1px solid var(--border-color)',
@@ -326,6 +339,11 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
             <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '0.75rem', lineHeight: '1.6' }}>
               <strong>中文解析：</strong> {currentQuestion.explanation}
             </div>
+            {currentQuestion.grammarPoint && (
+              <div style={{ fontSize: '0.88rem', color: 'var(--text-main)', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '0.75rem', marginTop: '0.75rem', lineHeight: '1.6' }}>
+                <strong>Grammar Point:</strong> {currentQuestion.grammarPoint}
+              </div>
+            )}
           </div>
         )}
 

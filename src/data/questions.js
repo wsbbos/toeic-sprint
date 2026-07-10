@@ -1,9 +1,11 @@
 import { listeningQuestionBank } from './listeningQuestionBank';
+import { part5QuestionBank } from './part5QuestionBank';
 
 // src/data/questions.js
 
 // Compact handcrafted base data for Part 5 (100 questions in total)
 // We define a high-density, structured compact format to maximize token efficiency and maintain 100% handcrafted quality.
+// eslint-disable-next-line no-unused-vars -- retained as legacy Part 5 source data
 const rawPart5Data = [
   // Existing 20 questions
   ["q1|Mr. Henderson completed the financial report ------- than his colleagues had expected.|quickly|quick|quickness|quicker|A|空格處修飾動詞 completed，因此應選副詞 A (quickly)。|詞性|Easy|詞性,副詞修飾"],
@@ -664,6 +666,25 @@ const rawPart7Data = [
   }
 ];
 
+// Compile Part 7 passages and their subquestions into the unified question shape.
+const parsedPart7 = [];
+rawPart7Data.forEach(passage => {
+  passage.questions.forEach(question => {
+    parsedPart7.push({
+      id: question.id,
+      part: 7,
+      type: question.type,
+      passage: passage.passage,
+      question: question.question,
+      choices: question.choices,
+      correctAnswer: question.correctAnswer,
+      explanation: question.explanation,
+      difficulty: question.difficulty,
+      tags: question.tags,
+      estimatedTime: question.type === '\u4e3b\u65e8' ? 45 : question.type === '\u7d30\u7bc0' ? 60 : 80
+    });
+  });
+});
 // Compile structured Listening question bank into the unified question shape.
 const parsedListening = listeningQuestionBank.map(q => ({
   id: q.id,
@@ -684,5 +705,21 @@ const parsedListening = listeningQuestionBank.map(q => ({
   tags: q.tags || [],
   estimatedTime: q.estimatedTime || 45
 }));
+// Compile structured Part 5 question bank into the unified question shape.
+const parsedPart5Bank = part5QuestionBank.map(q => ({
+  id: q.id,
+  part: 5,
+  type: 'Incomplete Sentences',
+  question: q.question,
+  choices: q.choices,
+  correctAnswer: q.answer,
+  answer: q.answer,
+  explanation: q.explanation,
+  grammarPoint: q.grammarPoint,
+  difficulty: q.difficulty,
+  tags: q.tags || [],
+  estimatedTime: q.estimatedTime || 45
+}));
+
 // Export unified questions database array
-export const questionsData = [...parsedPart5, ...parsedPart7, ...parsedListening];
+export const questionsData = [...parsedPart5Bank, ...parsedPart7, ...parsedListening];
