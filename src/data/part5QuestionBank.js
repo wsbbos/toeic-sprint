@@ -1,6 +1,31 @@
 // src/data/part5QuestionBank.js
 
-export const part5QuestionBank = [
+import { PART5_SCHEMA_VERSION } from './part5Schema.js';
+
+const categoryById = Object.freeze({
+  'p5-001': 'word_form',
+  'p5-002': 'verb_tense',
+  'p5-003': 'voice',
+  'p5-004': 'preposition',
+  'p5-005': 'conjunction',
+  'p5-006': 'relative_clause',
+  'p5-007': 'participle',
+  'p5-008': 'infinitive',
+  'p5-009': 'word_form',
+  'p5-010': 'subject_verb_agreement',
+  'p5-011': 'preposition',
+  'p5-012': 'conjunction',
+  'p5-013': 'participle',
+  'p5-014': 'verb_tense',
+  'p5-015': 'preposition',
+  'p5-016': 'relative_clause',
+  'p5-017': 'word_form',
+  'p5-018': 'vocabulary',
+  'p5-019': 'verb_tense',
+  'p5-020': 'verb_tense'
+});
+
+const part5SeedQuestions = [
   {
     id: 'p5-001',
     part: 'Part 5',
@@ -222,5 +247,11 @@ export const part5QuestionBank = [
     tags: ['subjunctive', 'formal business English', 'quotation']
   }
 ];
+
+export const part5QuestionBank = part5SeedQuestions.map((question) => ({
+  ...question,
+  category: categoryById[question.id],
+  version: PART5_SCHEMA_VERSION
+}));
 
 export const getPart5PracticeQuestions = () => part5QuestionBank;
