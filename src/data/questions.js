@@ -1,5 +1,5 @@
-import { listeningQuestionBank } from './listeningQuestionBank';
-import { part5QuestionBank } from './part5QuestionBank';
+import { listeningQuestionBank } from './listeningQuestionBank.js';
+import { part5QuestionBank } from './part5QuestionBank.js';
 
 // src/data/questions.js
 

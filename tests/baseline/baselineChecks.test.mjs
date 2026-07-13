@@ -13,10 +13,10 @@ test('baseline retains the existing Part 5, Part 7, Supabase, and core page asse
   assert.equal(report.hasPart7Adapter, true);
 });
 
-test('baseline reports the known production-readiness metrics', async () => {
+test('baseline reports the current modularization and question-bank metrics', async () => {
   const report = await inspectBaseline();
 
-  assert.ok(report.appLineCount > 1_000);
+  assert.ok(report.appLineCount < 100);
   assert.deepEqual(report.part5AnswerDistribution, { A: 9, B: 8, C: 3, D: 0 });
   assert.equal(report.hasAutomatedTestDependencies, false);
 });

@@ -911,3 +911,111 @@ a {
   }
 }
 
+
+/* Shared application states and modal infrastructure */
+.app-state-screen,
+.setup-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.app-state-screen {
+  align-content: center;
+  gap: 1rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.app-state-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.setup-card {
+  width: min(100%, 36rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  text-align: center;
+}
+
+.setup-card h1 {
+  margin: 0.75rem 0;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+}
+
+.setup-icon {
+  font-size: 3rem;
+}
+
+.setup-variable-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.setup-variable-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: hsl(220, 15%, 97%);
+}
+
+.setup-variable-list dt {
+  font-weight: 700;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 55%);
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  width: min(100%, 32rem);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.modal-card p {
+  margin: 0.75rem 0 1.25rem;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.modal-actions > * {
+  flex: 1;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+  .modal-actions,
+  .setup-variable-list > div {
+    flex-direction: column;
+  }
+}
