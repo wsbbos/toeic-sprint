@@ -2,6 +2,7 @@ import AppLoadingState from './components/AppLoadingState';
 import AppRoutes from './components/AppRoutes';
 import LocalImportModal from './components/LocalImportModal';
 import Navbar from './components/Navbar';
+import OfflineBanner from './components/OfflineBanner';
 import { useAppController } from './hooks/useAppController';
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
 
   return (
     <div className="app-container">
+      <OfflineBanner />
       <Navbar
         currentPage={app.currentPage}
         setCurrentPage={app.actions.setCurrentPage}

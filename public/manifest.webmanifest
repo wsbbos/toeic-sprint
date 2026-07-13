@@ -1,0 +1,13 @@
+{
+  "name": "TOEIC Sprint",
+  "short_name": "TOEIC Sprint",
+  "description": "Local-first TOEIC Part 5 and Part 7 practice",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#3157d5",
+  "lang": "zh-Hant",
+  "icons": [
+    { "src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
