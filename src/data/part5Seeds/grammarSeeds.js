@@ -1,0 +1,172 @@
+import { buildCategorySeeds } from './seedBuilder.js'
+
+export const wordFormSeeds = buildCategorySeeds('word_form', [
+  ["The finance team reviewed the expense report ------- before sending it to the auditor.", ['careful', 'carefully', 'carefulness', 'care'], 1, "The blank modifies reviewed, so an adverb is required.", ['adverb']],
+  ["The board released a ------- statement after the merger was approved.", ['formal', 'formally', 'formality', 'formalize'], 0, "The blank directly modifies the noun statement, so an adjective is required.", ['adjective']],
+  ["Rapid market ------- prompted the retailer to open a second distribution center.", ['expandable', 'expansively', 'expansion', 'expand'], 2, "The adjective market needs a noun as the subject of prompted.", ['noun']],
+  ["The new software will ------- the monthly invoicing process.", ['simple', 'simply', 'simplicity', 'simplify'], 3, "The modal will must be followed by a base verb.", ['verb']],
+  ["Ms. Chen explained the revised travel policy ------- to the new employees.", ['clear', 'clearly', 'clarity', 'clarify'], 1, "The blank modifies explained, so the adverb form is needed.", ['adverb']],
+  ["The consultant proposed a ------- solution to the inventory shortage.", ['practical', 'practically', 'practicality', 'practice'], 0, "The blank describes solution, which requires an adjective.", ['adjective']],
+  ["Customer ------- is measured through a survey sent after each service call.", ['satisfactory', 'satisfactorily', 'satisfaction', 'satisfy'], 2, "Customer combines with a noun to form the subject of the sentence.", ['noun']],
+  ["The workshop is designed to ------- supervisors for emergency situations.", ['preparatory', 'preparedly', 'preparation', 'prepare'], 3, "The infinitive marker to requires the base verb prepare.", ['verb']],
+  ["The receptionist responded ------- when the visitor requested directions.", ['polite', 'politely', 'politeness', 'polish'], 1, "The blank describes how the receptionist responded, so an adverb is needed.", ['adverb']],
+  ["Management needs ------- data before changing the pricing strategy.", ['reliable', 'reliably', 'reliability', 'rely'], 0, "The blank modifies the noun data, so an adjective is required.", ['adjective']],
+  ["The sudden ------- of the factory inspection surprised the production team.", ['cancelable', 'cancellably', 'cancellation', 'cancel'], 2, "The definite article and preposition of require the noun cancellation.", ['noun']],
+  ["The company hopes to ------- its presence in Southeast Asia next year.", ['strong', 'strongly', 'strength', 'strengthen'], 3, "Hopes to must be followed by a base verb.", ['verb']],
+  ["The technician ------- adjusted the temperature controls during the test.", ['precise', 'precisely', 'precision', 'specify'], 1, "An adverb is required to modify adjusted.", ['adverb']],
+  ["Applicants must provide ------- contact information for two references.", ['accurate', 'accurately', 'accuracy', 'accurize'], 0, "The blank describes contact information, so the adjective accurate is required.", ['adjective']],
+  ["The product launch received extensive media ------- throughout the region.", ['coverable', 'coveringly', 'coverage', 'cover'], 2, "Media coverage is a noun phrase serving as the object of received.", ['noun']],
+  ["The director asked the analyst to ------- the projected operating costs.", ['verification', 'verifiably', 'validity', 'verify'], 3, "Asked someone to must be followed by a base verb.", ['verb']],
+  ["The courier delivered the confidential documents ------- and on schedule.", ['secure', 'securely', 'security', 'protect'], 1, "The blank modifies delivered and is parallel with on schedule, so an adverb fits.", ['adverb']],
+  ["The contract includes a ------- description of each party's obligations.", ['detailed', 'detailfully', 'detail', 'describe'], 0, "The blank modifies description, so an adjective is required.", ['adjective']],
+  ["Employee ------- has improved since the flexible schedule was introduced.", ['productive', 'productively', 'productivity', 'produce'], 2, "Employee productivity is the noun phrase that serves as the subject.", ['noun']],
+  ["The revised checklist should ------- the approval process for small purchases.", ['short', 'shortly', 'shortness', 'shorten'], 3, "Should requires the base verb shorten.", ['verb']]
+], ['an adjective', 'an adverb', 'a noun', 'a base verb'])
+
+export const verbTenseSeeds = buildCategorySeeds('verb_tense', [
+  ["The accounting team ------- supplier invoices every Friday.", ['processes', 'processed', 'has processed', 'will process'], 0, "Every Friday signals a repeated present routine.", ['present simple']],
+  ["The courier ------- the replacement parts yesterday morning.", ['delivers', 'delivered', 'has delivered', 'will deliver'], 1, "Yesterday morning requires the simple past.", ['past simple']],
+  ["Our company ------- three regional offices since 2024.", ['opens', 'opened', 'has opened', 'will open'], 2, "Since 2024 connects a past starting point to the present, so the present perfect is required.", ['present perfect']],
+  ["The board ------- the final budget at next Monday's meeting.", ['approves', 'approved', 'has approved', 'will approve'], 3, "Next Monday refers to a future action.", ['future']],
+  ["Ms. Patel usually ------- the weekly sales briefing.", ['leads', 'led', 'has led', 'will lead'], 0, "Usually indicates a habitual present action.", ['present simple']],
+  ["The warehouse ------- operations early because of the storm last night.", ['suspends', 'suspended', 'has suspended', 'will suspend'], 1, "Last night fixes the action in the completed past.", ['past simple']],
+  ["The design team ------- the prototype already.", ['completes', 'completed', 'has completed', 'will complete'], 2, "Already with a current result calls for the present perfect.", ['present perfect']],
+  ["The new benefits package ------- into effect on January 1 next year.", ['comes', 'came', 'has come', 'will come'], 3, "Next year places the event in the future.", ['future']],
+  ["The security system automatically ------- inactive users after ten minutes.", ['logs out', 'logged out', 'has logged out', 'will log out'], 0, "The sentence describes how the system normally operates.", ['present simple']],
+  ["The client ------- the amended proposal two days ago.", ['accepts', 'accepted', 'has accepted', 'will accept'], 1, "Two days ago requires the simple past.", ['past simple']],
+  ["Researchers ------- significant progress so far this quarter.", ['make', 'made', 'have made', 'will make'], 2, "So far this quarter describes an unfinished period up to the present.", ['present perfect']],
+  ["The airline ------- an additional morning flight beginning next month.", ['adds', 'added', 'has added', 'will add'], 3, "Beginning next month signals a future plan.", ['future']],
+  ["The branch manager ------- cash balances at the end of each day.", ['checks', 'checked', 'has checked', 'will check'], 0, "Each day marks a regular present procedure.", ['present simple']],
+  ["The supplier ------- its quotation after our call yesterday.", ['revises', 'revised', 'has revised', 'will revise'], 1, "Yesterday identifies a completed past action.", ['past simple']],
+  ["The company ------- remote-work guidelines several times this year.", ['updates', 'updated', 'has updated', 'will update'], 2, "This year is still in progress, so the present perfect is appropriate.", ['present perfect']],
+  ["We ------- the maintenance schedule after the technician arrives tomorrow.", ['confirm', 'confirmed', 'have confirmed', 'will confirm'], 3, "Tomorrow places the main-clause action in the future.", ['future']],
+  ["The purchasing department regularly ------- prices from three vendors.", ['compares', 'compared', 'has compared', 'will compare'], 0, "Regularly signals a habitual action in the present.", ['present simple']],
+  ["The committee ------- the policy at its meeting last Thursday.", ['reviews', 'reviewed', 'has reviewed', 'will review'], 1, "Last Thursday requires the simple past.", ['past simple']],
+  ["Online orders ------- steadily since the free-shipping offer began.", ['increase', 'increased', 'have increased', 'will increase'], 2, "Since marks a change continuing from the past to now.", ['present perfect']],
+  ["The CEO ------- the expansion plan during tomorrow's press conference.", ['announces', 'announced', 'has announced', 'will announce'], 3, "Tomorrow's press conference refers to a future event.", ['future']]
+], ['the simple present', 'the simple past', 'the present perfect', 'a future form'])
+
+export const voiceSeeds = buildCategorySeeds('voice', [
+  ["The final contract ------- by both parties yesterday.", ['signs', 'signed', 'was signed', 'signing'], 2, "The contract receives the action, and yesterday requires the past passive.", ['passive voice']],
+  ["All expense claims ------- by a supervisor before payment.", ['review', 'reviewed', 'are reviewed', 'reviewing'], 2, "Claims receive the review, so a present passive form is required.", ['passive voice']],
+  ["The maintenance crew ------- the elevators every month.", ['inspects', 'inspected', 'is inspected', 'inspecting'], 0, "The crew performs a regular action, so active present voice is required.", ['active voice']],
+  ["The storm ------- several outdoor signs near the entrance last night.", ['damages', 'damaged', 'was damaged', 'damaging'], 1, "The storm performs the action in the completed past.", ['active voice']],
+  ["The revised handbook ------- to all employees next week.", ['distributes', 'distributed', 'will be distributed', 'distributing'], 2, "The handbook receives a future action, requiring the future passive.", ['passive voice']],
+  ["Visitor badges ------- at the reception desk upon arrival.", ['issue', 'issued', 'are issued', 'issuing'], 2, "Badges receive the action as a standard procedure.", ['passive voice']],
+  ["The project manager ------- the weekly status report every Monday.", ['prepares', 'prepared', 'is prepared', 'preparing'], 0, "The manager performs the habitual action.", ['active voice']],
+  ["A power outage ------- the evening production shift yesterday.", ['interrupts', 'interrupted', 'was interrupted', 'interrupting'], 1, "The outage caused the interruption in the past, so active simple past is needed.", ['active voice']],
+  ["The winning proposal ------- at the awards ceremony tomorrow.", ['announces', 'announced', 'will be announced', 'announcing'], 2, "The proposal receives a future action.", ['passive voice']],
+  ["Confidential files ------- in a locked cabinet after business hours.", ['store', 'stored', 'are stored', 'storing'], 2, "Files receive the action in a standard present procedure.", ['passive voice']],
+  ["Our legal team ------- every licensing agreement carefully.", ['examines', 'examined', 'is examined', 'examining'], 0, "The legal team actively performs the regular examination.", ['active voice']],
+  ["The technician ------- the faulty sensor during yesterday's inspection.", ['replaces', 'replaced', 'was replaced', 'replacing'], 1, "The technician performed the action at a completed past time.", ['active voice']],
+  ["The conference rooms ------- before the delegates arrive tomorrow.", ['clean', 'cleaned', 'will be cleaned', 'cleaning'], 2, "The rooms receive a future cleaning action.", ['passive voice']],
+  ["Customer calls ------- for quality-assurance purposes.", ['record', 'recorded', 'are recorded', 'recording'], 2, "Calls receive the action under a general policy.", ['passive voice']],
+  ["The finance director ------- all transfers above $10,000.", ['authorizes', 'authorized', 'is authorized', 'authorizing'], 0, "The director performs this regular active duty.", ['active voice']],
+  ["The marketing agency ------- the campaign materials last Friday.", ['delivers', 'delivered', 'was delivered', 'delivering'], 1, "The agency performed the delivery last Friday.", ['active voice']],
+  ["The annual safety drill ------- on the first Tuesday of May.", ['conducts', 'conducted', 'is conducted', 'conducting'], 2, "The drill receives the action in a recurring schedule.", ['passive voice']],
+  ["All applicants ------- by the hiring panel next week.", ['interview', 'interviewed', 'will be interviewed', 'interviewing'], 2, "Applicants receive a future interview action.", ['passive voice']],
+  ["The logistics coordinator ------- delivery routes each morning.", ['updates', 'updated', 'is updated', 'updating'], 0, "The coordinator performs a recurring active action.", ['active voice']],
+  ["The vendor ------- the missing items after we contacted support.", ['ships', 'shipped', 'was shipped', 'shipping'], 1, "The vendor performed the completed past action.", ['active voice']]
+], ['an active present form', 'an active past form', 'a passive form', 'a participle without a finite auxiliary'])
+
+export const subjectVerbAgreementSeeds = buildCategorySeeds('subject_verb_agreement', [
+  ["The list of approved vendors ------- on the procurement portal.", ['appears', 'appear', 'appeared', 'appearing'], 0, "The head noun list is singular, so a singular present verb is required.", ['singular subject']],
+  ["The new printers in the copy room ------- less energy than the old models.", ['uses', 'use', 'used', 'using'], 1, "The plural subject printers requires the base present form use.", ['plural subject']],
+  ["Each of the department heads ------- a monthly expense summary.", ['submits', 'submit', 'submitted', 'submitting'], 0, "Each is grammatically singular.", ['indefinite pronoun']],
+  ["Several candidates ------- experience in international logistics.", ['has', 'have', 'had', 'having'], 1, "Several candidates is a plural subject.", ['plural subject']],
+  ["The quality of these components ------- our production standards.", ['meets', 'meet', 'met', 'meeting'], 0, "The head noun quality is singular despite the plural noun in the prepositional phrase.", ['singular subject']],
+  ["Both the manager and the assistant ------- the updated schedule.", ['knows', 'know', 'knew', 'knowing'], 1, "Subjects joined by both...and take a plural verb.", ['compound subject']],
+  ["Neither of the proposed locations ------- enough parking.", ['offers', 'offer', 'offered', 'offering'], 0, "Neither is singular in formal written English.", ['indefinite pronoun']],
+  ["Monthly sales reports ------- useful data for forecasting.", ['provides', 'provide', 'provided', 'providing'], 1, "The plural subject reports requires provide.", ['plural subject']],
+  ["The equipment in the storage rooms ------- inspected every quarter.", ['is', 'are', 'was', 'being'], 0, "Equipment is an uncountable singular noun.", ['uncountable noun']],
+  ["Our clients across the region ------- faster delivery options.", ['prefers', 'prefer', 'preferred', 'preferring'], 1, "The plural subject clients requires prefer.", ['plural subject']],
+  ["One of the conference rooms ------- reserved for interviews today.", ['is', 'are', 'was', 'being'], 0, "One is the singular head of the subject phrase.", ['singular subject']],
+  ["The revised terms and conditions ------- on page twelve.", ['begins', 'begin', 'began', 'beginning'], 1, "The compound plural subject terms and conditions takes begin.", ['compound subject']],
+  ["Every employee and contractor ------- an identification badge.", ['needs', 'need', 'needed', 'needing'], 0, "Every makes the coordinated subject singular in meaning.", ['every']],
+  ["The results of the customer survey ------- available online.", ['is', 'are', 'was', 'being'], 1, "The plural head noun results requires are.", ['plural subject']],
+  ["A series of training workshops ------- next month.", ['starts', 'start', 'started', 'starting'], 0, "The head noun series is singular.", ['singular subject']],
+  ["Many of our overseas suppliers ------- electronic invoices.", ['accepts', 'accept', 'accepted', 'accepting'], 1, "Many suppliers is plural.", ['plural subject']],
+  ["The number of support requests ------- during holiday periods.", ['increases', 'increase', 'increased', 'increasing'], 0, "The number is a singular subject.", ['the number of']],
+  ["A number of employees ------- flexible start times.", ['prefers', 'prefer', 'preferred', 'preferring'], 1, "A number of means several and takes a plural verb.", ['a number of']],
+  ["Information about the new benefits ------- in the employee portal.", ['appears', 'appear', 'appeared', 'appearing'], 0, "Information is an uncountable singular noun.", ['uncountable noun']],
+  ["The director, along with two advisors, ------- the final decision.", ['makes', 'make', 'made', 'making'], 0, "Along with does not change the singular head subject director.", ['interrupting phrase']]
+], ['a singular present form', 'a plural or base present form', 'a past form', 'a non-finite participle'])
+
+export const conjunctionSeeds = buildCategorySeeds('conjunction', [
+  ["------- the shipment arrived late, the customer accepted it without complaint.", ['Although', 'Because', 'Unless', 'Once'], 0, "The two clauses contrast, so although is required.", ['contrast']],
+  ["The meeting was postponed ------- the chief negotiator was ill.", ['Although', 'Because', 'Unless', 'Once'], 1, "The second clause gives the reason for the postponement.", ['cause']],
+  ["The discount will not apply ------- the order exceeds fifty units.", ['Although', 'Because', 'Unless', 'Once'], 2, "Unless introduces the condition that must be met.", ['condition']],
+  ["------- the audit is complete, the results will be shared with management.", ['Although', 'Because', 'Unless', 'Once'], 3, "Once introduces the time at which the sharing can occur.", ['time']],
+  ["------- the office is small, it can accommodate the entire support team.", ['Although', 'Because', 'Unless', 'After'], 0, "Although introduces an unexpected contrast.", ['contrast']],
+  ["We selected the local supplier ------- it offered the shortest delivery time.", ['Although', 'Because', 'Unless', 'After'], 1, "Because introduces the reason for selecting the supplier.", ['cause']],
+  ["Employees cannot enter the laboratory ------- they are wearing safety glasses.", ['Although', 'Because', 'Unless', 'After'], 2, "Unless states the required condition for entry.", ['condition']],
+  ["------- the technician installs the update, please restart every workstation.", ['Although', 'Because', 'Unless', 'After'], 3, "After establishes the sequence of the two actions.", ['time']],
+  ["------- demand fell in April, overall quarterly sales remained strong.", ['Even though', 'Since', 'If', 'When'], 0, "Even though expresses contrast between lower demand and strong sales.", ['contrast']],
+  ["The factory added a night shift ------- orders had increased sharply.", ['Even though', 'Since', 'If', 'When'], 1, "Since introduces the cause of the added shift.", ['cause']],
+  ["The warranty is valid ------- the product is used according to the instructions.", ['Even though', 'Since', 'If', 'When'], 2, "If introduces the condition for warranty validity.", ['condition']],
+  ["Please notify reception ------- your guests arrive.", ['Even though', 'Since', 'If', 'When'], 3, "When introduces the time of the notification.", ['time']],
+  ["------- the proposal was expensive, it promised substantial long-term savings.", ['While', 'As', 'Provided that', 'Before'], 0, "While contrasts the high initial cost with future savings.", ['contrast']],
+  ["The outdoor event was moved indoors ------- heavy rain was expected.", ['While', 'As', 'Provided that', 'Before'], 1, "As introduces the reason for moving the event.", ['cause']],
+  ["Remote work is permitted ------- employees remain available during core hours.", ['While', 'As', 'Provided that', 'Before'], 2, "Provided that states the required condition.", ['condition']],
+  ["Back up the database ------- you install the new software.", ['While', 'As', 'Provided that', 'Before'], 3, "Before shows that the backup must happen first.", ['time']],
+  ["------- the negotiations were difficult, both sides reached an agreement.", ['Whereas', 'Now that', 'As long as', 'Whenever'], 0, "Whereas highlights the contrast between difficulty and agreement.", ['contrast']],
+  ["We can begin production ------- the safety permit has been issued.", ['Whereas', 'Now that', 'As long as', 'Whenever'], 1, "Now that gives the new reason production can begin.", ['cause']],
+  ["The account will remain active ------- the subscription fee is paid on time.", ['Whereas', 'Now that', 'As long as', 'Whenever'], 2, "As long as expresses the continuing condition.", ['condition']],
+  ["Save the receipt ------- you purchase office supplies.", ['Whereas', 'Now that', 'As long as', 'Whenever'], 3, "Whenever refers to every occasion on which a purchase occurs.", ['time']]
+], ['a contrast conjunction', 'a cause conjunction', 'a condition conjunction', 'a time conjunction'])
+
+export const relativeClauseSeeds = buildCategorySeeds('relative_clause', [
+  ["The accountant ------- prepared the forecast will present it this afternoon.", ['who', 'which', 'whose', 'where'], 0, "Who is the subject relative pronoun for a person.", ['who']],
+  ["The software ------- tracks inventory levels was updated yesterday.", ['who', 'which', 'whose', 'where'], 1, "Which refers to the nonhuman noun software.", ['which']],
+  ["We hired a consultant ------- recommendations reduced shipping costs.", ['who', 'which', 'whose', 'where'], 2, "Whose shows that the recommendations belong to the consultant.", ['whose']],
+  ["The warehouse ------- damaged goods are inspected is near the airport.", ['who', 'which', 'whose', 'where'], 3, "Where refers to the place in which inspections occur.", ['where']],
+  ["Employees ------- need technical support should submit a ticket.", ['who', 'which', 'whose', 'where'], 0, "Who refers to the people who need support.", ['who']],
+  ["The report ------- contains the survey results is confidential.", ['who', 'which', 'whose', 'where'], 1, "Which introduces a clause describing the report.", ['which']],
+  ["The vendor ------- proposal met all requirements received the contract.", ['who', 'which', 'whose', 'where'], 2, "Whose expresses possession of the proposal.", ['whose']],
+  ["The branch ------- Ms. Gomez works will close for renovations.", ['who', 'which', 'whose', 'where'], 3, "Where refers to the branch as a location.", ['where']],
+  ["The technician ------- repaired the printer left a service note.", ['who', 'which', 'whose', 'where'], 0, "Who is used for the person performing repaired.", ['who']],
+  ["The policy ------- takes effect in August applies to all contractors.", ['who', 'which', 'whose', 'where'], 1, "Which refers to the policy.", ['which']],
+  ["The candidate ------- references were strongest was offered the position.", ['who', 'which', 'whose', 'where'], 2, "Whose links the references to the candidate.", ['whose']],
+  ["The conference center ------- the seminar will be held has free parking.", ['who', 'which', 'whose', 'where'], 3, "Where identifies the location of the seminar.", ['where']],
+  ["Clients ------- renew early receive a ten-percent discount.", ['who', 'which', 'whose', 'where'], 0, "Who refers to clients as people.", ['who']],
+  ["The machine ------- packages the products requires monthly maintenance.", ['who', 'which', 'whose', 'where'], 1, "Which introduces a clause describing a machine.", ['which']],
+  ["The manager ------- team exceeded its target received an award.", ['who', 'which', 'whose', 'where'], 2, "Whose shows possession of the team.", ['whose']],
+  ["The website ------- customers can track orders is temporarily unavailable.", ['who', 'which', 'whose', 'where'], 3, "Where refers to the online place in which tracking occurs.", ['where']],
+  ["The attorney ------- reviewed the lease suggested two changes.", ['who', 'which', 'whose', 'where'], 0, "Who refers to the attorney performing the action.", ['who']],
+  ["The shipment ------- arrived this morning contains replacement parts.", ['who', 'which', 'whose', 'where'], 1, "Which describes the nonhuman shipment.", ['which']],
+  ["The company ------- headquarters are in Taipei opened a Tokyo office.", ['who', 'which', 'whose', 'where'], 2, "Whose expresses the company's possession of its headquarters.", ['whose']],
+  ["The lobby ------- visitors sign in is on the ground floor.", ['who', 'which', 'whose', 'where'], 3, "Where introduces the location of the sign-in action.", ['where']]
+], ['a relative pronoun for people', 'a relative pronoun for things', 'a possessive relative pronoun', 'a relative adverb for places'])
+
+export const comparisonSeeds = buildCategorySeeds('comparison', [
+  ["The new scanner is ------- than the previous model.", ['fast', 'faster', 'fastest', 'fastly'], 1, "Than requires the comparative form faster.", ['comparative']],
+  ["This is the ------- proposal the committee has reviewed this year.", ['comprehensive', 'more comprehensive', 'most comprehensive', 'comprehensively'], 2, "The plus a comparison within the full group requires the superlative.", ['superlative']],
+  ["The revised form is as ------- as the original but easier to process.", ['clear', 'clearer', 'clearest', 'clearly'], 0, "The as...as structure requires the base adjective clear.", ['equality']],
+  ["The automated process runs ------- than manual data entry.", ['efficient', 'more efficiently', 'most efficiently', 'efficiency'], 1, "Runs needs an adverb, and than requires the comparative more efficiently.", ['comparative adverb']],
+  ["Shipping by rail is ------- than shipping by air for this route.", ['economical', 'more economical', 'most economical', 'economically'], 1, "A comparison between two methods requires more economical.", ['comparative']],
+  ["Of the three candidates, Ms. Ortiz has the ------- experience.", ['relevant', 'more relevant', 'most relevant', 'relevantly'], 2, "Of the three calls for the superlative most relevant.", ['superlative']],
+  ["The backup system is just as ------- as the primary server.", ['reliable', 'more reliable', 'most reliable', 'reliably'], 0, "Just as...as takes the base adjective reliable.", ['equality']],
+  ["Orders are processed ------- now than before the software upgrade.", ['quick', 'more quickly', 'most quickly', 'quickness'], 1, "Processed needs an adverb, and than signals the comparative.", ['comparative adverb']],
+  ["The downtown office is ------- to public transportation than the suburban site.", ['accessible', 'more accessible', 'most accessible', 'accessibly'], 1, "Two locations are compared, so more accessible is required.", ['comparative']],
+  ["This quarter produced the ------- profit in the company's history.", ['high', 'higher', 'highest', 'highly'], 2, "The company's entire history defines a superlative group.", ['superlative']],
+  ["The temporary workspace is as ------- as our regular office.", ['functional', 'more functional', 'most functional', 'functionally'], 0, "As...as requires the base adjective functional.", ['equality']],
+  ["The new printer operates ------- than the older unit.", ['quiet', 'more quietly', 'most quietly', 'quietness'], 1, "Operates needs an adverb, and than requires a comparative.", ['comparative adverb']],
+  ["Video training is ------- than the printed manual for visual learners.", ['engaging', 'more engaging', 'most engaging', 'engagingly'], 1, "A comparison of two formats requires more engaging.", ['comparative']],
+  ["This is the ------- route among the four alternatives.", ['short', 'shorter', 'shortest', 'shortly'], 2, "Among four alternatives requires the superlative shortest.", ['superlative']],
+  ["The new policy is as ------- as the one it replaced.", ['flexible', 'more flexible', 'most flexible', 'flexibly'], 0, "As...as takes the base adjective flexible.", ['equality']],
+  ["The support team responded ------- this month than last month.", ['prompt', 'more promptly', 'most promptly', 'promptness'], 1, "Responded requires an adverb and than signals comparison.", ['comparative adverb']],
+  ["The premium plan is ------- than the standard plan but includes analytics.", ['expensive', 'more expensive', 'most expensive', 'expensively'], 1, "Two plans are compared, requiring more expensive.", ['comparative']],
+  ["December was the ------- sales month of the year.", ['busy', 'busier', 'busiest', 'busily'], 2, "The phrase of the year establishes a superlative group.", ['superlative']],
+  ["The electronic signature is as ------- as a handwritten one under the policy.", ['valid', 'more valid', 'most valid', 'validly'], 0, "As...as requires the base adjective valid.", ['equality']],
+  ["The delivery team worked ------- than expected to clear the backlog.", ['rapid', 'more rapidly', 'most rapidly', 'rapidity'], 1, "Worked needs an adverb and than expected requires the comparative.", ['comparative adverb']]
+], ['a base adjective', 'a comparative form', 'a superlative form', 'an adverb or noun form'])
+
+export const grammarSeeds = [
+  ...wordFormSeeds,
+  ...verbTenseSeeds,
+  ...voiceSeeds,
+  ...subjectVerbAgreementSeeds,
+  ...conjunctionSeeds,
+  ...relativeClauseSeeds,
+  ...comparisonSeeds
+]

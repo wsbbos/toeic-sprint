@@ -28,4 +28,4 @@ npm.cmd run validate:questions
 
 The command exits non-zero for structural errors, duplicate content, invalid answers, explanation mismatches, a severely skewed answer position, or an abnormal category distribution. A bank with fewer than 100 questions receives a category sample-size warning because a strict category-distribution judgement would be misleading.
 
-During phase 3, the current 20-question bank is expected to fail only `ANSWER_POSITION_MISSING` because no correct answer uses D. Phase 4 must replace that known debt with at least 300 validated questions and make the command exit successfully.
+The production bank contains 300 questions. It preserves the original 20 stems, adds 280 curated business-English seeds, and moves each correct choice together with its option text so A-D positions remain balanced without changing the grammar answer. Every generated explanation names all four choices and states the governing rule or meaning.

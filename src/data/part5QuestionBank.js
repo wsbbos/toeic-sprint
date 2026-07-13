@@ -1,6 +1,7 @@
 // src/data/part5QuestionBank.js
 
-import { PART5_SCHEMA_VERSION } from './part5Schema.js';
+import { PART5_ANSWER_KEYS, PART5_SCHEMA_VERSION } from './part5Schema.js';
+import { generatedPart5Seeds } from './part5Seeds/index.js';
 
 const categoryById = Object.freeze({
   'p5-001': 'word_form',
@@ -248,10 +249,71 @@ const part5SeedQuestions = [
   }
 ];
 
-export const part5QuestionBank = part5SeedQuestions.map((question) => ({
-  ...question,
-  category: categoryById[question.id],
-  version: PART5_SCHEMA_VERSION
-}));
+function stripTrailingPunctuation(value) {
+  return String(value || '').trim().replace(/[.\s]+$/, '');
+}
+
+function buildExplanation(seed, orderedOptions, answer) {
+  const rationale = stripTrailingPunctuation(seed.rationale || seed.explanation || seed.grammarPoint);
+  const requirement = stripTrailingPunctuation(seed.grammarPoint || rationale);
+  const correctOption = orderedOptions.find((option) => option.key === answer);
+  const incorrectReasons = orderedOptions
+    .filter((option) => option.key !== answer)
+    .map((option) => {
+      const role = option.role || 'a form or meaning that does not fit this context';
+      return `${option.key} (${option.text}) is incorrect because it functions as ${role} and does not satisfy this requirement: ${requirement}.`;
+    })
+    .join(' ');
+
+  return `The correct answer is ${answer} (${correctOption.text}): ${rationale}. ${incorrectReasons}`;
+}
+
+function toProductionQuestion(seed, index) {
+  const sourceOptions = PART5_ANSWER_KEYS.map((key) => ({
+    text: seed.choices[key],
+    role: seed.choiceRoles?.[key]
+  }));
+  const sourceAnswerIndex = PART5_ANSWER_KEYS.indexOf(seed.answer);
+  const correctOption = sourceOptions[sourceAnswerIndex];
+  const distractors = sourceOptions.filter((_, optionIndex) => optionIndex !== sourceAnswerIndex);
+  const targetAnswerIndex = index % PART5_ANSWER_KEYS.length;
+  const orderedOptions = [...distractors];
+  orderedOptions.splice(targetAnswerIndex, 0, correctOption);
+
+  const choices = Object.fromEntries(
+    orderedOptions.map((option, optionIndex) => [PART5_ANSWER_KEYS[optionIndex], option.text])
+  );
+  const answer = PART5_ANSWER_KEYS[targetAnswerIndex];
+  const optionsWithKeys = orderedOptions.map((option, optionIndex) => ({
+    ...option,
+    key: PART5_ANSWER_KEYS[optionIndex]
+  }));
+  const category = seed.category || categoryById[seed.id];
+
+  return {
+    id: `p5-${String(index + 1).padStart(3, '0')}`,
+    part: 'Part 5',
+    question: seed.question,
+    choices,
+    answer,
+    explanation: buildExplanation(seed, optionsWithKeys, answer),
+    grammarPoint: seed.grammarPoint || category.replaceAll('_', ' '),
+    category,
+    difficulty: seed.difficulty,
+    tags: [...new Set(seed.tags || [category, 'business English'])],
+    version: PART5_SCHEMA_VERSION
+  };
+}
+
+const productionSeeds = [
+  ...part5SeedQuestions.map((question) => ({
+    ...question,
+    category: categoryById[question.id],
+    rationale: question.explanation
+  })),
+  ...generatedPart5Seeds
+];
+
+export const part5QuestionBank = productionSeeds.map(toProductionQuestion);
 
 export const getPart5PracticeQuestions = () => part5QuestionBank;

@@ -108,12 +108,11 @@ test('reports severely skewed answer and category distributions', () => {
   assert.ok(codes.includes('CATEGORY_DISTRIBUTION_SKEW'))
 })
 
-test('keeps the current Part 5 bank schema-valid while exposing its distribution debt', () => {
+test('keeps the production Part 5 bank schema-valid with healthy distributions', () => {
   const schemaResult = validatePart5QuestionBank(part5QuestionBank, { checkDistribution: false })
   const fullResult = validatePart5QuestionBank(part5QuestionBank)
 
   assert.equal(schemaResult.valid, true)
   assert.deepEqual(schemaResult.errors, [])
-  assert.equal(fullResult.valid, false)
-  assert.ok(fullResult.errors.some((issue) => issue.code === 'ANSWER_POSITION_MISSING'))
+  assert.equal(fullResult.valid, true, JSON.stringify(fullResult.errors, null, 2))
 })

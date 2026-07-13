@@ -717,6 +717,8 @@ const parsedPart5Bank = part5QuestionBank.map(q => ({
   explanation: q.explanation,
   grammarPoint: q.grammarPoint,
   difficulty: q.difficulty,
+  category: q.category,
+  version: q.version,
   tags: q.tags || [],
   estimatedTime: q.estimatedTime || 45
 }));

@@ -1,0 +1,172 @@
+import { buildCategorySeeds } from './seedBuilder.js'
+
+export const prepositionSeeds = buildCategorySeeds('preposition', [
+  ["Please send the signed purchase order ------- email.", ['by', 'on', 'at', 'from'], 0, "By email is the fixed expression for the method of sending.", ['method']],
+  ["The facilities manager is responsible ------- scheduling fire drills.", ['to', 'for', 'with', 'of'], 1, "Responsible for is the required adjective-preposition combination.", ['collocation']],
+  ["------- the latest forecast, demand will rise in the third quarter.", ['Across', 'According to', 'Beside', 'Among'], 1, "According to introduces the source of information.", ['source']],
+  ["Conference participants should register ------- advance.", ['at', 'in', 'on', 'for'], 1, "In advance is the fixed phrase meaning before an event.", ['time']],
+  ["Ms. Nouri signed the agreement ------- behalf of the regional director.", ['at', 'by', 'on', 'with'], 2, "On behalf of means as the representative of another person.", ['representation']],
+  ["All contractors must comply ------- the building's safety rules.", ['to', 'with', 'for', 'by'], 1, "Comply with is the standard verb-preposition combination.", ['collocation']],
+  ["The bonus will be divided equally ------- the two project leaders.", ['among', 'between', 'through', 'inside'], 1, "Between is used for a distribution involving two people.", ['distribution']],
+  ["The customer service desk remains open ------- the lunch hour.", ['during', 'until', 'since', 'toward'], 0, "During refers to an event occurring within a period.", ['time']],
+  ["Expense reports must be submitted ------- ten business days.", ['inside of', 'within', 'around', 'beside'], 1, "Within sets a deadline no later than the stated period.", ['deadline']],
+  ["Production stopped temporarily ------- a shortage of raw materials.", ['because', 'due to', 'although', 'unless'], 1, "Due to must be followed by a noun phrase expressing cause.", ['cause']],
+  ["Mr. Lewis is ------- charge of the overseas sales division.", ['on', 'at', 'in', 'for'], 2, "In charge of is the fixed phrase meaning responsible for.", ['responsibility']],
+  ["The training session will last ------- three hours.", ['at least', 'at once', 'at hand', 'at random'], 0, "At least establishes the minimum duration.", ['minimum']],
+  ["The company added live chat ------- response to customer feedback.", ['at', 'in', 'for', 'with'], 1, "In response to is the fixed phrase for an action prompted by something.", ['response']],
+  ["The renovation was completed two weeks ------- schedule.", ['ahead of', 'inside', 'beyond from', 'through'], 0, "Ahead of schedule means earlier than planned.", ['schedule']],
+  ["------- the base salary, employees receive a transportation allowance.", ['In addition to', 'Except', 'Despite of', 'Instead'], 0, "In addition to introduces an extra benefit.", ['addition']],
+  ["The defective monitor is still ------- warranty.", ['below', 'under', 'inside', 'beneath of'], 1, "Under warranty is the standard expression for active warranty coverage.", ['warranty']],
+  ["Despite the weather, every flight departed ------- schedule.", ['in', 'at', 'on', 'by'], 2, "On schedule means at the planned time.", ['schedule']],
+  ["Several refurbished laptops are now available ------- sale.", ['to', 'for', 'with', 'at'], 1, "For sale is the fixed phrase meaning available to purchase.", ['sales']],
+  ["Payment is required ------- receipt of the invoice.", ['upon', 'through', 'beside', 'among'], 0, "Upon receipt means immediately when something is received.", ['time']],
+  ["Please report any data breach ------- delay.", ['without', 'outside', 'beneath', 'across'], 0, "Without delay means immediately.", ['urgency']]
+])
+
+export const pronounSeeds = buildCategorySeeds('pronoun', [
+  ["All interns must submit ------- weekly time sheets by Friday.", ['they', 'their', 'them', 'theirs'], 1, "A possessive adjective is required before weekly time sheets.", ['possessive adjective']],
+  ["The director thanked Maria and ------- for completing the audit early.", ['I', 'me', 'my', 'mine'], 1, "The object pronoun me is required after thanked.", ['object pronoun']],
+  ["This laptop belongs to the design team; ------- is kept in the locked cabinet.", ['it', 'its', 'itself', 'them'], 0, "The subject pronoun it replaces the singular noun laptop.", ['subject pronoun']],
+  ["The two companies introduced ------- to potential investors at the forum.", ['them', 'their', 'theirs', 'themselves'], 3, "The reflexive pronoun themselves is needed because the companies introduced their own organizations.", ['reflexive pronoun']],
+  ["Neither proposal met the budget limit, so ------- was approved.", ['neither', 'either', 'both', 'each other'], 0, "Neither refers to not one and not the other of two items.", ['indefinite pronoun']],
+  ["Employees may use either entrance because ------- is open before 8 a.m.", ['both', 'each', 'neither', 'one another'], 1, "Each treats the two entrances individually and takes a singular verb.", ['distributive pronoun']],
+  ["Ms. Ito asked the applicants to email ------- directly.", ['she', 'her', 'hers', 'herself'], 1, "The verb email requires the object pronoun her.", ['object pronoun']],
+  ["Our warranty is longer than ------- offered by the other supplier.", ['they', 'their', 'them', 'theirs'], 3, "The possessive pronoun theirs replaces their warranty.", ['possessive pronoun']],
+  ["The printer shuts ------- off automatically after thirty minutes.", ['it', 'its', 'itself', 'it is'], 2, "The reflexive pronoun itself refers back to the printer.", ['reflexive pronoun']],
+  ["Several team members shared ------- suggestions during the workshop.", ['they', 'their', 'them', 'theirs'], 1, "The possessive adjective their modifies suggestions.", ['possessive adjective']],
+  ["Please give the completed form to Daniel or ------- at reception.", ['I', 'me', 'my', 'mine'], 1, "After the preposition to, the object pronoun me is required.", ['object pronoun']],
+  ["The company updated ------- privacy policy last month.", ['it', 'its', 'itself', 'it is'], 1, "The possessive adjective its modifies privacy policy.", ['possessive adjective']],
+  ["The consultants prepared the presentation by ------- without outside help.", ['them', 'their', 'theirs', 'themselves'], 3, "By themselves means without help from others.", ['reflexive pronoun']],
+  ["Of the two delivery options, ------- will meet our Friday deadline.", ['neither', 'none', 'both of', 'one another'], 0, "Neither is used because not one of the two options will meet the deadline.", ['indefinite pronoun']],
+  ["Every department has ------- own procedure for approving overtime.", ['it', 'its', 'itself', 'them'], 1, "Its is the singular possessive adjective agreeing with every department.", ['possessive adjective']],
+  ["The visitors left ------- coats in the conference room.", ['they', 'their', 'them', 'theirs'], 1, "Their is the possessive adjective before coats.", ['possessive adjective']],
+  ["The final decision is -------, so the committee will not change it.", ['our', 'us', 'ours', 'ourselves'], 2, "The possessive pronoun ours stands alone after is.", ['possessive pronoun']],
+  ["Mr. Park and Ms. Silva introduced ------- before the meeting began.", ['them', 'their', 'theirs', 'themselves'], 3, "The reflexive pronoun themselves refers back to both subjects.", ['reflexive pronoun']],
+  ["If a caller leaves a message, return ------- call within one business day.", ['they', 'their', 'them', 'theirs'], 1, "Singular their is the possessive adjective referring to a caller.", ['possessive adjective']],
+  ["The updated guidelines are clearer than the previous -------.", ['one', 'ones', 'it', 'itself'], 1, "The plural substitute ones replaces guidelines.", ['substitute pronoun']]
+])
+
+export const participleSeeds = buildCategorySeeds('participle', [
+  ["------- the quarterly figures, the analyst discovered a calculation error.", ['Review', 'Reviewing', 'Reviewed', 'To review'], 1, "Reviewing forms an active participial phrase describing the analyst's action.", ['present participle']],
+  ["------- near the airport, the warehouse offers convenient access to cargo terminals.", ['Locate', 'Locating', 'Located', 'To locate'], 2, "Located is a past participle with passive meaning describing the warehouse.", ['past participle']],
+  ["Customers ------- in the loyalty program receive free standard shipping.", ['enroll', 'enrolling', 'enrolled', 'to enroll'], 2, "Enrolled is a reduced passive relative clause meaning customers who are enrolled.", ['reduced clause']],
+  ["The employees ------- in the lobby are waiting for the orientation tour.", ['gather', 'gathering', 'gathered', 'to gather'], 1, "Gathering actively describes what the employees are doing now.", ['present participle']],
+  ["------- by the legal department, the revised clause was added to the contract.", ['Approve', 'Approving', 'Approved', 'To approve'], 2, "Approved supplies passive meaning because the clause received approval.", ['past participle']],
+  ["The manager walked through the office, ------- with each team leader.", ['speak', 'speaking', 'spoken', 'to speak'], 1, "Speaking describes a simultaneous active action by the manager.", ['present participle']],
+  ["Products ------- after the deadline will not appear in this month's catalog.", ['submit', 'submitting', 'submitted', 'to submit'], 2, "Submitted is a reduced passive clause modifying products.", ['reduced clause']],
+  ["------- the client's concerns, the consultant revised the implementation plan.", ['Understand', 'Understanding', 'Understood', 'To understood'], 1, "Understanding actively describes the consultant's reason and state.", ['present participle']],
+  ["The data ------- from the survey will be presented tomorrow.", ['collect', 'collecting', 'collected', 'to collect'], 2, "Collected means data that was collected, so passive meaning is required.", ['past participle']],
+  ["Staff members ------- the evening shift may use the west parking lot.", ['work', 'working', 'worked', 'to work'], 1, "Working is a reduced active relative clause modifying staff members.", ['reduced clause']],
+  ["------- in recyclable containers, the samples remained protected during shipping.", ['Pack', 'Packing', 'Packed', 'To pack'], 2, "Packed describes the samples receiving the packing action.", ['past participle']],
+  ["The presenter stood near the screen, ------- the key figures with a laser pointer.", ['highlight', 'highlighting', 'highlighted', 'to highlight'], 1, "Highlighting shows a simultaneous active action.", ['present participle']],
+  ["Invoices ------- without a purchase-order number will be returned.", ['send', 'sending', 'sent', 'to send'], 2, "Sent is a reduced passive relative clause modifying invoices.", ['past participle']],
+  ["------- a lower price from the vendor, the buyer placed a larger order.", ['Negotiate', 'Negotiating', 'Negotiated', 'To negotiated'], 1, "Negotiating actively describes the buyer's action.", ['present participle']],
+  ["The equipment ------- in the hallway must be moved before the inspection.", ['leave', 'leaving', 'left', 'to leave'], 2, "Left means equipment that was left, giving passive meaning.", ['past participle']],
+  ["Visitors ------- for the seminar should proceed to Room 402.", ['register', 'registering', 'registered', 'to register'], 2, "Registered is a reduced passive clause for visitors who have registered.", ['reduced clause']],
+  ["------- the damaged package, the clerk immediately contacted the carrier.", ['Notice', 'Noticing', 'Noticed', 'To noticed'], 1, "Noticing is an active participial phrase describing the clerk.", ['present participle']],
+  ["The brochure ------- on recycled paper supports the company's sustainability policy.", ['print', 'printing', 'printed', 'to print'], 2, "Printed passively modifies the brochure.", ['past participle']],
+  ["The sales representatives traveled across the region, ------- prospective clients.", ['visit', 'visiting', 'visited', 'to visited'], 1, "Visiting describes the representatives' simultaneous active activity.", ['present participle']],
+  ["Requests ------- after 5 p.m. will be processed the following morning.", ['receive', 'receiving', 'received', 'to receive'], 2, "Received is a reduced passive clause modifying requests.", ['past participle']]
+], ['a base verb', 'a present participle with active meaning', 'a past participle with passive meaning', 'an infinitive'])
+
+export const infinitiveSeeds = buildCategorySeeds('infinitive', [
+  ["The company plans ------- a customer support center in Kaohsiung.", ['to open', 'opening', 'opened', 'opening of'], 0, "Plan is followed by a to-infinitive.", ['verb complement']],
+  ["Ms. Garcia agreed ------- the revised delivery schedule.", ['to accept', 'accepting', 'accepted', 'acceptance'], 0, "Agree is followed by a to-infinitive.", ['verb complement']],
+  ["The training video shows employees how ------- the emergency alarm.", ['to activate', 'activating', 'activated', 'activation'], 0, "How is followed by a to-infinitive when explaining a procedure.", ['how to']],
+  ["We need additional data ------- whether the campaign was effective.", ['to determine', 'determining', 'determined', 'determination'], 0, "The infinitive expresses the purpose of needing the data.", ['purpose']],
+  ["The director asked the assistant ------- a larger meeting room.", ['to reserve', 'reserving', 'reserved', 'reservation'], 0, "Ask someone is followed by a to-infinitive.", ['object plus infinitive']],
+  ["Please remember ------- the lights before leaving.", ['to turn off', 'turning off', 'turned off', 'turnoff'], 0, "Remember to do means not to forget a future required action.", ['remember to']],
+  ["The supplier promised ------- the missing parts by Thursday.", ['to deliver', 'delivering', 'delivered', 'delivery'], 0, "Promise is followed by a to-infinitive.", ['verb complement']],
+  ["Our objective is ------- response times without increasing costs.", ['to reduce', 'reducing', 'reduced', 'reduction'], 0, "A to-infinitive can define the purpose or objective after is.", ['subject complement']],
+  ["The software allows users ------- customized monthly reports.", ['to generate', 'generating', 'generated', 'generation'], 0, "Allow someone is followed by a to-infinitive.", ['object plus infinitive']],
+  ["The committee decided ------- the proposal until more data was available.", ['to postpone', 'postponing', 'postponed', 'postponement'], 0, "Decide is followed by a to-infinitive.", ['verb complement']],
+  ["The technician came early ------- the network before business hours.", ['to test', 'testing', 'tested', 'test'], 0, "The infinitive expresses the purpose of coming early.", ['purpose']],
+  ["Employees are encouraged ------- professional development courses.", ['to attend', 'attending', 'attended', 'attendance'], 0, "The passive expression be encouraged is followed by a to-infinitive.", ['passive complement']],
+  ["The finance team expects ------- the audit by the end of June.", ['to complete', 'completing', 'completed', 'completion'], 0, "Expect is followed by a to-infinitive.", ['verb complement']],
+  ["This checklist will help new hires ------- common setup errors.", ['to avoid', 'avoiding', 'avoided', 'avoidance'], 0, "Help can be followed by a to-infinitive to describe the assisted action.", ['help to']],
+  ["The applicant was the first person ------- for the interview.", ['to arrive', 'arriving', 'arrived', 'arrival'], 0, "An ordinal expression such as the first is followed by a to-infinitive.", ['ordinal plus infinitive']],
+  ["Management intends ------- the policy after the six-month trial.", ['to review', 'reviewing', 'reviewed', 'review'], 0, "Intend is followed by a to-infinitive.", ['verb complement']],
+  ["The new dashboard makes it easier ------- regional performance.", ['to compare', 'comparing', 'compared', 'comparison'], 0, "The adjective easier is followed by a to-infinitive.", ['adjective complement']],
+  ["The airline offered ------- our tickets without a service fee.", ['to rebook', 'rebooking', 'rebooked', 'rebooking of'], 0, "Offer is followed by a to-infinitive.", ['verb complement']],
+  ["We have enough time ------- the figures before the presentation.", ['to verify', 'verifying', 'verified', 'verification'], 0, "The infinitive explains what the available time is for.", ['noun complement']],
+  ["The manufacturer hopes ------- energy use by fifteen percent.", ['to lower', 'lowering', 'lowered', 'lowering of'], 0, "Hope is followed by a to-infinitive.", ['verb complement']]
+])
+
+export const gerundSeeds = buildCategorySeeds('gerund', [
+  ["The manager recommended ------- the supplier before placing another order.", ['contacting', 'contact', 'contacted', 'contact request'], 0, "Recommend is followed by a gerund when no object is named before the action.", ['verb complement']],
+  ["Employees should avoid ------- confidential files to personal devices.", ['copying', 'copy', 'copied', 'copy machine'], 0, "Avoid is followed by a gerund.", ['verb complement']],
+  ["The team discussed ------- the launch until the quality issue was resolved.", ['delaying', 'delay', 'delayed', 'delay period'], 0, "Discuss is followed by a gerund for the proposed action.", ['verb complement']],
+  ["Ms. Roy is responsible for ------- the monthly newsletter.", ['editing', 'edit', 'edited', 'editor'], 0, "A verb after the preposition for must use the gerund form.", ['preposition plus gerund']],
+  ["The company is considering ------- a smaller office downtown.", ['leasing', 'lease', 'leased', 'lease agreement'], 0, "Consider is followed by a gerund.", ['verb complement']],
+  ["Thank you for ------- our technical support team.", ['contacting', 'contact', 'contacted', 'contact request'], 0, "The preposition for is followed by a gerund.", ['preposition plus gerund']],
+  ["The consultant suggested ------- weekly progress meetings.", ['holding', 'hold', 'held', 'holder'], 0, "Suggest is followed by a gerund when proposing an activity.", ['verb complement']],
+  ["We look forward to ------- you at the annual conference.", ['meeting', 'meet', 'met', 'meeting place'], 0, "In look forward to, to is a preposition and must be followed by a gerund.", ['fixed expression']],
+  ["The new system prevents users from ------- incomplete forms.", ['submitting', 'submit', 'submitted', 'submission'], 0, "Prevent someone from is followed by a gerund.", ['preposition plus gerund']],
+  ["The committee finished ------- the scholarship applications yesterday.", ['reviewing', 'review', 'reviewed', 'review process'], 0, "Finish is followed by a gerund.", ['verb complement']],
+  ["Mr. Evans admitted ------- the wrong file to the client.", ['sending', 'send', 'sent', 'sender'], 0, "Admit is followed by a gerund for the acknowledged action.", ['verb complement']],
+  ["The workshop focuses on ------- practical negotiation skills.", ['developing', 'develop', 'developed', 'development'], 0, "The preposition on is followed by a gerund.", ['preposition plus gerund']],
+  ["Please stop ------- the printer while the warning light is flashing.", ['using', 'use', 'used', 'usage'], 0, "Stop doing means cease an activity already in progress.", ['stop doing']],
+  ["The sales team practiced ------- the new product benefits clearly.", ['explaining', 'explain', 'explained', 'explanation'], 0, "Practice is followed by a gerund.", ['verb complement']],
+  ["The director denied ------- advance notice of the price increase.", ['receiving', 'receive', 'received', 'receipt'], 0, "Deny is followed by a gerund.", ['verb complement']],
+  ["Before ------- the contract, please read every clause carefully.", ['signing', 'sign', 'signed', 'signature'], 0, "The preposition before is followed by a gerund when no subject is stated.", ['preposition plus gerund']],
+  ["The supplier apologized for ------- the wrong components.", ['shipping', 'ship', 'shipped', 'shipment'], 0, "Apologize for is followed by a gerund.", ['preposition plus gerund']],
+  ["The company postponed ------- its new mobile application.", ['releasing', 'release', 'released', 'release date'], 0, "Postpone is followed by a gerund.", ['verb complement']],
+  ["By ------- the form online, applicants receive immediate confirmation.", ['submitting', 'submit', 'submitted', 'submission'], 0, "By is followed by a gerund to describe a method.", ['method']],
+  ["The analyst kept ------- the figures until the totals matched.", ['checking', 'check', 'checked', 'checklist'], 0, "Keep is followed by a gerund for a continuing action.", ['verb complement']]
+])
+
+export const vocabularySeeds = buildCategorySeeds('vocabulary', [
+  ["The warehouse manager ordered additional ------- before the holiday sales period.", ['inventory', 'revenue', 'vacancy', 'itinerary'], 0, "Inventory means goods held for sale; revenue is income, vacancy is an open position, and itinerary is a travel plan.", ['inventory']],
+  ["Applicants must meet all minimum ------- listed in the job posting.", ['qualifications', 'transactions', 'subscriptions', 'destinations'], 0, "Qualifications are required skills or experience; the other words refer to payments, memberships, or places.", ['recruiting']],
+  ["The airline issued a full ------- after canceling the flight.", ['refund', 'forecast', 'permit', 'agenda'], 0, "A refund is money returned to a customer; a forecast predicts, a permit authorizes, and an agenda lists meeting topics.", ['customer service']],
+  ["The marketing team conducted a customer ------- to learn about buying preferences.", ['survey', 'invoice', 'shipment', 'warranty'], 0, "A survey collects opinions; an invoice requests payment, a shipment is transported goods, and a warranty is a guarantee.", ['research']],
+  ["Please attach the original ------- when submitting a travel expense claim.", ['receipt', 'brochure', 'certificate', 'catalog'], 0, "A receipt proves payment; the other documents advertise, certify, or list products.", ['expenses']],
+  ["The technician identified a software ------- that caused the system to freeze.", ['defect', 'dividend', 'tenant', 'quota'], 0, "A defect is a fault; dividend is a shareholder payment, tenant is an occupant, and quota is a required amount.", ['technology']],
+  ["The company opened a new ------- in Taichung to serve central Taiwan.", ['branch', 'balance', 'benefit', 'bargain'], 0, "A branch is a local office; balance, benefit, and bargain do not mean an operating location.", ['operations']],
+  ["Strong consumer ------- led the factory to increase production.", ['demand', 'permission', 'absence', 'complaint'], 0, "Demand means customers' desire for a product; the other options mean authorization, nonattendance, or dissatisfaction.", ['economics']],
+  ["The landlord renewed the office ------- for another three years.", ['lease', 'fare', 'fine', 'grant'], 0, "A lease is a rental agreement; fare is a travel charge, fine is a penalty, and grant is awarded funding.", ['real estate']],
+  ["The board approved the capital ------- for new manufacturing equipment.", ['expenditure', 'attendance', 'correspondence', 'merchandise'], 0, "Expenditure means money spent; the other choices mean presence, communication, or goods.", ['finance']],
+  ["The courier provided a tracking number for the international -------.", ['shipment', 'seminar', 'vacancy', 'estimate'], 0, "A shipment is goods being transported; the other options are an event, an open job, or an approximation.", ['logistics']],
+  ["Our insurance policy provides ------- against damage caused by flooding.", ['coverage', 'circulation', 'occupation', 'recognition'], 0, "Coverage is protection under insurance; the other words refer to distribution, employment, or acknowledgment.", ['insurance']],
+  ["The supplier sent a price ------- valid through the end of the month.", ['quotation', 'qualification', 'questionnaire', 'reservation'], 0, "A quotation states a proposed price; the other choices concern credentials, survey questions, or a booking.", ['procurement']],
+  ["Employees receive a transportation ------- in addition to their salary.", ['allowance', 'appliance', 'appearance', 'attendance'], 0, "An allowance is money provided for a purpose; the other choices mean a device, outward look, or presence.", ['benefits']],
+  ["The hotel confirmed our room ------- by email.", ['reservation', 'renovation', 'regulation', 'reputation'], 0, "A reservation is a booking; renovation is repair work, regulation is a rule, and reputation is public opinion.", ['travel']],
+  ["The factory increased its production ------- by installing faster equipment.", ['capacity', 'casualty', 'certainty', 'courtesy'], 0, "Capacity is the maximum output possible; the other choices mean an injured person, confidence, or politeness.", ['production']],
+  ["The consultant's ------- helped management reduce unnecessary expenses.", ['recommendation', 'reimbursement', 'recruitment', 'replacement'], 0, "A recommendation is professional advice; the other choices mean repayment, hiring, or substitution.", ['consulting']],
+  ["Please review the meeting ------- before suggesting additional topics.", ['agenda', 'edition', 'facility', 'identity'], 0, "An agenda lists meeting topics; the other choices mean a version, a building/resource, or who someone is.", ['meetings']],
+  ["The manufacturer recalled the product as a safety ------- after several incidents.", ['precaution', 'promotion', 'profession', 'prediction'], 0, "A precaution is an action taken to prevent harm; the other choices concern marketing, careers, or forecasts.", ['safety']],
+  ["The bank requires additional ------- before approving a large business loan.", ['collateral', 'colleague', 'catalog', 'commute'], 0, "Collateral is property pledged for a loan; the other choices mean a coworker, product list, or trip to work.", ['banking']]
+])
+
+export const businessCollocationSeeds = buildCategorySeeds('business_collocation', [
+  ["The two firms expect to ------- an agreement by the end of the week.", ['reach', 'arrive', 'touch', 'catch'], 0, "Reach an agreement is the standard collocation; arrive, touch, and catch do not combine with agreement in this meaning.", ['agreement']],
+  ["Management will ------- a decision after reviewing the cost analysis.", ['make', 'do', 'set', 'perform'], 0, "Make a decision is the correct collocation; do, set, and perform are not used with decision here.", ['decision']],
+  ["The new advertising campaign is expected to ------- sales.", ['boost', 'lift up', 'grow up', 'raise up'], 0, "Boost sales is natural business English; the other phrasal forms do not collocate with sales in this structure.", ['sales']],
+  ["Please ------- attention to the revised payment terms.", ['pay', 'spend', 'give out', 'settle'], 0, "Pay attention is fixed; spend, give out, and settle cannot replace pay in this expression.", ['attention']],
+  ["The company plans to ------- a new product line in September.", ['launch', 'depart', 'release out', 'start up with'], 0, "Launch a product line is the standard phrase; the other choices do not form the required product-introduction collocation.", ['product launch']],
+  ["Our team must ------- the deadline despite the supplier delay.", ['meet', 'visit', 'touch', 'arrive'], 0, "Meet a deadline means finish on time; visit, touch, and arrive do not collocate with deadline.", ['deadline']],
+  ["The finance department will ------- an audit of travel expenses.", ['conduct', 'drive', 'play', 'operate'], 0, "Conduct an audit is standard; drive, play, and operate do not take audit as their object in this meaning.", ['audit']],
+  ["The retailer decided to ------- a complaint with the delivery company.", ['file', 'store', 'save', 'place down'], 0, "File a complaint means formally submit it; the other verbs do not express that legal or administrative action.", ['complaint']],
+  ["The manager asked us to ------- minutes during the committee meeting.", ['take', 'bring', 'carry', 'hold'], 0, "Take minutes means record a meeting; bring, carry, and hold do not form this expression.", ['meeting']],
+  ["The factory must ------- costs without reducing product quality.", ['cut', 'slice', 'break', 'drop off'], 0, "Cut costs is the established business collocation; the other choices are not natural with costs here.", ['costs']],
+  ["The training program will help employees ------- experience with the new system.", ['gain', 'win', 'earn up', 'collect up'], 0, "Gain experience is standard; win, earn up, and collect up do not collocate naturally with experience.", ['experience']],
+  ["The board voted to ------- the proposal at yesterday's meeting.", ['approve', 'allow of', 'agree on to', 'permit of'], 0, "Approve a proposal is the correct transitive construction; the other forms are ungrammatical collocations.", ['proposal']],
+  ["The supplier offered to ------- the damaged goods at no charge.", ['replace', 'exchange with', 'switch of', 'change over of'], 0, "Replace the goods is the natural transitive phrase; the other options require different structures or are incorrect.", ['replacement']],
+  ["The company hopes to ------- its market share in Europe.", ['increase', 'rise', 'grow up', 'enlarge up'], 0, "Increase market share is standard; rise is intransitive and the other phrasal forms are unnatural.", ['market share']],
+  ["Please ------- a reservation before visiting the research facility.", ['make', 'do', 'build', 'create up'], 0, "Make a reservation is fixed; do, build, and create up do not form this booking expression.", ['reservation']],
+  ["The new director will ------- responsibility for the regional offices.", ['assume', 'consume', 'resume of', 'presume of'], 0, "Assume responsibility means take it on; the other verbs do not express this collocation.", ['responsibility']],
+  ["The parties agreed to ------- negotiations after a two-week pause.", ['resume', 'repeat again', 'restore back', 'return over'], 0, "Resume negotiations is concise and standard; the other options are redundant or do not collocate.", ['negotiation']],
+  ["The updated software may ------- a risk to older devices.", ['pose', 'put', 'stand', 'place up'], 0, "Pose a risk is the established collocation; put, stand, and place up cannot replace pose.", ['risk']],
+  ["The company will ------- a survey to measure employee engagement.", ['carry out', 'carry over', 'bring up', 'take off'], 0, "Carry out a survey means conduct it; the other phrasal verbs have unrelated meanings.", ['survey']],
+  ["We need to ------- a budget for the upcoming trade show.", ['set', 'put on', 'lay up', 'stand'], 0, "Set a budget means establish one; the other verbs do not form the required financial collocation.", ['budget']]
+])
+
+export const usageSeeds = [
+  ...prepositionSeeds,
+  ...pronounSeeds,
+  ...participleSeeds,
+  ...infinitiveSeeds,
+  ...gerundSeeds,
+  ...vocabularySeeds,
+  ...businessCollocationSeeds
+]

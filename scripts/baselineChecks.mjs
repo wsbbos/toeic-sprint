@@ -73,8 +73,8 @@ export async function inspectBaseline() {
     .filter((check) => !check.exists)
     .map((check) => `Missing required baseline file: ${check.relativePath}`);
 
-  if (part5QuestionBank.length < 20) {
-    failures.push(`Part 5 baseline fell below 20 questions: ${part5QuestionBank.length}`);
+  if (part5QuestionBank.length < 300) {
+    failures.push(`Part 5 production bank fell below 300 questions: ${part5QuestionBank.length}`);
   }
   if (part7QuestionCount < 30) {
     failures.push(`Part 7 baseline fell below 30 questions: ${part7QuestionCount}`);
