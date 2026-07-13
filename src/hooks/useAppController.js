@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { normalizeUserProfile } from '../data/userProfile';
+import { createGuestProfile, normalizeUserProfile } from '../data/userProfile';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import {
   fetchCloudUser,
@@ -111,6 +111,7 @@ export function useAppController() {
     setCurrentSession(session);
 
     if (!session) {
+      if (event === 'INITIAL_SESSION' && currentUser?.isGuest) return;
       if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
         clearLocalSession();
       }
@@ -158,7 +159,7 @@ export function useAppController() {
     } catch (error) {
       await exposeSyncError(error);
     }
-  }, [clearLocalSession, exposeSyncError, handleStaleSession, syncPublicStatsSafely]);
+  }, [clearLocalSession, currentUser?.isGuest, exposeSyncError, handleStaleSession, syncPublicStatsSafely]);
 
   const sessionStatus = useSupabaseSession({
     client: supabase,
@@ -192,6 +193,15 @@ export function useAppController() {
     await syncWithCloud(updated);
     return updated;
   }, [currentUser, syncWithCloud]);
+
+  const handleGuestLogin = useCallback(() => {
+    const guest = createGuestProfile();
+    setCurrentUser(guest);
+    setCurrentSession(null);
+    saveCachedUser(undefined, guest);
+    setSyncStatus('synced');
+    setCurrentPage('home');
+  }, []);
 
   const handleLoginSuccess = useCallback((session, customUsername) => (
     handleSessionChange(session, 'SIGNED_IN', customUsername)
@@ -334,6 +344,7 @@ export function useAppController() {
     onAnswerSubmitted: handleAnswerSubmitted,
     onClearData: handleClearData,
     onDeleteAccount: handleDeleteAccount,
+    onGuestLogin: handleGuestLogin,
     onLoginSuccess: handleLoginSuccess,
     onManualSync: handleManualSync,
     onMockExamSubmitted: handleMockExamSubmitted,
@@ -351,6 +362,7 @@ export function useAppController() {
     handleAnswerSubmitted,
     handleClearData,
     handleDeleteAccount,
+    handleGuestLogin,
     handleLoginSuccess,
     handleManualSync,
     handleMockExamSubmitted,

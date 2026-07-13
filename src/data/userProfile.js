@@ -43,6 +43,10 @@ export function createDefaultUserProfile(overrides = {}) {
   };
 }
 
+export function createGuestProfile(overrides = {}) {
+  return createDefaultUserProfile({ id: 'guest-local', username: '訪客學員', isGuest: true, ...overrides });
+}
+
 export function normalizeUserProfile(user = {}) {
   return createDefaultUserProfile(user && typeof user === 'object' ? user : {});
 }

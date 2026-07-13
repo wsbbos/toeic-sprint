@@ -1,10 +1,10 @@
 import ActiveMockTest from '../pages/ActiveMockTest';
+import AuthGateway from './AuthGateway';
 import Dashboard from '../pages/Dashboard';
 import Friends from '../pages/Friends';
 import Home from '../pages/Home';
 import LearningInsightsPanel from './LearningInsightsPanel';
 import '../styles/insights.css';
-import Login from '../pages/Login';
 import MockTest from '../pages/MockTest';
 import Onboarding from '../pages/Onboarding';
 import PracticeCenter from '../pages/PracticeCenter';
@@ -30,7 +30,7 @@ export default function AppRoutes({
   actions,
 }) {
   if (!currentUser) {
-    return <Login onLoginSuccess={actions.onLoginSuccess} />;
+    return <AuthGateway onLoginSuccess={actions.onLoginSuccess} onGuestLogin={actions.onGuestLogin} />;
   }
 
   switch (currentPage) {

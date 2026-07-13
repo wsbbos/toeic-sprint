@@ -2,16 +2,11 @@ import AppLoadingState from './components/AppLoadingState';
 import AppRoutes from './components/AppRoutes';
 import LocalImportModal from './components/LocalImportModal';
 import Navbar from './components/Navbar';
-import SupabaseSetupScreen from './components/SupabaseSetupScreen';
 import { useAppController } from './hooks/useAppController';
-import { getSupabaseDebugInfo, isSupabaseConfigured } from './lib/supabase';
 
 export default function App() {
   const app = useAppController();
 
-  if (!isSupabaseConfigured) {
-    return <SupabaseSetupScreen debugInfo={getSupabaseDebugInfo()} />;
-  }
 
   if (app.sessionStatus === 'loading' && !app.currentUser) {
     return <AppLoadingState />;
