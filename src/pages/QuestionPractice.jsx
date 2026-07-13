@@ -12,7 +12,7 @@ import { extractAudioTranscript, isSpeechSupported, speakText, stopSpeaking } fr
 
 const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 
-export default function QuestionPractice({ setCurrentPage, practiceFilter, onAnswerSubmitted, questions = [] }) {
+export default function QuestionPractice({ currentUser, setCurrentPage, practiceFilter, onAnswerSubmitted, onToggleFavorite, questions = [] }) {
   const questionById = useMemo(() => new Map(questions.map((question) => [question.id, question])), [questions])
   const [session, setSession] = useState(() => {
     const draft = loadPracticeDraft()
@@ -30,6 +30,7 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
   const activeQuestions = useMemo(() => session.questionIds.map((id) => questionById.get(id)).filter(Boolean), [questionById, session.questionIds])
   const currentQuestion = activeQuestions[session.currentIndex]
   const selectedChoice = currentQuestion ? session.answers[currentQuestion.id] || '' : ''
+  const isFavorite = currentQuestion ? (currentUser?.favorites || []).some((item) => item.questionId === currentQuestion.id) : false
   const duration = Number(session.config.durationSeconds) || 0
   const remaining = duration ? Math.max(0, duration - elapsedSeconds) : null
 
@@ -96,7 +97,7 @@ export default function QuestionPractice({ setCurrentPage, practiceFilter, onAns
       <header className="practice-toolbar"><button className="btn btn-outline btn-sm" onClick={leave}>離開並保存</button><span>{remaining === null ? `已用 ${formatTime(elapsedSeconds)}` : `剩餘 ${formatTime(remaining)}`}</span><span>{session.currentIndex + 1} / {activeQuestions.length}</span></header>
       <div className="progress-bar-container" aria-label={`進度 ${progress}%`}><div className="progress-bar-fill" style={{ width: `${progress}%` }} /></div>
       <article className="card question-card">
-        <div className="flex justify-between align-center"><span className="badge badge-new">Part {currentQuestion.part}</span><button className={`btn btn-sm ${session.markedQuestionIds.includes(currentQuestion.id) ? 'btn-accent' : 'btn-outline'}`} onClick={() => setSession((current) => toggleMarkedQuestion(current, currentQuestion.id))}>{session.markedQuestionIds.includes(currentQuestion.id) ? '已標記' : '標記題目'}</button></div>
+        <div className="flex justify-between align-center"><span className="badge badge-new">Part {currentQuestion.part}</span><div className="flex gap-2"><button className={`btn btn-sm ${isFavorite ? 'btn-accent' : 'btn-outline'}`} onClick={() => onToggleFavorite?.(currentQuestion)}>{isFavorite ? '已收藏' : '收藏'}</button><button className={`btn btn-sm ${session.markedQuestionIds.includes(currentQuestion.id) ? 'btn-accent' : 'btn-outline'}`} onClick={() => setSession((current) => toggleMarkedQuestion(current, currentQuestion.id))}>{session.markedQuestionIds.includes(currentQuestion.id) ? '已標記' : '標記題目'}</button></div></div>
         {currentQuestion.passage && <div className="question-passage">{currentQuestion.passage}</div>}
         {imageUrl && <img className="question-image" src={imageUrl} alt="TOEIC Part 1 題目圖片" />}
         {isListening && <button className="btn btn-outline" disabled={!isSpeechSupported()} onClick={() => { if (isPlaying) { stopSpeaking(); setIsPlaying(false) } else { setIsPlaying(true); speakText(currentQuestion.audioText || currentQuestion.transcript || extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false)) } }}>{isPlaying ? '停止播放' : '播放聽力題目'}</button>}

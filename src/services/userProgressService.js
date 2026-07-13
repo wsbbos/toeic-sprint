@@ -1,4 +1,5 @@
 import { normalizeUserProfile } from '../data/userProfile.js';
+import { calculateStudyStreak, updateReviewSchedule } from './learningInsightsService.js';
 
 export const WRONG_STATUS = Object.freeze({
   UNLEARNED: '\u672A\u7406\u89E3',
@@ -27,9 +28,6 @@ const getOrCreateDailyRecord = (user, now) => {
     };
     user.dailyRecords.push(record);
   }
-  if (user.progress.streakDays === 0) {
-    user.progress.streakDays = 1;
-  }
   return record;
 };
 
@@ -49,6 +47,7 @@ export function recordPracticeAnswer(
     if (existing) {
       existing.wrongCount = (existing.wrongCount || 1) + 1;
       existing.status = WRONG_STATUS.UNLEARNED;
+      Object.assign(existing, updateReviewSchedule(existing, false, now));
       existing.userAnswer = userAnswer;
       existing.lastAnsweredAt = now.toISOString();
     } else {
@@ -69,13 +68,20 @@ export function recordPracticeAnswer(
         createdAt: now.toISOString(),
         lastAnsweredAt: now.toISOString(),
         lastReviewedAt: null,
+        nextReviewAt: new Date(now.getTime() + 86400000).toISOString(),
+        reviewLevel: 0,
+        mastery: 0,
       });
     }
   }
 
   const todayRecord = getOrCreateDailyRecord(next, now);
   todayRecord.questionsAnswered += 1;
+  todayRecord.correctAnswers = (todayRecord.correctAnswers || 0) + (isCorrect ? 1 : 0);
+  todayRecord.wrongAnswers = (todayRecord.wrongAnswers || 0) + (isCorrect ? 0 : 1);
   todayRecord.studyMinutes += 1;
+  next.progress.totalStudyMinutes += 1;
+  next.progress.streakDays = calculateStudyStreak(next.dailyRecords, now);
   next.practiceHistory.push({
     questionId: question.id,
     part: question.part,
@@ -196,6 +202,7 @@ export function recordRetake(user, questionId, isCorrect, now = new Date()) {
   const next = cloneProfile(user);
   const item = next.wrongBook.find((entry) => entry.questionId === questionId);
   if (item) {
+    Object.assign(item, updateReviewSchedule(item, isCorrect, now));
     item.reviewCount = (item.reviewCount || 0) + 1;
     item.lastReviewedAt = now.toISOString();
     if (isCorrect) {
@@ -210,6 +217,17 @@ export function recordRetake(user, questionId, isCorrect, now = new Date()) {
   todayRecord.questionsAnswered += 1;
   todayRecord.studyMinutes += 1;
   todayRecord.mistakesReviewed += 1;
+  todayRecord.correctAnswers = (todayRecord.correctAnswers || 0) + (isCorrect ? 1 : 0);
+  todayRecord.wrongAnswers = (todayRecord.wrongAnswers || 0) + (isCorrect ? 0 : 1);
+  next.progress.totalStudyMinutes += 1;
+  next.progress.streakDays = calculateStudyStreak(next.dailyRecords, now);
+  return next;
+}
+
+export function toggleFavorite(user, question) {
+  const next = cloneProfile(user);
+  const exists = next.favorites.some((item) => item.questionId === question.id);
+  next.favorites = exists ? next.favorites.filter((item) => item.questionId !== question.id) : [...next.favorites, { questionId: question.id, question: question.question, part: question.part, category: question.category || '', addedAt: new Date().toISOString() }];
   return next;
 }
 

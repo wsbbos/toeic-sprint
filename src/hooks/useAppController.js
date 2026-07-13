@@ -23,6 +23,7 @@ import {
   recordRetake,
   removeWrongQuestion,
   resetLearningData,
+  toggleFavorite,
   updateVocabularyStatus,
   updateWrongReason,
   updateWrongStatus,
@@ -297,6 +298,10 @@ export function useAppController() {
     updateActiveUser((user) => updateVocabularyStatus(user, wordId, status))
   ), [updateActiveUser]);
 
+  const handleToggleFavorite = useCallback((question) => (
+    updateActiveUser((user) => toggleFavorite(user, question))
+  ), [updateActiveUser]);
+
   const handleUpdateWrongReason = useCallback((questionId, reason) => (
     updateActiveUser((user) => updateWrongReason(user, questionId, reason))
   ), [updateActiveUser]);
@@ -336,6 +341,7 @@ export function useAppController() {
     onRetakeCompleted: handleRetakeCompleted,
     onSaveGoals: handleSaveGoals,
     onStartRetakeSession: handleStartRetakeSession,
+    onToggleFavorite: handleToggleFavorite,
     onUpdateWrongReason: handleUpdateWrongReason,
     onUpdateWrongStatus: handleUpdateWrongStatus,
     onWordStatusChanged: handleWordStatusChanged,
@@ -352,6 +358,7 @@ export function useAppController() {
     handleRetakeCompleted,
     handleSaveGoals,
     handleStartRetakeSession,
+    handleToggleFavorite,
     handleUpdateWrongReason,
     handleUpdateWrongStatus,
     handleWordStatusChanged,

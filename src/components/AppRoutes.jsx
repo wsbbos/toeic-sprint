@@ -2,6 +2,8 @@ import ActiveMockTest from '../pages/ActiveMockTest';
 import Dashboard from '../pages/Dashboard';
 import Friends from '../pages/Friends';
 import Home from '../pages/Home';
+import LearningInsightsPanel from './LearningInsightsPanel';
+import '../styles/insights.css';
 import Login from '../pages/Login';
 import MockTest from '../pages/MockTest';
 import Onboarding from '../pages/Onboarding';
@@ -36,12 +38,10 @@ export default function AppRoutes({
       return <Onboarding currentUser={currentUser} onSaveGoals={actions.onSaveGoals} />;
     case 'dashboard':
       return (
-        <Dashboard
-          currentUser={currentUser}
-          setCurrentPage={actions.setCurrentPage}
-          todayRecord={todayRecord}
-          setPracticeFilter={actions.setPracticeFilter}
-        />
+        <>
+          <Dashboard currentUser={currentUser} setCurrentPage={actions.setCurrentPage} todayRecord={todayRecord} setPracticeFilter={actions.setPracticeFilter} />
+          <LearningInsightsPanel currentUser={currentUser} setCurrentPage={actions.setCurrentPage} setPracticeFilter={actions.setPracticeFilter} onStartRetakeSession={actions.onStartRetakeSession} />
+        </>
       );
     case 'practice-center':
       return (
@@ -57,6 +57,7 @@ export default function AppRoutes({
           setCurrentPage={actions.setCurrentPage}
           practiceFilter={practiceFilter}
           onAnswerSubmitted={actions.onAnswerSubmitted}
+          onToggleFavorite={actions.onToggleFavorite}
           questions={questionsData}
         />
       );
