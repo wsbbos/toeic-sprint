@@ -57,7 +57,7 @@ export default function RetakePractice({ setCurrentPage, retakeList = [], onReta
   if (retakeList.length === 0) return null;
 
   return (
-    <div className="practice-container">
+    <div data-testid="retake-practice" className="practice-container">
       <div className="flex justify-between align-center" style={{ marginBottom: '1.5rem' }}>
         <button className="btn btn-outline btn-sm" onClick={() => setCurrentPage('wrong-book')}>
           ✕ 結束重練

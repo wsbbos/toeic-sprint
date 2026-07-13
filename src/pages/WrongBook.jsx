@@ -45,7 +45,7 @@ export default function WrongBook({ currentUser, onUpdateReason, onUpdateStatus,
   const masteredPercent = totalWrong > 0 ? Math.round((masteredCount / totalWrong) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div data-testid="wrong-book" className="flex flex-col gap-3">
       {/* Upper Panel */}
       <div className="card flex justify-between align-center flex-col md:flex-row gap-3" style={{ borderLeft: '5px solid var(--danger)' }}>
         <div>
@@ -156,6 +156,7 @@ export default function WrongBook({ currentUser, onUpdateReason, onUpdateStatus,
         <button 
           className="btn btn-primary" 
           disabled={filteredBook.length === 0}
+          data-testid="retake-all"
           onClick={handleRetakeAll}
           style={{ width: '100%', maxWidth: '280px', marginTop: '0.5rem' }}
         >

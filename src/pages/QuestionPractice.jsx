@@ -77,7 +77,7 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
 
   if (result) {
     return (
-      <main className="practice-result" aria-labelledby="result-title">
+      <main data-testid="practice-result" className="practice-result" aria-labelledby="result-title">
         <section className="card result-hero"><span className="badge badge-mastered">Completed</span><h1 id="result-title">練習結果</h1>
           <div className="result-metrics"><div><strong>{result.accuracy}%</strong><span>正確率</span></div><div><strong>{result.correctCount}/{result.totalQuestions}</strong><span>答對題數</span></div><div><strong>{formatTime(result.elapsedSeconds)}</strong><span>作答時間</span></div></div>
         </section>
@@ -93,7 +93,7 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
   const progress = Math.round(((session.currentIndex + 1) / activeQuestions.length) * 100)
 
   return (
-    <main className="practice-container" aria-labelledby="question-title">
+    <main data-testid="question-practice" className="practice-container" aria-labelledby="question-title">
       <header className="practice-toolbar"><button className="btn btn-outline btn-sm" onClick={leave}>離開並保存</button><span>{remaining === null ? `已用 ${formatTime(elapsedSeconds)}` : `剩餘 ${formatTime(remaining)}`}</span><span>{session.currentIndex + 1} / {activeQuestions.length}</span></header>
       <div className="progress-bar-container" aria-label={`進度 ${progress}%`}><div className="progress-bar-fill" style={{ width: `${progress}%` }} /></div>
       <article className="card question-card">
@@ -103,7 +103,7 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
         {isListening && <button className="btn btn-outline" disabled={!isSpeechSupported()} onClick={() => { if (isPlaying) { stopSpeaking(); setIsPlaying(false) } else { setIsPlaying(true); speakText(currentQuestion.audioText || currentQuestion.transcript || extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false)) } }}>{isPlaying ? '停止播放' : '播放聽力題目'}</button>}
         <h1 id="question-title">{currentQuestion.question}</h1>
         <div className="choice-container" role="radiogroup" aria-label="答案選項">{Object.entries(currentQuestion.choices || {}).map(([key, value]) => <button key={key} role="radio" aria-checked={selectedChoice === key} className={`choice-btn ${selectedChoice === key ? 'selected' : ''}`} onClick={() => setSession((current) => setSessionAnswer(current, currentQuestion.id, key))}><span className="choice-letter">{key}</span><span>{value}</span></button>)}</div>
-        <nav className="practice-navigation" aria-label="題目導覽"><button className="btn btn-outline" disabled={session.currentIndex === 0} onClick={() => setSession((current) => setSessionCurrentIndex(current, current.currentIndex - 1))}>上一題</button><button className="btn btn-outline" disabled={session.currentIndex === activeQuestions.length - 1} onClick={() => setSession((current) => setSessionCurrentIndex(current, current.currentIndex + 1))}>下一題</button><button className="btn btn-primary" onClick={() => finish(false)}>確認交卷</button></nav>
+        <nav className="practice-navigation" aria-label="題目導覽"><button className="btn btn-outline" disabled={session.currentIndex === 0} onClick={() => setSession((current) => setSessionCurrentIndex(current, current.currentIndex - 1))}>上一題</button><button data-testid="next-question" className="btn btn-outline" disabled={session.currentIndex === activeQuestions.length - 1} onClick={() => setSession((current) => setSessionCurrentIndex(current, current.currentIndex + 1))}>下一題</button><button data-testid="submit-practice" className="btn btn-primary" onClick={() => finish(false)}>確認交卷</button></nav>
       </article>
     </main>
   )

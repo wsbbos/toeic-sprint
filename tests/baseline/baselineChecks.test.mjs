@@ -18,5 +18,5 @@ test('baseline reports the current modularization and question-bank metrics', as
 
   assert.ok(report.appLineCount < 100);
   assert.deepEqual(report.part5AnswerDistribution, { A: 75, B: 75, C: 75, D: 75 });
-  assert.equal(report.hasAutomatedTestDependencies, false);
+  assert.equal(report.hasAutomatedTestDependencies, true);
 });

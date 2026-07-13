@@ -32,7 +32,7 @@ export default function PracticeCenter({ setCurrentPage, setPracticeFilter }) {
   })
 
   return (
-    <main className="flex flex-col gap-3" aria-labelledby="practice-title">
+    <main data-testid="practice-center" className="flex flex-col gap-3" aria-labelledby="practice-title">
       <header>
         <h1 id="practice-title" style={{ fontSize: '1.8rem', marginBottom: '0.35rem' }}>練習中心</h1>
         <p style={{ color: 'var(--text-sub)' }}>從 300 題 Part 5 題庫建立可恢復的個人練習，或進入 Part 7 閱讀練習。</p>
@@ -45,7 +45,7 @@ export default function PracticeCenter({ setCurrentPage, setPracticeFilter }) {
           <p style={{ color: 'var(--text-sub)' }}>隨機抽題，適合每日短時間維持手感。</p>
           <div className="flex gap-2" style={{ marginTop: '1rem', flexWrap: 'wrap' }}>
             {[10, 20].map((quickCount) => (
-              <button key={quickCount} className="btn btn-primary btn-sm" onClick={() => start({ type: 'part5', mode: 'quick', count: quickCount })}>
+              <button key={quickCount} data-testid={`quick-${quickCount}`} className="btn btn-primary btn-sm" onClick={() => start({ type: 'part5', mode: 'quick', count: quickCount })}>
                 {quickCount} 題
               </button>
             ))}
