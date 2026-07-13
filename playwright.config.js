@@ -1,11 +1,20 @@
+import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
+
+const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL
+const baseURL = externalBaseURL || 'http://127.0.0.1:4174'
 
 export default defineConfig({
   testDir: './tests/e2e', timeout: 30000, fullyParallel: false, retries: 1,
-  use: { baseURL: 'http://127.0.0.1:4174', trace: 'retain-on-failure', video: 'off' },
-  webServer: { command: 'npm run dev -- --host 127.0.0.1 --port 4174', url: 'http://127.0.0.1:4174', reuseExistingServer: true, timeout: 120000 },
+  use: { baseURL, trace: 'retain-on-failure', video: 'off' },
+  webServer: externalBaseURL ? undefined : {
+    command: 'npm run dev -- --host 127.0.0.1 --port 4174',
+    url: baseURL,
+    reuseExistingServer: true,
+    timeout: 120000,
+  },
   projects: [
     { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chromium', use: { ...devices['Pixel 5'] } }
-  ]
+    { name: 'mobile-chromium', use: { ...devices['Pixel 5'] } },
+  ],
 })

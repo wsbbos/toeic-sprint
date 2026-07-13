@@ -9,4 +9,5 @@ test('PWA manifest and service worker expose an installable local-first shell', 
   assert.ok(manifest.icons.some((icon) => icon.purpose.includes('maskable')))
   assert.match(worker, /url\.origin !== self\.location\.origin/)
   assert.match(worker, /caches\.match\('\/'\)/)
+  assert.match(worker, /await cache\.put/)
 })

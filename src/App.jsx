@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import AppLoadingState from './components/AppLoadingState';
 import AppRoutes from './components/AppRoutes';
 import LocalImportModal from './components/LocalImportModal';
@@ -25,18 +26,20 @@ export default function App() {
       />
 
       <main className="main-content">
-        <AppRoutes
-          currentPage={app.currentPage}
-          currentUser={app.currentUser}
-          currentSession={app.currentSession}
-          practiceFilter={app.practiceFilter}
-          activeMockResult={app.activeMockResult}
-          retakeList={app.retakeList}
-          todayRecord={app.todayRecord}
-          syncStatus={app.syncStatus}
-          syncError={app.syncError}
-          actions={app.actions}
-        />
+        <Suspense fallback={<AppLoadingState contained message="正在載入頁面…" />}>
+          <AppRoutes
+            currentPage={app.currentPage}
+            currentUser={app.currentUser}
+            currentSession={app.currentSession}
+            practiceFilter={app.practiceFilter}
+            activeMockResult={app.activeMockResult}
+            retakeList={app.retakeList}
+            todayRecord={app.todayRecord}
+            syncStatus={app.syncStatus}
+            syncError={app.syncError}
+            actions={app.actions}
+          />
+        </Suspense>
       </main>
 
       {app.showImportModal && (

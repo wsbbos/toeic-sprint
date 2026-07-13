@@ -16,7 +16,8 @@
     "test:node": "npm run test:baseline && npm run test:unit",
     "test:component": "vitest run",
     "test:e2e": "playwright test",
-    "verify:ci": "npm run validate:questions && npm test && npm run lint && npm run build"
+    "verify:ci": "npm run validate:questions && npm test && npm run lint && npm run build",
+    "audit:deps": "npm audit --audit-level=high"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
@@ -37,7 +38,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
-    "vite": "^8.0.12",
+    "vite": "^8.1.4",
     "vitest": "^4.1.10"
   }
 }

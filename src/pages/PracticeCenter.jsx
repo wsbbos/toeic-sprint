@@ -65,7 +65,7 @@ export default function PracticeCenter({ setCurrentPage, setPracticeFilter }) {
           <span className="badge badge-mastered">Part 7</span>
           <h2 style={{ margin: '0.8rem 0 0.4rem' }}>閱讀理解</h2>
           <p style={{ color: 'var(--text-sub)' }}>保留既有 Part 7 題庫與文章閱讀流程。</p>
-          <button className="btn btn-outline" style={{ marginTop: '1rem', width: '100%' }} onClick={() => start({ type: 'part7', mode: 'reading', count: 30 })}>
+          <button data-testid="start-part7" className="btn btn-outline" style={{ marginTop: '1rem', width: '100%' }} onClick={() => start({ type: 'part7', mode: 'reading', count: 30 })}>
             開始 Part 7
           </button>
         </article>

@@ -36,4 +36,12 @@
 - Existing page IDs and Navbar navigation are unchanged.
 - Part 7 stays inside the unified `questionsData` adapter and is not mixed into Part 5 source data.
 - Existing Supabase table names remain `profiles`, `user_data`, and `user_public_stats`.
-- Guest mode and offline fallback are added in later phases on top of the same repository/service boundaries.
+- Guest mode and offline fallback use the same repository/service boundaries and remain available when Supabase is absent or unavailable.
+
+
+## Production loading boundary
+
+- AppRoutes.jsx lazy-loads page modules behind the shell-level React Suspense fallback.
+- Route adapters load the unified question bank and vocabulary only when their feature is opened.
+- Vite emits stable cache groups for React, Supabase, and Part 5 question data.
+- Part 5 validation remains a Node/CI concern; runtime imports only the validated production bank.

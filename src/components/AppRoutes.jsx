@@ -1,21 +1,21 @@
-import ActiveMockTest from '../pages/ActiveMockTest';
+import { lazy } from 'react';
 import AuthGateway from './AuthGateway';
-import Dashboard from '../pages/Dashboard';
-import Friends from '../pages/Friends';
-import Home from '../pages/Home';
-import LearningInsightsPanel from './LearningInsightsPanel';
 import '../styles/insights.css';
-import MockTest from '../pages/MockTest';
-import Onboarding from '../pages/Onboarding';
-import PracticeCenter from '../pages/PracticeCenter';
-import QuestionPractice from '../pages/QuestionPractice';
-import Result from '../pages/Result';
-import RetakePractice from '../pages/RetakePractice';
-import Settings from '../pages/Settings';
-import Vocabulary from '../pages/Vocabulary';
-import WrongBook from '../pages/WrongBook';
-import { questionsData } from '../data/questions';
-import { vocabularyData } from '../data/vocabulary';
+
+const ActiveMockTest = lazy(() => import('../pages/ActiveMockTestRoute.jsx'));
+const Dashboard = lazy(() => import('../pages/Dashboard.jsx'));
+const Friends = lazy(() => import('../pages/Friends.jsx'));
+const Home = lazy(() => import('../pages/Home.jsx'));
+const LearningInsightsPanel = lazy(() => import('./LearningInsightsPanel.jsx'));
+const MockTest = lazy(() => import('../pages/MockTest.jsx'));
+const Onboarding = lazy(() => import('../pages/Onboarding.jsx'));
+const PracticeCenter = lazy(() => import('../pages/PracticeCenter.jsx'));
+const QuestionPractice = lazy(() => import('../pages/QuestionPracticeRoute.jsx'));
+const Result = lazy(() => import('../pages/Result.jsx'));
+const RetakePractice = lazy(() => import('../pages/RetakePractice.jsx'));
+const Settings = lazy(() => import('../pages/Settings.jsx'));
+const Vocabulary = lazy(() => import('../pages/VocabularyRoute.jsx'));
+const WrongBook = lazy(() => import('../pages/WrongBook.jsx'));
 
 export default function AppRoutes({
   currentPage,
@@ -58,7 +58,6 @@ export default function AppRoutes({
           practiceFilter={practiceFilter}
           onAnswerSubmitted={actions.onAnswerSubmitted}
           onToggleFavorite={actions.onToggleFavorite}
-          questions={questionsData}
         />
       );
     case 'vocabulary':
@@ -66,7 +65,6 @@ export default function AppRoutes({
         <Vocabulary
           currentUser={currentUser}
           onWordStatusChanged={actions.onWordStatusChanged}
-          vocabulary={vocabularyData}
         />
       );
     case 'mock-test':
@@ -77,7 +75,6 @@ export default function AppRoutes({
           currentUser={currentUser}
           setCurrentPage={actions.setCurrentPage}
           onMockExamSubmitted={actions.onMockExamSubmitted}
-          questions={questionsData}
         />
       );
     case 'result':
