@@ -1,0 +1,26 @@
+.practice-config-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.practice-config-grid label { display: flex; flex-direction: column; gap: .45rem; font-weight: 700; }
+.practice-config-grid input, .practice-config-grid select { min-height: 44px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: .65rem .75rem; background: var(--bg-card); color: var(--text-main); }
+.practice-config-grid .practice-checkbox { flex-direction: row; align-items: center; align-self: end; min-height: 44px; }
+.practice-toolbar, .practice-navigation { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.practice-navigation { margin: 2rem 0 0; }
+.question-card { padding: 2rem; }
+.question-card h1 { font-size: 1.2rem; line-height: 1.55; margin: 1.5rem 0; }
+.question-passage { white-space: pre-wrap; max-height: 360px; overflow: auto; padding: 1.25rem; margin-top: 1.25rem; border-radius: var(--radius-md); background: var(--bg-main); line-height: 1.7; }
+.question-image { width: 100%; max-height: 360px; object-fit: contain; margin: 1rem 0; border-radius: var(--radius-md); }
+.practice-result { display: flex; flex-direction: column; gap: 1rem; }
+.result-hero { text-align: center; }
+.result-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.25rem; }
+.result-metrics div { display: flex; flex-direction: column; gap: .35rem; }
+.result-metrics strong { color: var(--primary); font-size: 1.7rem; }
+.category-results { display: grid; gap: .6rem; margin-top: 1rem; }
+.category-results div { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--border-color); }
+.answer-correct { color: var(--success); font-weight: 700; }
+.answer-wrong { color: var(--danger); font-weight: 700; }
+.empty-state { text-align: center; padding: 3rem; display: grid; justify-items: center; gap: 1rem; }
+
+@media (max-width: 760px) {
+  .practice-config-grid, .result-metrics { grid-template-columns: 1fr; }
+  .question-card { padding: 1.15rem; }
+  .practice-navigation .btn { flex: 1 1 40%; min-height: 44px; }
+}

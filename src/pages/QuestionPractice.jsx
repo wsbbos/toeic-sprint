@@ -1,390 +1,109 @@
-// src/pages/QuestionPractice.jsx
-import { useState, useEffect } from 'react';
-import { speakText, stopSpeaking, extractAudioTranscript, isSpeechSupported } from '../utils/speech';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { clearPracticeDraft, loadPracticeDraft, savePracticeDraft } from '../services/practiceDraftRepository.js'
+import {
+  createPracticeSession,
+  selectPracticeQuestions,
+  setSessionAnswer,
+  setSessionCurrentIndex,
+  submitPracticeSession,
+  toggleMarkedQuestion
+} from '../services/practiceSessionService.js'
+import { extractAudioTranscript, isSpeechSupported, speakText, stopSpeaking } from '../utils/speech.js'
+
+const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 
 export default function QuestionPractice({ setCurrentPage, practiceFilter, onAnswerSubmitted, questions = [] }) {
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [selectedChoice, setSelectedChoice] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [seconds, setSeconds] = useState(0);
-  const [sessionResults, setSessionResults] = useState([]);
-  const [focusMode, setFocusMode] = useState(false); // Focus Mode Toggle
-  const [isPlaying, setIsPlaying] = useState(false);
+  const questionById = useMemo(() => new Map(questions.map((question) => [question.id, question])), [questions])
+  const [session, setSession] = useState(() => {
+    const draft = loadPracticeDraft()
+    const requestedConfig = practiceFilter || { type: 'part5', count: 10 }
+    const draftMatchesConfig = ['type', 'mode', 'category', 'difficulty', 'timed'].every((key) => (draft?.config?.[key] || null) === (requestedConfig[key] || null))
+    const draftIsUsable = draftMatchesConfig && draft?.questionIds.every((id) => questions.some((question) => question.id === id))
+    if (draftIsUsable) return draft
+    const selected = selectPracticeQuestions(questions, practiceFilter || { type: 'part5', count: 10 })
+    return createPracticeSession(selected, practiceFilter || { type: 'part5', count: 10 })
+  })
+  const [result, setResult] = useState(session.result)
+  const [elapsedSeconds, setElapsedSeconds] = useState(() => Math.max(0, Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000)))
+  const [isPlaying, setIsPlaying] = useState(false)
 
-  // Timer logic
+  const activeQuestions = useMemo(() => session.questionIds.map((id) => questionById.get(id)).filter(Boolean), [questionById, session.questionIds])
+  const currentQuestion = activeQuestions[session.currentIndex]
+  const selectedChoice = currentQuestion ? session.answers[currentQuestion.id] || '' : ''
+  const duration = Number(session.config.durationSeconds) || 0
+  const remaining = duration ? Math.max(0, duration - elapsedSeconds) : null
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (session.status !== 'active') return undefined
+    savePracticeDraft(session)
+    return undefined
+  }, [session])
 
   useEffect(() => {
-    return () => stopSpeaking();
-  }, []);
+    if (session.status !== 'active') return undefined
+    const timer = setInterval(() => setElapsedSeconds(Math.max(0, Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000))), 1000)
+    return () => clearInterval(timer)
+  }, [session.startedAt, session.status])
 
-  const isPart5Practice = practiceFilter === '5' || practiceFilter?.type === 'part5';
-  const requestedPart5Count = isPart5Practice && typeof practiceFilter === 'object' ? practiceFilter.count : null;
-  const part5Candidates = questions.filter(q => q.part === 5);
-  const isListeningPractice = practiceFilter === 'listening' || practiceFilter?.type === 'listening';
-  const requestedListeningCount = isListeningPractice && typeof practiceFilter === 'object' ? practiceFilter.count : null;
-  const listeningCandidates = questions.filter(q => {
-    if (q.part < 1 || q.part > 4) return false;
-    if (q.part !== 1) return true;
-    return Boolean(q.imageUrl || q.image || q.photo);
-  });
+  useEffect(() => () => stopSpeaking(), [])
 
-  // Filter questions based on part/type. Part 1 without a photo is not a valid practice item.
-  const activeQuestions = (() => {
-    if (!practiceFilter) return questions;
-    if (isPart5Practice) {
-      return part5Candidates.slice(0, requestedPart5Count || part5Candidates.length);
-    }
-    if (practiceFilter === '7') return questions.filter(q => q.part === 7);
-    if (isListeningPractice) {
-      return listeningCandidates.slice(0, requestedListeningCount || listeningCandidates.length);
-    }
-    return questions;
-  })();
+  const finish = useCallback((automatic = false) => {
+    if (session.status !== 'active') return
+    const unanswered = session.questionIds.length - Object.keys(session.answers).length
+    if (!automatic && !window.confirm(`確定交卷嗎？尚有 ${unanswered} 題未作答。`)) return
+    const submitted = submitPracticeSession(session, questions)
+    submitted.result.outcomes.forEach((outcome) => {
+      if (outcome.question && outcome.userAnswer) onAnswerSubmitted?.(outcome.question, outcome.userAnswer, outcome.isCorrect)
+    })
+    setSession(submitted.session)
+    setResult(submitted.result)
+    clearPracticeDraft()
+  }, [onAnswerSubmitted, questions, session])
 
-  const listeningShortageMessage = isListeningPractice && requestedListeningCount && listeningCandidates.length < requestedListeningCount
-    ? `目前 Listening 題庫只有 ${listeningCandidates.length} 題，已使用全部可用題目`
-    : '';
+  useEffect(() => {
+    // Timer expiry is an external time event; submit once when the countdown reaches zero.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (remaining === 0 && session.status === 'active') finish(true)
+  }, [finish, remaining, session.status])
 
-  const part5ShortageMessage = isPart5Practice && requestedPart5Count && part5Candidates.length < requestedPart5Count
-    ? `目前 Part 5 題庫只有 ${part5Candidates.length} 題，已使用全部可用題目`
-    : '';
-
-  const currentQuestion = activeQuestions[currentIdx];
-  const isListeningQuestion = currentQuestion?.part >= 1 && currentQuestion?.part <= 4;
-  const isPartOneQuestion = currentQuestion?.part === 1;
-  const partOneImageUrl = currentQuestion?.imageUrl || currentQuestion?.image || currentQuestion?.photo || '';
-  const isPartOneMissingPhoto = isPartOneQuestion && !partOneImageUrl;
-  const questionWithoutTranscript = currentQuestion?.question?.replace(/\s*\[Audio transcript:\s*[^\]]+\]\s*/i, ' ').replace(/\s+/g, ' ').trim();
-  const displayedQuestionText = isPartOneQuestion
-    ? (partOneImageUrl ? 'Look at the photo and choose the best description.' : '此 Part 1 題目缺少圖片，請先補上圖片素材')
-    : (isListeningQuestion ? questionWithoutTranscript : currentQuestion?.question);
-
-  const handleSelect = (choice) => {
-    if (submitted) return;
-    setSelectedChoice(choice);
-  };
-
-  const handleSubmit = () => {
-    if (!selectedChoice || submitted) return;
-    setSubmitted(true);
-
-    const isCorrect = selectedChoice === currentQuestion.correctAnswer;
-    
-    // Call high level progress tracker
-    onAnswerSubmitted(currentQuestion, selectedChoice, isCorrect);
-
-    // Save locally to display at the end of session
-    setSessionResults(prev => [...prev, {
-      question: currentQuestion,
-      userAnswer: selectedChoice,
-      isCorrect
-    }]);
-  };
-
-  const handleNext = () => {
-    stopSpeaking();
-    setIsPlaying(false);
-    if (currentIdx + 1 < activeQuestions.length) {
-      setCurrentIdx(currentIdx + 1);
-      setSelectedChoice('');
-      setSubmitted(false);
-    } else {
-      // Completed all questions in list! Show summary dialog
-      const corrects = sessionResults.filter(r => r.isCorrect).length;
-      alert(`🎉 恭喜你！已完成本次練習。\n作答題量：${activeQuestions.length} 題\n答對題數：${corrects} 題\n正確率：${Math.round((corrects / activeQuestions.length) * 100)}%\n\n系統已自動將答錯題記錄至錯題本。`);
-      setCurrentPage('dashboard');
-    }
-  };
-
-  if (activeQuestions.length === 0) {
-    return (
-      <div className="practice-container card" style={{ textAlign: 'center', padding: '3rem' }}>
-        <h2>📭 目前該單元沒有題目</h2>
-        <p style={{ color: 'var(--text-sub)', marginTop: '0.5rem' }}>請返回練習中心選擇其他項目</p>
-        <button className="btn btn-primary" style={{ marginTop: '1.5rem' }} onClick={() => setCurrentPage('practice-center')}>
-          返回練習中心
-        </button>
-      </div>
-    );
+  const leave = () => {
+    if (window.confirm('離開後會保留目前答案，下次可繼續作答。')) setCurrentPage('practice-center')
   }
 
-  const progressPercent = Math.round(((currentIdx) / activeQuestions.length) * 100);
+  if (!currentQuestion && !result) {
+    return <section className="card empty-state"><h2>沒有符合條件的題目</h2><button className="btn btn-primary" onClick={() => setCurrentPage('practice-center')}>返回練習中心</button></section>
+  }
+
+  if (result) {
+    return (
+      <main className="practice-result" aria-labelledby="result-title">
+        <section className="card result-hero"><span className="badge badge-mastered">Completed</span><h1 id="result-title">練習結果</h1>
+          <div className="result-metrics"><div><strong>{result.accuracy}%</strong><span>正確率</span></div><div><strong>{result.correctCount}/{result.totalQuestions}</strong><span>答對題數</span></div><div><strong>{formatTime(result.elapsedSeconds)}</strong><span>作答時間</span></div></div>
+        </section>
+        <section className="card"><h2>分類表現</h2><div className="category-results">{Object.entries(result.categoryPerformance).map(([category, stats]) => <div key={category}><span>{category.replaceAll('_', ' ')}</span><strong>{stats.correct}/{stats.total} · {stats.accuracy}%</strong></div>)}</div></section>
+        <section className="flex flex-col gap-3" aria-label="逐題解析">{result.outcomes.map((outcome, index) => <article className="card" key={outcome.questionId}><h3>{index + 1}. {outcome.question?.question}</h3><p className={outcome.isCorrect ? 'answer-correct' : 'answer-wrong'}>你的答案：{outcome.userAnswer || '未作答'} / 正確答案：{outcome.correctAnswer}</p><p>{outcome.question?.explanation}</p></article>)}</section>
+        <button className="btn btn-primary" onClick={() => setCurrentPage('practice-center')}>返回練習中心</button>
+      </main>
+    )
+  }
+
+  const isListening = currentQuestion.part >= 1 && currentQuestion.part <= 4
+  const imageUrl = currentQuestion.imageUrl || currentQuestion.image || currentQuestion.photo
+  const progress = Math.round(((session.currentIndex + 1) / activeQuestions.length) * 100)
 
   return (
-    <div className="practice-container" style={{ maxWidth: focusMode ? '800px' : '700px', transition: 'max-width 0.4s ease' }}>
-      {/* Practice Header with Progress and Timer */}
-      <div className="flex justify-between align-center" style={{ marginBottom: '1.25rem' }}>
-        <button className="btn btn-outline btn-sm" onClick={() => {
-          if (confirm('確定要離開本次練習嗎？未完成的進度將不會計入日誌。')) {
-            setCurrentPage('practice-center');
-          }
-        }}>
-          ✕ 結束練習
-        </button>
-        
-        <button 
-          className={`btn btn-sm ${focusMode ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setFocusMode(prev => !prev)}
-          style={{ transition: 'all 0.3s ease' }}
-        >
-          {focusMode ? '👀 退出專注模式' : '🧘 啟動專注模式'}
-        </button>
-
-        <div style={{ fontWeight: 600, color: 'var(--primary)' }}>
-          ⏱️ 時間: {Math.floor(seconds / 60)} 分 {seconds % 60} 秒
-        </div>
-        <div style={{ fontWeight: 600, color: 'var(--text-sub)' }}>
-          題號: {currentIdx + 1} / {activeQuestions.length}
-        </div>
-      </div>
-
-      <div className="progress-bar-container" style={{ height: '6px', marginBottom: '2rem' }}>
-        <div className="progress-bar-fill" style={{ width: `${progressPercent}%`, background: 'var(--secondary)' }} />
-      </div>
-
-      {listeningShortageMessage && (
-        <div className="card" style={{ padding: '0.9rem 1rem', marginBottom: '1.25rem', color: 'var(--warning)', fontWeight: 700, fontSize: '0.9rem' }}>
-          {listeningShortageMessage}
-        </div>
-      )}
-      {part5ShortageMessage && (
-        <div className="card" style={{ padding: '0.9rem 1rem', marginBottom: '1.25rem', color: 'var(--warning)', fontWeight: 700, fontSize: '0.9rem' }}>
-          {part5ShortageMessage}
-        </div>
-      )}      {/* Main Question Card */}
-      <div className="card" style={{ 
-        padding: focusMode ? '3rem 4rem' : '2.5rem', 
-        border: focusMode ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-        boxShadow: focusMode ? 'var(--shadow-lg)' : 'var(--shadow-md)',
-        backgroundColor: focusMode ? 'hsl(220, 25%, 99%)' : 'var(--bg-card)',
-        transition: 'padding 0.4s ease, border 0.4s ease'
-      }}>
-        <div className="flex justify-between align-center" style={{ marginBottom: '1.25rem' }}>
-          <span className="badge badge-new" style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}>
-            Part {currentQuestion.part} - {currentQuestion.type || '精選'}
-          </span>
-          <span className={`badge ${currentQuestion.difficulty === 'Easy' ? 'badge-mastered' : currentQuestion.difficulty === 'Medium' ? 'badge-review' : 'badge-learning'}`}>
-            {currentQuestion.difficulty || 'Medium'}
-          </span>
-        </div>
-
-        {currentQuestion.passage && (
-          <div style={{ 
-            backgroundColor: 'hsl(220, 10%, 97%)', 
-            padding: '1.5rem', 
-            borderRadius: 'var(--radius-md)', 
-            border: '1px solid var(--border-color)',
-            marginBottom: '1.5rem',
-            maxHeight: focusMode ? '350px' : '260px',
-            overflowY: 'auto',
-            fontSize: focusMode ? '1.05rem' : '0.95rem',
-            lineHeight: '1.7',
-            whiteSpace: 'pre-wrap',
-            transition: 'all 0.4s ease'
-          }}>
-            <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: '0.5rem' }}>[閱讀短文 Passage]</strong>
-            {currentQuestion.passage}
-          </div>
-        )}
-
-        {isPartOneQuestion && partOneImageUrl && (
-          <div style={{
-            marginBottom: '1.5rem',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-md)',
-            overflow: 'hidden',
-            backgroundColor: '#ffffff'
-          }}>
-            <img
-              src={partOneImageUrl}
-              alt="TOEIC Part 1 prompt"
-              style={{ width: '100%', display: 'block', maxHeight: focusMode ? '420px' : '320px', objectFit: 'contain' }}
-            />
-          </div>
-        )}
-
-        {isPartOneMissingPhoto && (
-          <div style={{
-            padding: '1.25rem',
-            marginBottom: '1.5rem',
-            border: '1px solid var(--warning)',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'hsl(45, 100%, 96%)',
-            color: 'var(--text-main)',
-            lineHeight: '1.6'
-          }}>
-            <strong style={{ display: 'block', marginBottom: '0.35rem' }}>此 Part 1 題目缺少圖片，請先補上圖片素材</strong>
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-sub)' }}>
-              TOEIC Part 1 必須看照片選描述；作答前不會顯示 audio transcript，避免破壞練習效果。
-            </span>
-          </div>
-        )}
-
-        {/* Listening Mock Audio Control */}
-        {(currentQuestion.part >= 1 && currentQuestion.part <= 4 && !isPartOneMissingPhoto) && (
-          <div className="audio-player-mock" style={{ 
-            padding: '1.25rem', 
-            backgroundColor: 'var(--primary-light)', 
-            border: '1px dashed var(--primary)', 
-            borderRadius: 'var(--radius-md)', 
-            display: 'flex', 
-            flexDirection: 'column',
-            gap: '0.75rem', 
-            marginBottom: '1.5rem' 
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{ fontSize: '2rem', animation: isPlaying ? 'float 2s ease-in-out infinite' : 'none' }}>🗣️</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>{currentQuestion.isDemo ? 'Listening TTS 模擬語音 Demo' : 'Listening 音訊練習'}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: '600', marginTop: '0.25rem', lineHeight: '1.4' }}>
-                  ⚠️ 聲明：本功能採用瀏覽器語音合成（TTS）技術進行模擬，並非正式 TOEIC 聽力考試官方原檔音訊，僅供日常英聽語感輔助練習。
-                </div>
-              </div>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center', marginTop: '0.25rem' }}>
-              {isSpeechSupported() ? (
-                <>
-                  {isPlaying ? (
-                    <>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--primary)', marginRight: 'auto', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                        🔊 語音播放中...
-                      </span>
-                      <button className="btn btn-outline btn-sm" onClick={() => {
-                        stopSpeaking();
-                        setIsPlaying(false);
-                      }}>
-                        ⏹️ 停止播放
-                      </button>
-                      <button className="btn btn-primary btn-sm" onClick={() => {
-                        setIsPlaying(true);
-                        speakText(currentQuestion.audioText || currentQuestion.transcript || extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false));
-                      }}>
-                        🔄 重播
-                      </button>
-                    </>
-                  ) : (
-                    <button className="btn btn-primary btn-sm" onClick={() => {
-                      setIsPlaying(true);
-                      speakText(currentQuestion.audioText || currentQuestion.transcript || extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false));
-                    }}>
-                      🔊 播放模擬語音
-                    </button>
-                  )}
-                </>
-              ) : (
-                <span style={{ fontSize: '0.85rem', color: 'var(--danger)', fontWeight: 600 }}>您的瀏覽器暫時不支援 Web Speech API 語音合成。</span>
-              )}
-            </div>
-          </div>
-        )}
-
-        <h3 style={{ 
-          fontSize: focusMode ? '1.35rem' : '1.15rem', 
-          marginBottom: '1.75rem', 
-          fontWeight: 700, 
-          lineHeight: '1.5',
-          color: 'var(--text-main)',
-          transition: 'font-size 0.4s ease'
-        }}>
-          {displayedQuestionText}
-        </h3>
-
-        {!isPartOneMissingPhoto && (
-          <div className="choice-container" style={{ gap: focusMode ? '1rem' : '0.75rem' }}>
-          {Object.entries(currentQuestion.choices || {}).map(([key, value]) => {
-            let btnClass = 'choice-btn';
-            if (submitted) {
-              if (key === currentQuestion.correctAnswer) btnClass += ' correct';
-              else if (key === selectedChoice) btnClass += ' wrong';
-              else btnClass += ' disabled';
-            } else if (key === selectedChoice) {
-              btnClass += ' selected';
-            }
-
-            return (
-              <button 
-                key={key} 
-                className={btnClass}
-                onClick={() => handleSelect(key)}
-                disabled={submitted}
-                style={{ 
-                  padding: focusMode ? '1.25rem 1.5rem' : '1rem 1.25rem',
-                  fontSize: focusMode ? '1.05rem' : '0.95rem',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                <span className="choice-letter">{key}</span>
-                <span>{value}</span>
-              </button>
-            );
-          })}
-          </div>
-        )}
-
-        {!isPartOneMissingPhoto && submitted && (
-          <div className={`explanation-box ${selectedChoice === currentQuestion.correctAnswer ? '' : 'incorrect'}`} style={{ marginTop: '2rem' }}>
-            <h4 style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '0.5rem', color: selectedChoice === currentQuestion.correctAnswer ? 'var(--success)' : 'var(--danger)' }}>
-              {selectedChoice === currentQuestion.correctAnswer ? '🎉 恭喜你！答對了！' : '❌ 答錯了，再接再厲！'}
-            </h4>
-            <p style={{ fontSize: '0.9rem', marginBottom: '0.75rem', fontWeight: 600 }}>
-              正確答案是： <span className="badge badge-mastered" style={{ fontSize: '0.85rem' }}>{currentQuestion.correctAnswer}</span>
-            </p>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '0.75rem', lineHeight: '1.6' }}>
-              <strong>中文解析：</strong> {currentQuestion.explanation}
-            </div>
-            {currentQuestion.grammarPoint && (
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-main)', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '0.75rem', marginTop: '0.75rem', lineHeight: '1.6' }}>
-                <strong>Grammar Point:</strong> {currentQuestion.grammarPoint}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="flex justify-between" style={{ marginTop: '2.5rem', gap: '0.75rem' }}>
-          {isPartOneMissingPhoto ? (
-            <>
-              <button
-                className="btn btn-outline"
-                style={{ flex: 1, padding: '1rem', fontSize: '1rem' }}
-                onClick={() => setCurrentPage('practice-center')}
-              >
-                返回練習中心
-              </button>
-              <button
-                className="btn btn-accent"
-                style={{ flex: 1, padding: '1rem', fontSize: '1rem' }}
-                onClick={handleNext}
-              >
-                {currentIdx + 1 === activeQuestions.length ? '結束練習' : '跳過此題'}
-              </button>
-            </>
-          ) : !submitted ? (
-            <button 
-              className="btn btn-primary" 
-              style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }}
-              onClick={handleSubmit}
-              disabled={!selectedChoice}
-            >
-              提交作答
-            </button>
-          ) : (
-            <button 
-              className="btn btn-accent" 
-              style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }}
-              onClick={handleNext}
-            >
-              {currentIdx + 1 === activeQuestions.length ? '🎉 完成本次練習' : '下一題 ➔'}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+    <main className="practice-container" aria-labelledby="question-title">
+      <header className="practice-toolbar"><button className="btn btn-outline btn-sm" onClick={leave}>離開並保存</button><span>{remaining === null ? `已用 ${formatTime(elapsedSeconds)}` : `剩餘 ${formatTime(remaining)}`}</span><span>{session.currentIndex + 1} / {activeQuestions.length}</span></header>
+      <div className="progress-bar-container" aria-label={`進度 ${progress}%`}><div className="progress-bar-fill" style={{ width: `${progress}%` }} /></div>
+      <article className="card question-card">
+        <div className="flex justify-between align-center"><span className="badge badge-new">Part {currentQuestion.part}</span><button className={`btn btn-sm ${session.markedQuestionIds.includes(currentQuestion.id) ? 'btn-accent' : 'btn-outline'}`} onClick={() => setSession((current) => toggleMarkedQuestion(current, currentQuestion.id))}>{session.markedQuestionIds.includes(currentQuestion.id) ? '已標記' : '標記題目'}</button></div>
+        {currentQuestion.passage && <div className="question-passage">{currentQuestion.passage}</div>}
+        {imageUrl && <img className="question-image" src={imageUrl} alt="TOEIC Part 1 題目圖片" />}
+        {isListening && <button className="btn btn-outline" disabled={!isSpeechSupported()} onClick={() => { if (isPlaying) { stopSpeaking(); setIsPlaying(false) } else { setIsPlaying(true); speakText(currentQuestion.audioText || currentQuestion.transcript || extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false)) } }}>{isPlaying ? '停止播放' : '播放聽力題目'}</button>}
+        <h1 id="question-title">{currentQuestion.question}</h1>
+        <div className="choice-container" role="radiogroup" aria-label="答案選項">{Object.entries(currentQuestion.choices || {}).map(([key, value]) => <button key={key} role="radio" aria-checked={selectedChoice === key} className={`choice-btn ${selectedChoice === key ? 'selected' : ''}`} onClick={() => setSession((current) => setSessionAnswer(current, currentQuestion.id, key))}><span className="choice-letter">{key}</span><span>{value}</span></button>)}</div>
+        <nav className="practice-navigation" aria-label="題目導覽"><button className="btn btn-outline" disabled={session.currentIndex === 0} onClick={() => setSession((current) => setSessionCurrentIndex(current, current.currentIndex - 1))}>上一題</button><button className="btn btn-outline" disabled={session.currentIndex === activeQuestions.length - 1} onClick={() => setSession((current) => setSessionCurrentIndex(current, current.currentIndex + 1))}>下一題</button><button className="btn btn-primary" onClick={() => finish(false)}>確認交卷</button></nav>
+      </article>
+    </main>
+  )
 }
