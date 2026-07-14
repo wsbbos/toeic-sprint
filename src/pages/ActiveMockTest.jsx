@@ -55,6 +55,7 @@ export default function ActiveMockTest({ setCurrentPage, onMockExamSubmitted, qu
           part: q.part,
           question: q.question,
           passage: q.passage || '',
+          document: q.document || null,
           choices: q.choices,
           userAnswer: userAns || '無作答',
           correctAnswer: q.correctAnswer,

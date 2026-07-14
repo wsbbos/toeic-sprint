@@ -1,3 +1,5 @@
+import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx';
+
 
 export default function Result({ setCurrentPage, activeMockResult }) {
   if (!activeMockResult) {
@@ -129,17 +131,13 @@ export default function Result({ setCurrentPage, activeMockResult }) {
           <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>❌ 本次測驗錯題摘要 ({wrongCount})</h2>
           <div className="flex flex-col gap-2">
             {wrongList.map((item, idx) => (
-              <div key={idx} style={{ 
-                padding: '0.75rem', 
-                borderBottom: idx + 1 < wrongList.length ? '1px solid var(--border-color)' : 'none',
-                fontSize: '0.9rem'
-              }}>
-                <div className="flex justify-between align-center" style={{ marginBottom: '0.25rem' }}>
-                  <span className="badge badge-new">Part {item.part}</span>
-                  <span style={{ color: 'var(--danger)', fontWeight: 600 }}>你的答案: {item.userAnswer} | 正確答案: {item.correctAnswer}</span>
-                </div>
-                <div style={{ color: 'var(--text-main)', fontWeight: 500 }}>{item.question}</div>
-              </div>
+              <ExplanationPanel
+                key={item.questionId || idx}
+                question={item}
+                userAnswer={item.userAnswer}
+                correctAnswer={item.correctAnswer}
+                index={idx}
+              />
             ))}
           </div>
         </div>

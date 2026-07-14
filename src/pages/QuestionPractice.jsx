@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
+import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx'
 import { clearPracticeDraft, loadPracticeDraft, savePracticeDraft } from '../services/practiceDraftRepository.js'
 import {
   createPracticeSession,
@@ -83,7 +84,17 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
           <div className="result-metrics"><div><strong>{result.accuracy}%</strong><span>正確率</span></div><div><strong>{result.correctCount}/{result.totalQuestions}</strong><span>答對題數</span></div><div><strong>{formatTime(result.elapsedSeconds)}</strong><span>作答時間</span></div></div>
         </section>
         <section className="card"><h2>分類表現</h2><div className="category-results">{Object.entries(result.categoryPerformance).map(([category, stats]) => <div key={category}><span>{category.replaceAll('_', ' ')}</span><strong>{stats.correct}/{stats.total} · {stats.accuracy}%</strong></div>)}</div></section>
-        <section className="flex flex-col gap-3" aria-label="逐題解析">{result.outcomes.map((outcome, index) => <article className="card" key={outcome.questionId}><h3>{index + 1}. {outcome.question?.question}</h3><p className={outcome.isCorrect ? 'answer-correct' : 'answer-wrong'}>你的答案：{outcome.userAnswer || '未作答'} / 正確答案：{outcome.correctAnswer}</p><p>{outcome.question?.explanation}</p></article>)}</section>
+        <section className="flex flex-col gap-3" aria-label="逐題解析">
+          {result.outcomes.map((outcome, index) => (
+            <ExplanationPanel
+              key={outcome.questionId}
+              question={outcome.question}
+              userAnswer={outcome.userAnswer}
+              correctAnswer={outcome.correctAnswer}
+              index={index}
+            />
+          ))}
+        </section>
         <button className="btn btn-primary" onClick={() => setCurrentPage('practice-center')}>返回練習中心</button>
       </main>
     )

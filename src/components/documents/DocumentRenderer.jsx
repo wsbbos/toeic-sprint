@@ -14,6 +14,21 @@ const TEMPLATE_LABELS = Object.freeze({
   table_chart: 'Table / chart',
 })
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+function HighlightText({ text, terms = [] }) {
+  const value = String(text || '')
+  const normalizedTerms = [...new Set(terms.map((term) => String(term || '').trim()).filter(Boolean))]
+    .sort((left, right) => right.length - left.length)
+  if (!normalizedTerms.length) return value
+
+  const matcher = new RegExp(`(${normalizedTerms.map(escapeRegExp).join('|')})`, 'gi')
+  const termSet = new Set(normalizedTerms.map((term) => term.toLocaleLowerCase()))
+  return value.split(matcher).map((part, index) => termSet.has(part.toLocaleLowerCase())
+    ? <mark className="document-clue" key={`${part}-${index}`}>{part}</mark>
+    : part)
+}
+
 function DocumentGlyph({ type }) {
   const isConversation = type === 'email' || type === 'message_thread'
   const isData = ['invoice', 'schedule', 'table_chart'].includes(type)
@@ -31,70 +46,70 @@ function DocumentGlyph({ type }) {
   )
 }
 
-function DocumentFields({ fields, formStyle = false }) {
+function DocumentFields({ fields, formStyle = false, highlightTerms }) {
   if (!fields.length) return null
   return (
     <dl className={formStyle ? 'document-fields document-form-fields' : 'document-fields'}>
       {fields.map((field) => (
         <div key={`${field.label}-${field.value}`}>
           <dt>{field.label}</dt>
-          <dd>{field.value}</dd>
+          <dd><HighlightText text={field.value} terms={highlightTerms} /></dd>
         </div>
       ))}
     </dl>
   )
 }
 
-function DocumentBody({ body }) {
+function DocumentBody({ body, highlightTerms }) {
   if (!body) return null
   return (
     <div className="document-body">
-      {body.split(/\n{2,}/).map((paragraph, index) => <p key={`${paragraph.slice(0, 18)}-${index}`}>{paragraph}</p>)}
+      {body.split(/\n{2,}/).map((paragraph, index) => <p key={`${paragraph.slice(0, 18)}-${index}`}><HighlightText text={paragraph} terms={highlightTerms} /></p>)}
     </div>
   )
 }
 
-function DocumentCallouts({ callouts }) {
+function DocumentCallouts({ callouts, highlightTerms }) {
   if (!callouts.length) return null
-  return <ul className="document-callouts">{callouts.map((item) => <li key={item}>{item}</li>)}</ul>
+  return <ul className="document-callouts">{callouts.map((item) => <li key={item}><HighlightText text={item} terms={highlightTerms} /></li>)}</ul>
 }
 
-function DocumentMetrics({ metrics }) {
+function DocumentMetrics({ metrics, highlightTerms }) {
   if (!metrics.length) return null
   return (
     <div className="document-metrics">
-      {metrics.map((metric) => <div key={metric.label}><strong>{metric.value}</strong><span>{metric.label}</span></div>)}
+      {metrics.map((metric) => <div key={metric.label}><strong><HighlightText text={metric.value} terms={highlightTerms} /></strong><span><HighlightText text={metric.label} terms={highlightTerms} /></span></div>)}
     </div>
   )
 }
 
-function DocumentTable({ model }) {
+function DocumentTable({ model, highlightTerms }) {
   if (!model.rows.length) return null
   return (
     <div className="document-table-scroll" tabIndex="0" aria-label={`${model.title} table region`}>
       <table aria-label={model.title}>
-        {model.columns.length > 0 && <thead><tr>{model.columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead>}
-        <tbody>{model.rows.map((row, rowIndex) => <tr key={`${row.join('-')}-${rowIndex}`}>{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`}>{cell}</td>)}</tr>)}</tbody>
+        {model.columns.length > 0 && <thead><tr>{model.columns.map((column) => <th key={column} scope="col"><HighlightText text={column} terms={highlightTerms} /></th>)}</tr></thead>}
+        <tbody>{model.rows.map((row, rowIndex) => <tr key={`${row.join('-')}-${rowIndex}`}>{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`}><HighlightText text={cell} terms={highlightTerms} /></td>)}</tr>)}</tbody>
       </table>
     </div>
   )
 }
 
-function DocumentThread({ messages }) {
+function DocumentThread({ messages, highlightTerms }) {
   if (!messages.length) return null
   return (
     <ol className="document-thread">
       {messages.map((message, index) => (
         <li key={`${message.sender}-${message.time}-${index}`}>
           <div className="document-avatar" aria-hidden="true">{String(message.sender || '?').slice(0, 1)}</div>
-          <div><header><strong>{message.sender || 'Team member'}</strong><time>{message.time || ''}</time></header><p>{message.body}</p></div>
+          <div><header><strong>{message.sender || 'Team member'}</strong><time>{message.time || ''}</time></header><p><HighlightText text={message.body} terms={highlightTerms} /></p></div>
         </li>
       ))}
     </ol>
   )
 }
 
-export default function DocumentRenderer({ passage = '', document = {}, compact = false }) {
+export default function DocumentRenderer({ passage = '', document = {}, compact = false, highlightTerms = [] }) {
   const model = createDocumentModel({ passage, document })
   const tableType = ['invoice', 'schedule', 'table_chart'].includes(model.type)
   const isThread = model.type === 'message_thread'
@@ -109,15 +124,15 @@ export default function DocumentRenderer({ passage = '', document = {}, compact 
     >
       <header className="document-heading">
         <div className="document-kind"><DocumentGlyph type={model.type} /><span>{model.eyebrow || TEMPLATE_LABELS[model.type]}</span></div>
-        <h2>{model.title}</h2>
+        <h2><HighlightText text={model.title} terms={highlightTerms} /></h2>
       </header>
 
-      <DocumentFields fields={model.fields} formStyle={isForm} />
-      <DocumentMetrics metrics={model.metrics} />
-      {tableType && <DocumentTable model={model} />}
-      {isThread && <DocumentThread messages={model.messages} />}
-      <DocumentBody body={model.body} />
-      <DocumentCallouts callouts={model.callouts} />
+      <DocumentFields fields={model.fields} formStyle={isForm} highlightTerms={highlightTerms} />
+      <DocumentMetrics metrics={model.metrics} highlightTerms={highlightTerms} />
+      {tableType && <DocumentTable model={model} highlightTerms={highlightTerms} />}
+      {isThread && <DocumentThread messages={model.messages} highlightTerms={highlightTerms} />}
+      <DocumentBody body={model.body} highlightTerms={highlightTerms} />
+      <DocumentCallouts callouts={model.callouts} highlightTerms={highlightTerms} />
 
       {model.attachment && <div className="document-attachment"><span aria-hidden="true">↳</span><span>{model.attachment}</span></div>}
       {model.action && <div className="document-action" aria-label={`Call to action: ${model.action}`}>{model.action}</div>}

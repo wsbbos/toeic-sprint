@@ -26,6 +26,8 @@ test('guest can answer and submit a Part 5 practice', async ({ page, isMobile })
   page.once('dialog', (dialog) => dialog.accept())
   await page.getByTestId('submit-practice').click()
   await expect(page.getByTestId('practice-result')).toBeVisible()
+  await expect(page.getByTestId('explanation-panel').first()).toBeVisible()
+  await expect(page.getByRole('list', { name: '選項比較' }).first()).toBeVisible()
 })
 
 test('mobile viewport has no page-level horizontal overflow', async ({ page, isMobile }) => {
@@ -44,6 +46,12 @@ test('Part 7 remains available as a separate reading flow', async ({ page, isMob
   const document = page.getByTestId('business-document')
   await expect(document).toBeVisible()
   await expect(document).toHaveAttribute('data-document-type', /email|memo|notice|advertisement|schedule|form|table_chart/)
+  await page.getByRole('radio').first().click()
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByTestId('submit-practice').click()
+  await expect(page.getByTestId('practice-result')).toBeVisible()
+  await expect(page.locator('.evidence-card').first()).toContainText('答案依據')
+  await expect(page.locator('mark.document-clue').first()).toBeVisible()
 })
 
 test('wrong answers can start a retake session', async ({ page, isMobile }) => {
