@@ -1,6 +1,6 @@
 import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx';
 import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx';
-import LearningVisual from '../components/visuals/LearningVisual.jsx';
+import VisualAsset from '../components/visuals/VisualAsset.jsx';
 
 
 export default function Result({ setCurrentPage, activeMockResult }) {
@@ -47,7 +47,7 @@ export default function Result({ setCurrentPage, activeMockResult }) {
   return (
     <div className="practice-container">
       <div className="card" style={{ textAlign: 'center', padding: '2.5rem', marginBottom: '1.5rem' }}>
-        <LearningVisual className="result-hero-visual" variant="result" size="medium" decorative />
+        <VisualAsset className="result-hero-visual" name="result" decorative />
         <h1 style={{ fontSize: '1.8rem', marginTop: '0.5rem', color: 'var(--success)' }}>模擬考試已完成！</h1>
         <p style={{ color: 'var(--text-sub)' }}>{mode} 結果與能力評估報告</p>
 

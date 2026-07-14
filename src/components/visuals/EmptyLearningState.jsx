@@ -1,4 +1,4 @@
-import LearningVisual from './LearningVisual.jsx'
+import VisualAsset from './VisualAsset.jsx'
 
 export default function EmptyLearningState({ variant = 'empty', title, description, actionLabel, onAction, compact = false }) {
   return (
@@ -8,7 +8,7 @@ export default function EmptyLearningState({ variant = 'empty', title, descripti
       data-testid="learning-empty-state"
       aria-live="polite"
     >
-      <LearningVisual variant={variant} size={compact ? 'small' : 'medium'} decorative />
+      <VisualAsset name={variant} decorative className={compact ? 'visual-empty-compact' : ''} />
       <div>
         <h2>{title}</h2>
         {description && <p>{description}</p>}

@@ -45,3 +45,12 @@
 - Route adapters load the unified question bank and vocabulary only when their feature is opened.
 - Vite emits stable cache groups for React, Supabase, and Part 5 question data.
 - Part 5 validation remains a Node/CI concern; runtime imports only the validated production bank.
+
+
+## Visual content boundary
+
+- Part 7 legacy passages enter a backward-compatible document model before rendering; Part 5 and Part 7 source banks remain separate.
+- Answer evidence is source-backed data, not presentation-only highlighting. Production tests require all 30 Part 7 quotes to exist in their passages.
+- Route-level pages use original standalone SVG assets through a manifest and lazy image component. Small icons remain inline SVG.
+- Standalone assets have fixed dimensions, CSS placeholders, an inline fallback, and service-worker cache coverage.
+- Visual implementation and extension rules are documented in [visual-content-system.md](visual-content-system.md).

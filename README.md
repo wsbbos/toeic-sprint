@@ -5,12 +5,12 @@ TOEIC Sprint 是一個 local-first 的 TOEIC 練習 MVP。核心流程不需登�
 ## 已完成的核心能力
 
 - Part 5：300 題、14 類題型、A/B/C/D 各 75 題，全部通過 schema 與內容分布驗證。
-- Part 7：保留既有 30 題閱讀題，資料來源與 Part 5 分離。
+- Part 7：保留既有 30 題閱讀題，提供 10 種真實商務文件版型與 30/30 題原文答案線索，資料仍與 Part 5 分離。
 - 練習模式：快速、自訂題數、分類、難度、計時與完整模擬。
 - 作答流程：上一題、下一題、標記、提交確認、重整恢復與防重複提交。
 - 學習系統：錯題本、收藏、重新作答、間隔複習、弱點分析、每日目標、連續天數與趨勢。
 - 資料策略：訪客模式完整可用；Supabase 未設定或失敗時安全降級至 local storage。
-- 體驗與品質：RWD、鍵盤焦點、離線狀態、PWA shell、Vitest、React Testing Library、Playwright 與 GitHub Actions。
+- 體驗與品質：原創 SVG 視覺系統、解析高亮、RWD、鍵盤焦點、lazy asset、離線快取、PWA、Vitest、React Testing Library、Playwright 與 GitHub Actions。
 
 任何 TOEIC 分數區間都只可視為非官方學習估算，不能當成正式成績預測。
 
@@ -35,6 +35,7 @@ npm.cmd run dev
 | `npm run build` | 建立壓縮、分割過的 production bundle |
 | `npm run preview` | 本機預覽 production build |
 | `npm run validate:questions` | 驗證 Part 5 schema、重複、答案、解析與分布 |
+| `npm run validate:visuals` | 驗證原創 SVG manifest、尺寸、大小、安全引用與 PWA 快取 |
 | `npm run test:node` | 執行 baseline 與 domain 單元測試 |
 | `npm run test:component` | 執行 Vitest / React Testing Library 測試 |
 | `npm run test:e2e` | 執行桌面與手機 Playwright 流程 |
@@ -53,19 +54,22 @@ npm.cmd run test:e2e
 
 ```text
 src/
-  components/   共用 UI、路由與系統狀態
+  assets/       視覺資產 manifest 與命名規則
+  components/   共用 UI、文件、解析、視覺與系統狀態
   pages/        頁面與延遲載入 route adapters
   hooks/        session 與 application controller
   services/     練習、進度、同步、驗證與儲存邏輯
   data/         Part 5、Part 7、單字與正式 schema
   utils/        錯誤遮罩、storage、語音等工具
+public/
+  assets/visuals/ 原創、可快取的 SVG 插圖
 supabase/
   migrations/   可重複套用的資料表、索引、約束與 RLS
 tests/
   baseline/ unit/ component/ e2e/
 ```
 
-頁面使用 `React.lazy` 延遲載入；Part 5 題庫、Supabase 與大型頁面會輸出為獨立 chunk，避免阻塞初始訪客入口。架構與資料流詳見 [docs/architecture.md](docs/architecture.md)。
+頁面使用 `React.lazy` 延遲載入；Part 5 題庫、Supabase 與大型頁面會輸出為獨立 chunk，避免阻塞初始訪客入口。架構與資料流詳見 [docs/architecture.md](docs/architecture.md)；文件 renderer、解析高亮與圖片資產規則詳見 [docs/visual-content-system.md](docs/visual-content-system.md)。
 
 ## Supabase 設定
 
@@ -99,7 +103,7 @@ npm.cmd run test:e2e
 ## 已知限制
 
 - 真實信箱註冊、驗證信與跨裝置同步需要外部 Supabase 測試專案，無法在無憑證的本機 CI 中端到端驗證。
-- PWA 目前提供 app shell 與同源 GET runtime cache，不包含背景同步或完整離線帳號功能。
+- PWA 提供 app shell、原創視覺 precache 與同源 GET runtime cache；仍不包含背景資料同步或完整離線帳號功能。
 - 分數區間是非官方學習估算；正式成績仍以 ETS TOEIC 測驗為準。
 - 上線前仍應用真實手機、螢幕閱讀器與 Vercel Preview 做人工驗收。
 

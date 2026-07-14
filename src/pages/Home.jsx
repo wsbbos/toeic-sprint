@@ -1,4 +1,5 @@
 import LearningVisual from '../components/visuals/LearningVisual.jsx';
+import VisualAsset from '../components/visuals/VisualAsset.jsx';
 
 // src/pages/Home.jsx
 
@@ -23,7 +24,7 @@ export default function Home({ currentUser, setCurrentPage }) {
         <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '30%', height: '30%', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', bottom: '-20%', right: '-20%', width: '40%', height: '40%', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
 
-        <LearningVisual className="home-hero-visual" variant="hero" size="large" tone="inverse" label="TOEIC Sprint 學習進度" />
+        <VisualAsset className="home-hero-visual" name="hero" alt="TOEIC Sprint 學習進度" priority />
         <h1 style={{ color: 'white', fontSize: '2.5rem', fontWeight: 800, marginBottom: '0.75rem', fontFamily: 'var(--font-display)' }}>
           TOEIC Sprint V1.3
         </h1>

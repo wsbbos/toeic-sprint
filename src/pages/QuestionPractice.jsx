@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
 import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx'
 import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx'
-import LearningVisual from '../components/visuals/LearningVisual.jsx'
+import VisualAsset from '../components/visuals/VisualAsset.jsx'
 import { clearPracticeDraft, loadPracticeDraft, savePracticeDraft } from '../services/practiceDraftRepository.js'
 import {
   createPracticeSession,
@@ -82,7 +82,7 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
   if (result) {
     return (
       <main data-testid="practice-result" className="practice-result" aria-labelledby="result-title">
-        <section className="card result-hero"><LearningVisual className="result-hero-visual" variant="result" size="medium" decorative /><span className="badge badge-mastered">Completed</span><h1 id="result-title">練習結果</h1>
+        <section className="card result-hero"><VisualAsset className="result-hero-visual" name="result" decorative /><span className="badge badge-mastered">Completed</span><h1 id="result-title">練習結果</h1>
           <div className="result-metrics"><div><strong>{result.accuracy}%</strong><span>正確率</span></div><div><strong>{result.correctCount}/{result.totalQuestions}</strong><span>答對題數</span></div><div><strong>{formatTime(result.elapsedSeconds)}</strong><span>作答時間</span></div></div>
         </section>
         <section className="card"><h2>分類表現</h2><div className="category-results">{Object.entries(result.categoryPerformance).map(([category, stats]) => <div key={category}><span>{category.replaceAll('_', ' ')}</span><strong>{stats.correct}/{stats.total} · {stats.accuracy}%</strong></div>)}</div></section>

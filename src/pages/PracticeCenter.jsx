@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import LearningVisual from '../components/visuals/LearningVisual.jsx'
+import VisualAsset from '../components/visuals/VisualAsset.jsx'
 import '../styles/practice.css'
 import { part5QuestionBank } from '../data/part5QuestionBank.js'
 import { PART5_CATEGORIES } from '../data/part5Schema.js'
@@ -37,7 +38,7 @@ export default function PracticeCenter({ setCurrentPage, setPracticeFilter }) {
       <header className="visual-page-header">
         <div><h1 id="practice-title" style={{ fontSize: '1.8rem', marginBottom: '0.35rem' }}>練習中心</h1>
         <p style={{ color: 'var(--text-sub)' }}>從 300 題 Part 5 題庫建立可恢復的個人練習，或進入 Part 7 閱讀練習。</p></div>
-        <LearningVisual variant="practice" size="medium" decorative />
+        <VisualAsset name="practice" decorative />
       </header>
 
       <section className="grid grid-cols-3 gap-3" aria-label="快速練習模式">

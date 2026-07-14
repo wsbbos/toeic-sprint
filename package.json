@@ -12,6 +12,7 @@
     "test:unit": "node --test \"tests/unit/*.test.mjs\"",
     "test": "npm run test:node && npm run test:component",
     "validate:questions": "node scripts/validate-questions.mjs",
+    "validate:visuals": "node --test \"tests/unit/visualAssets.test.mjs\" \"tests/unit/pwaVisualCache.test.mjs\"",
     "verify:baseline": "node scripts/verify-baseline.mjs && npm run verify:ci",
     "test:node": "npm run test:baseline && npm run test:unit",
     "test:component": "vitest run",

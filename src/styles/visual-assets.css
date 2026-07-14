@@ -1,0 +1,34 @@
+.visual-asset-shell {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: min(100%, 320px);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  isolation: isolate;
+}
+
+.visual-asset-shell img {
+  grid-area: 1 / 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: opacity .2s ease;
+}
+
+.visual-asset-shell.is-loading img { opacity: 0; }
+.visual-asset-shell.is-loaded img { opacity: 1; }
+.visual-asset-placeholder {
+  grid-area: 1 / 1;
+  align-self: stretch;
+  justify-self: stretch;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--primary) 5%, white) 20%, color-mix(in srgb, var(--primary) 11%, white) 36%, color-mix(in srgb, var(--primary) 5%, white) 52%);
+  background-size: 220% 100%;
+}
+.visual-asset-shell.is-loaded .visual-asset-placeholder { display: none; }
+.visual-asset-shell.is-error { min-height: 120px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .visual-asset-shell.is-loading .visual-asset-placeholder { animation: visual-placeholder 1.2s linear infinite; }
+  @keyframes visual-placeholder { to { background-position-x: -220%; } }
+}
