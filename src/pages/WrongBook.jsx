@@ -1,6 +1,7 @@
 // src/pages/WrongBook.jsx
 import { useState } from 'react';
 import WrongQuestionCard from '../components/WrongQuestionCard';
+import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx';
 
 export default function WrongBook({ currentUser, onUpdateReason, onUpdateStatus, onRemoveWrongQuestion, onStartRetakeSession }) {
   const [partFilter, setPartFilter] = useState('');
@@ -166,17 +167,13 @@ export default function WrongBook({ currentUser, onUpdateReason, onUpdateStatus,
 
       {/* Wrong List */}
       {filteredBook.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem', border: '1px dashed var(--border-color)', backgroundColor: 'transparent' }}>
-          <span style={{ fontSize: '3rem', display: 'block', animation: 'float 3s ease-in-out infinite' }}>🎉</span>
-          <h2 style={{ marginTop: '1rem', color: 'var(--text-main)', fontSize: '1.4rem' }}>
-            {totalWrong === 0 ? "你的錯題本目前完全是空的！" : "找不到符合篩選條件的錯題！"}
-          </h2>
-          <p style={{ color: 'var(--text-sub)', fontSize: '0.95rem', marginTop: '0.5rem', maxWidth: '480px', margin: '0.5rem auto 1.5rem' }}>
-            {totalWrong === 0 
-              ? "太棒了！這代表你的作答紀錄非常優秀，或者尚未答錯任何題目。繼續保持完美作答狀態！"
-              : "請嘗試變更上方的 Part 題型、錯誤原因或掌握度狀態篩選器，以便尋找你的錯題紀錄。"}
-          </p>
-        </div>
+        <EmptyLearningState
+          variant="review"
+          title={totalWrong === 0 ? '你的錯題本目前是空的' : '找不到符合篩選條件的錯題'}
+          description={totalWrong === 0
+            ? '完成練習後，答錯題目會自動進入這裡，並依複習時程安排下一次作答。'
+            : '請調整 Part、錯誤原因或掌握狀態篩選器，再查看其他錯題紀錄。'}
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {filteredBook.map((item) => (

@@ -1,15 +1,14 @@
 import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx';
+import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx';
+import LearningVisual from '../components/visuals/LearningVisual.jsx';
 
 
 export default function Result({ setCurrentPage, activeMockResult }) {
   if (!activeMockResult) {
     return (
-      <div className="practice-container card" style={{ textAlign: 'center', padding: '3rem' }}>
-        <h2>📭 沒有最近的模擬考紀錄</h2>
-        <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={() => setCurrentPage('dashboard')}>
-          返回儀表板
-        </button>
-      </div>
+      <main className="practice-container">
+        <EmptyLearningState variant="empty" title="沒有最近的模擬考紀錄" description="完成一次文字題 Mini Mock 後，這裡會顯示成績、弱點與逐題解析。" actionLabel="返回儀表板" onAction={() => setCurrentPage('dashboard')} />
+      </main>
     );
   }
 
@@ -48,7 +47,7 @@ export default function Result({ setCurrentPage, activeMockResult }) {
   return (
     <div className="practice-container">
       <div className="card" style={{ textAlign: 'center', padding: '2.5rem', marginBottom: '1.5rem' }}>
-        <span style={{ fontSize: '3rem' }}>🏆</span>
+        <LearningVisual className="result-hero-visual" variant="result" size="medium" decorative />
         <h1 style={{ fontSize: '1.8rem', marginTop: '0.5rem', color: 'var(--success)' }}>模擬考試已完成！</h1>
         <p style={{ color: 'var(--text-sub)' }}>{mode} 結果與能力評估報告</p>
 

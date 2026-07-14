@@ -17,15 +17,18 @@ test.afterEach(async ({ page }) => {
 
 test('guest can answer and submit a Part 5 practice', async ({ page, isMobile }) => {
   await page.getByTestId('guest-entry').click()
+  await expect(page.getByRole('img', { name: 'TOEIC Sprint 學習進度' })).toBeVisible()
   if (isMobile) await page.locator('.mobile-bottom-tabs .mobile-tab-item').nth(2).click()
   else await page.locator('a[href="#practice"]').first().click()
   await expect(page.getByTestId('practice-center')).toBeVisible()
+  await expect(page.locator('[data-visual="practice"]').first()).toBeVisible()
   await page.getByTestId('quick-10').click()
   await expect(page.getByTestId('question-practice')).toBeVisible()
   await page.getByRole('radio').first().click()
   page.once('dialog', (dialog) => dialog.accept())
   await page.getByTestId('submit-practice').click()
   await expect(page.getByTestId('practice-result')).toBeVisible()
+  await expect(page.locator('[data-visual="result"]')).toBeVisible()
   await expect(page.getByTestId('explanation-panel').first()).toBeVisible()
   await expect(page.getByRole('list', { name: '選項比較' }).first()).toBeVisible()
 })
@@ -68,4 +71,13 @@ test('wrong answers can start a retake session', async ({ page, isMobile }) => {
   await expect(page.getByTestId('wrong-book')).toBeVisible()
   await page.getByTestId('retake-all').click()
   await expect(page.getByTestId('retake-practice')).toBeVisible()
+})
+
+
+test('empty wrong book uses the shared review illustration', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop navigation covers the shared empty state')
+  await page.getByTestId('guest-entry').click()
+  await page.locator('a[href="#wrongbook"]').first().click()
+  await expect(page.getByTestId('learning-empty-state')).toBeVisible()
+  await expect(page.locator('[data-visual="review"]').last()).toBeVisible()
 })

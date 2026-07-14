@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
 import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx'
+import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx'
+import LearningVisual from '../components/visuals/LearningVisual.jsx'
 import { clearPracticeDraft, loadPracticeDraft, savePracticeDraft } from '../services/practiceDraftRepository.js'
 import {
   createPracticeSession,
@@ -74,13 +76,13 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
   }
 
   if (!currentQuestion && !result) {
-    return <section className="card empty-state"><h2>沒有符合條件的題目</h2><button className="btn btn-primary" onClick={() => setCurrentPage('practice-center')}>返回練習中心</button></section>
+    return <EmptyLearningState variant="empty" title="沒有符合條件的題目" description="目前題庫沒有符合這組篩選條件的題目，請返回練習中心調整題數、分類或難度。" actionLabel="返回練習中心" onAction={() => setCurrentPage('practice-center')} />
   }
 
   if (result) {
     return (
       <main data-testid="practice-result" className="practice-result" aria-labelledby="result-title">
-        <section className="card result-hero"><span className="badge badge-mastered">Completed</span><h1 id="result-title">練習結果</h1>
+        <section className="card result-hero"><LearningVisual className="result-hero-visual" variant="result" size="medium" decorative /><span className="badge badge-mastered">Completed</span><h1 id="result-title">練習結果</h1>
           <div className="result-metrics"><div><strong>{result.accuracy}%</strong><span>正確率</span></div><div><strong>{result.correctCount}/{result.totalQuestions}</strong><span>答對題數</span></div><div><strong>{formatTime(result.elapsedSeconds)}</strong><span>作答時間</span></div></div>
         </section>
         <section className="card"><h2>分類表現</h2><div className="category-results">{Object.entries(result.categoryPerformance).map(([category, stats]) => <div key={category}><span>{category.replaceAll('_', ' ')}</span><strong>{stats.correct}/{stats.total} · {stats.accuracy}%</strong></div>)}</div></section>

@@ -1,3 +1,5 @@
+import LearningVisual from '../components/visuals/LearningVisual.jsx';
+
 // src/pages/Home.jsx
 
 export default function Home({ currentUser, setCurrentPage }) {
@@ -21,7 +23,7 @@ export default function Home({ currentUser, setCurrentPage }) {
         <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '30%', height: '30%', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', bottom: '-20%', right: '-20%', width: '40%', height: '40%', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
 
-        <span style={{ fontSize: '3.5rem', display: 'block', animation: 'float 3s ease-in-out infinite' }}>🚀</span>
+        <LearningVisual className="home-hero-visual" variant="hero" size="large" tone="inverse" label="TOEIC Sprint 學習進度" />
         <h1 style={{ color: 'white', fontSize: '2.5rem', fontWeight: 800, marginBottom: '0.75rem', fontFamily: 'var(--font-display)' }}>
           TOEIC Sprint V1.3
         </h1>
@@ -36,7 +38,7 @@ export default function Home({ currentUser, setCurrentPage }) {
             style={{ padding: '0.85rem 2rem', fontSize: '1.05rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
             onClick={() => setCurrentPage('practice-center')}
           >
-            🎯 開始自主學習
+            開始自主學習
           </button>
           <button 
             type="button" 
@@ -50,7 +52,7 @@ export default function Home({ currentUser, setCurrentPage }) {
             }}
             onClick={() => setCurrentPage('dashboard')}
           >
-            📈 前往學習總覽
+            查看學習總覽
           </button>
         </div>
       </div>
@@ -79,7 +81,7 @@ export default function Home({ currentUser, setCurrentPage }) {
         </h2>
         <div className="grid grid-cols-3 gap-3">
           <div className="card flex flex-col gap-1">
-            <span style={{ fontSize: '1.8rem' }}>📖</span>
+            <LearningVisual variant="favorites" size="icon" decorative />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>核心單字卡</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
               精選 TOEIC 常考核心詞彙，支援雙面卡片翻轉記憶、不熟/熟練狀態標記。V1.3 翻面後支援美音發音功能，全面加深字彙聽感！
@@ -87,7 +89,7 @@ export default function Home({ currentUser, setCurrentPage }) {
           </div>
           
           <div className="card flex flex-col gap-1">
-            <span style={{ fontSize: '1.8rem' }}>✏️</span>
+            <LearningVisual variant="practice" size="icon" decorative />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>文法與閱讀練習</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
               提供完整的 Part 5 單字文法填空與 Part 7 閱讀理解訓練。支援即時批改解析與答錯題目自動收錄，助您精準查漏補缺。
@@ -95,7 +97,7 @@ export default function Home({ currentUser, setCurrentPage }) {
           </div>
 
           <div className="card flex flex-col gap-1">
-            <span style={{ fontSize: '1.8rem' }}>📓</span>
+            <LearningVisual variant="review" size="icon" decorative />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>錯題本弱點複習</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
               專屬您的個人錯題庫。答錯的題目會自動匯入，並支援錯誤原因歸類（單字不會、文法不懂、粗心等）與獨立錯題重練，攻克盲點。
@@ -103,7 +105,7 @@ export default function Home({ currentUser, setCurrentPage }) {
           </div>
 
           <div className="card flex flex-col gap-1">
-            <span style={{ fontSize: '1.8rem' }}>📝</span>
+            <LearningVisual variant="result" size="icon" decorative />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>文字題 Mini Mock</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
               為您提供 20 題極速模擬測驗，專注於 Part 5 與 Part 7 題型，不夾雜缺失圖片音檔的虛假功能，考後自動生成分數報告。
@@ -111,7 +113,7 @@ export default function Home({ currentUser, setCurrentPage }) {
           </div>
 
           <div className="card flex flex-col gap-1">
-            <span style={{ fontSize: '1.8rem' }}>📊</span>
+            <LearningVisual variant="weakness" size="icon" decorative />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>個人學習總覽</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
               全新 V1.3 大幅整合了原本冗餘的儀表板與統計頁面。將單字、題量、答題正確率、各 Part 佔比、考點弱點與歷史紀錄全面聚合展現。
@@ -119,7 +121,7 @@ export default function Home({ currentUser, setCurrentPage }) {
           </div>
 
           <div className="card flex flex-col gap-1">
-            <span style={{ fontSize: '1.8rem' }}>🤝</span>
+            <LearningVisual variant="hero" size="icon" decorative />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>戰友互相監督</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
               支援多個本機帳號之間的達成率、學習天數與模擬考高分排行榜，同舟共濟，互相激勵！
