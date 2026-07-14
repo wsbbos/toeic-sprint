@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DocumentRenderer from '../components/documents/DocumentRenderer.jsx';
 
 export default function ActiveMockTest({ setCurrentPage, onMockExamSubmitted, questions = [] }) {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -211,21 +212,7 @@ export default function ActiveMockTest({ setCurrentPage, onMockExamSubmitted, qu
           <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>第 {currentIdx + 1} / 20 題</span>
         </div>
 
-        {q.passage && (
-          <div style={{ 
-            backgroundColor: 'hsl(220, 10%, 97%)', 
-            padding: '1.25rem', 
-            borderRadius: 'var(--radius-md)', 
-            border: '1px solid var(--border-color)',
-            marginBottom: '1.5rem',
-            maxHeight: '260px',
-            overflowY: 'auto',
-            fontSize: '0.95rem',
-            whiteSpace: 'pre-wrap'
-          }}>
-            {q.passage}
-          </div>
-        )}
+        {q.passage && <DocumentRenderer passage={q.passage} document={q.document} compact />}
 
         <h3 style={{ fontSize: '1.15rem', marginBottom: '1.5rem', fontWeight: 600 }}>
           {q.question}

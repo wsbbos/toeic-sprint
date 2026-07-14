@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
 import { clearPracticeDraft, loadPracticeDraft, savePracticeDraft } from '../services/practiceDraftRepository.js'
 import {
   createPracticeSession,
@@ -98,7 +99,7 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
       <div className="progress-bar-container" aria-label={`進度 ${progress}%`}><div className="progress-bar-fill" style={{ width: `${progress}%` }} /></div>
       <article className="card question-card">
         <div className="flex justify-between align-center"><span className="badge badge-new">Part {currentQuestion.part}</span><div className="flex gap-2"><button className={`btn btn-sm ${isFavorite ? 'btn-accent' : 'btn-outline'}`} onClick={() => onToggleFavorite?.(currentQuestion)}>{isFavorite ? '已收藏' : '收藏'}</button><button className={`btn btn-sm ${session.markedQuestionIds.includes(currentQuestion.id) ? 'btn-accent' : 'btn-outline'}`} onClick={() => setSession((current) => toggleMarkedQuestion(current, currentQuestion.id))}>{session.markedQuestionIds.includes(currentQuestion.id) ? '已標記' : '標記題目'}</button></div></div>
-        {currentQuestion.passage && <div className="question-passage">{currentQuestion.passage}</div>}
+        {currentQuestion.passage && <DocumentRenderer passage={currentQuestion.passage} document={currentQuestion.document} />}
         {imageUrl && <img className="question-image" src={imageUrl} alt="TOEIC Part 1 題目圖片" />}
         {isListening && <button className="btn btn-outline" disabled={!isSpeechSupported()} onClick={() => { if (isPlaying) { stopSpeaking(); setIsPlaying(false) } else { setIsPlaying(true); speakText(currentQuestion.audioText || currentQuestion.transcript || extractAudioTranscript(currentQuestion.question), 0.9, () => setIsPlaying(false)) } }}>{isPlaying ? '停止播放' : '播放聽力題目'}</button>}
         <h1 id="question-title">{currentQuestion.question}</h1>

@@ -41,7 +41,9 @@ test('Part 7 remains available as a separate reading flow', async ({ page, isMob
   await page.locator('a[href="#practice"]').first().click()
   await page.getByTestId('start-part7').click()
   await expect(page.getByTestId('question-practice')).toBeVisible()
-  await expect(page.locator('.question-passage')).toBeVisible()
+  const document = page.getByTestId('business-document')
+  await expect(document).toBeVisible()
+  await expect(document).toHaveAttribute('data-document-type', /email|memo|notice|advertisement|schedule|form|table_chart/)
 })
 
 test('wrong answers can start a retake session', async ({ page, isMobile }) => {

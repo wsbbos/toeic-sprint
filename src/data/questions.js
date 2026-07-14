@@ -1,5 +1,6 @@
 import { listeningQuestionBank } from './listeningQuestionBank.js';
 import { part5QuestionBank } from './part5QuestionBank.js';
+import { getPart7DocumentMetadata } from './part7Documents.js';
 
 // src/data/questions.js
 
@@ -566,6 +567,7 @@ rawPart7Data.forEach(passage => {
       part: 7,
       type: question.type,
       passage: passage.passage,
+      document: getPart7DocumentMetadata(passage.passageId),
       question: question.question,
       choices: question.choices,
       correctAnswer: question.correctAnswer,
