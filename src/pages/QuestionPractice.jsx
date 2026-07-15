@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
 import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx'
 import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx'
@@ -16,7 +16,7 @@ import { extractAudioTranscript, isSpeechSupported, speakText, stopSpeaking } fr
 
 const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 
-export default function QuestionPractice({ currentUser, setCurrentPage, practiceFilter, onAnswerSubmitted, onToggleFavorite, questions = [] }) {
+export default function QuestionPractice({ currentUser, setCurrentPage, practiceFilter, onAnswerSubmitted, onPracticeCompleted, onToggleFavorite, questions = [] }) {
   const questionById = useMemo(() => new Map(questions.map((question) => [question.id, question])), [questions])
   const [session, setSession] = useState(() => {
     const draft = loadPracticeDraft()
@@ -30,6 +30,7 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
   const [result, setResult] = useState(session.result)
   const [elapsedSeconds, setElapsedSeconds] = useState(() => Math.max(0, Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000)))
   const [isPlaying, setIsPlaying] = useState(false)
+  const submittingRef = useRef(false)
 
   const activeQuestions = useMemo(() => session.questionIds.map((id) => questionById.get(id)).filter(Boolean), [questionById, session.questionIds])
   const currentQuestion = activeQuestions[session.currentIndex]
@@ -53,17 +54,18 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
   useEffect(() => () => stopSpeaking(), [])
 
   const finish = useCallback((automatic = false) => {
-    if (session.status !== 'active') return
+    if (session.status !== 'active' || submittingRef.current) return
     const unanswered = session.questionIds.length - Object.keys(session.answers).length
     if (!automatic && !window.confirm(`確定交卷嗎？尚有 ${unanswered} 題未作答。`)) return
+    submittingRef.current = true
     const submitted = submitPracticeSession(session, questions)
-    submitted.result.outcomes.forEach((outcome) => {
-      if (outcome.question && outcome.userAnswer) onAnswerSubmitted?.(outcome.question, outcome.userAnswer, outcome.isCorrect)
-    })
+    const trackedOutcomes = submitted.result.outcomes.filter((outcome) => outcome.question && outcome.userAnswer)
+    if (onPracticeCompleted) onPracticeCompleted(trackedOutcomes)
+    else trackedOutcomes.forEach((outcome) => onAnswerSubmitted?.(outcome.question, outcome.userAnswer, outcome.isCorrect))
     setSession(submitted.session)
     setResult(submitted.result)
     clearPracticeDraft()
-  }, [onAnswerSubmitted, questions, session])
+  }, [onAnswerSubmitted, onPracticeCompleted, questions, session])
 
   useEffect(() => {
     // Timer expiry is an external time event; submit once when the countdown reaches zero.

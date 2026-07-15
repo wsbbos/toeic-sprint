@@ -7,6 +7,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
   const [dailyVocabularyGoal, setDailyVocabularyGoal] = useState(currentUser?.goals?.dailyVocabularyGoal || 30);
   const [dailyQuestionGoal, setDailyQuestionGoal] = useState(currentUser?.goals?.dailyQuestionGoal || 50);
   const [dailyStudyMinutesGoal, setDailyStudyMinutesGoal] = useState(currentUser?.goals?.dailyStudyMinutesGoal || 60);
+  const isGuest = Boolean(currentUser?.isGuest || !currentUser?.email);
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -19,7 +20,8 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
     });
   };
 
-  const getSyncStatusText = (status) => {
+  const getSyncStatusText = (status, localOnly) => {
+    if (localOnly) return { text: '💾 已儲存於此裝置', color: 'var(--success)', bg: 'var(--success-light)' };
     switch (status) {
       case 'syncing':
         return { text: '🔄 同步中...', color: 'var(--primary)', bg: 'var(--primary-light)' };
@@ -31,23 +33,25 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
     }
   };
 
-  const syncInfo = getSyncStatusText(syncStatus);
+  const syncInfo = getSyncStatusText(syncStatus, isGuest);
 
   // Wiping of current user logs (Cloud data clear)
   const handleClearClick = async () => {
     if (!currentUser) return;
 
-    const emailConfirm = prompt(`⚠️ 本操作將抹除此帳號在雲端及本機的所有做題、單字與模擬考歷史記錄。\n確定要清除嗎？請輸入您的帳號 E-mail (${currentUser.email}) 以確認清除：`);
-    if (emailConfirm === null) return; // cancelled
-    
-    if (emailConfirm.trim().toLowerCase() !== currentUser.email.toLowerCase()) {
-      alert("❌ 輸入的 E-mail 不符合，拒絕清空歷史資料！");
+    const expectedConfirmation = isGuest ? '清除' : currentUser.email;
+    const identityConfirm = window.prompt(isGuest
+      ? '⚠️ 本操作將清除此裝置上的訪客學習紀錄。請輸入「清除」以繼續：'
+      : `⚠️ 本操作將清除此帳號在雲端及本機的所有學習紀錄。請輸入帳號 E-mail（${currentUser.email}）以繼續：`);
+    if (identityConfirm === null) return;
+    if (identityConfirm.trim().toLowerCase() !== expectedConfirmation.toLowerCase()) {
+      window.alert(isGuest ? '❌ 確認文字不符，已取消清除。' : '❌ 輸入的 E-mail 不符合，已取消清除。');
       return;
     }
 
-    if (confirm('警告！這將清除您雲端及本機的所有作答歷史、單字熟練度以及錯題記錄，重設為初始狀態。確定要繼續嗎？')) {
+    if (window.confirm(isGuest ? '再次確認：要清除此裝置上的所有訪客學習紀錄嗎？' : '再次確認：要清除雲端及本機的所有學習紀錄嗎？')) {
       await onClearData();
-      alert('🧹 雲端與本機數據已成功清空！');
+      window.alert(isGuest ? '🧹 訪客學習紀錄已清空。' : '🧹 雲端與本機學習紀錄已清空。');
     }
   };
 
@@ -55,17 +59,19 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
   const handleDeleteClick = async () => {
     if (!currentUser) return;
 
-    const emailConfirm = prompt(`🚨 徹底刪除帳號警告 🚨\n這將永久刪除您的此雲端帳號及所有相關學習紀錄，不可撤銷！\n確定要刪除嗎？請輸入您的帳號 E-mail (${currentUser.email}) 以確認徹底刪除：`);
-    if (emailConfirm === null) return; // cancelled
-
-    if (emailConfirm.trim().toLowerCase() !== currentUser.email.toLowerCase()) {
-      alert("❌ 輸入的 E-mail 不符合，拒絕刪除帳號！");
+    const expectedConfirmation = isGuest ? '登出' : currentUser.email;
+    const identityConfirm = window.prompt(isGuest
+      ? '⚠️ 這會清除訪客學習紀錄並離開訪客模式。請輸入「登出」以繼續：'
+      : `⚠️ 這會清除學習紀錄並登出，但不會刪除 Supabase 登入帳號。請輸入帳號 E-mail（${currentUser.email}）以繼續：`);
+    if (identityConfirm === null) return;
+    if (identityConfirm.trim().toLowerCase() !== expectedConfirmation.toLowerCase()) {
+      window.alert(isGuest ? '❌ 確認文字不符，已取消操作。' : '❌ 輸入的 E-mail 不符合，已取消操作。');
       return;
     }
 
-    if (confirm('警告！！！這將「永久刪除」您的雲端帳號學習檔案，且無法撤銷。確定要徹底刪除嗎？')) {
+    if (window.confirm('再次確認：要清除所有學習紀錄並登出嗎？')) {
       await onDeleteAccount();
-      alert('🗑️ 帳號數據已成功清空，帳號已完成登出！');
+      window.alert('🗑️ 學習紀錄已清空，並已完成登出。');
     }
   };
 
@@ -73,7 +79,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
     <div className="flex flex-col gap-3 practice-container">
       <div style={{ marginBottom: '1rem' }}>
         <h1 style={{ fontSize: '1.8rem', marginBottom: '0.25rem' }}>⚙️ 學習計畫與系統設定</h1>
-        <p style={{ color: 'var(--text-sub)' }}>在此調整您的 TOEIC 目標分數與每日目標，並查看雲端同步狀態。</p>
+        <p style={{ color: 'var(--text-sub)' }}>{isGuest ? '在此調整 TOEIC 目標與每日目標；訪客資料會保存在目前裝置。' : '在此調整 TOEIC 目標與每日目標，並查看雲端同步狀態。'}</p>
       </div>
 
       {/* Cloud Status Panel */}
@@ -86,11 +92,11 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
         gap: '0.5rem'
       }}>
         <h3 style={{ fontSize: '1.1rem', color: 'var(--secondary)', fontWeight: 700, margin: 0 }}>
-          ☁️ 雲端同步狀態 (V2.1 Cloud)
+          {isGuest ? '💾 本機資料保存狀態' : '☁️ 雲端同步狀態'}
         </h3>
         <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           <div>
-            <strong>登入帳號：</strong><span style={{ fontFamily: 'monospace' }}>{currentUser?.email || '未知雲端用戶'}</span>
+            <strong>登入帳號：</strong><span style={{ fontFamily: 'monospace' }}>{currentUser?.email || '本機訪客模式'}</span>
           </div>
           <div>
             <strong>暱稱稱呼：</strong><span>{currentUser?.username || '未設定'}</span>
@@ -129,36 +135,18 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
             </div>
           )}
 
-          {/* Manual Re-sync Button */}
-          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
-            <button
-              onClick={onManualSync}
-              disabled={syncStatus === 'syncing'}
-              style={{
-                backgroundColor: 'var(--secondary)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.5rem 1rem',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                cursor: syncStatus === 'syncing' ? 'not-allowed' : 'pointer',
-                opacity: syncStatus === 'syncing' ? 0.7 : 1,
-                transition: 'background-color 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem'
-              }}
-              onMouseOver={(e) => {
-                if (syncStatus !== 'syncing') e.currentTarget.style.backgroundColor = '#1e3a8a';
-              }}
-              onMouseOut={(e) => {
-                if (syncStatus !== 'syncing') e.currentTarget.style.backgroundColor = 'var(--secondary)';
-              }}
-            >
-              {syncStatus === 'syncing' ? '🔄 同步中...' : '☁️ 重新同步資料'}
-            </button>
-          </div>
+          {!isGuest && (
+            <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={onManualSync}
+                disabled={syncStatus === 'syncing'}
+              >
+                {syncStatus === 'syncing' ? '🔄 同步中...' : '☁️ 重新同步資料'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -199,7 +187,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-            💾 儲存並更新雲端計畫
+            {isGuest ? '💾 儲存本機計畫' : '💾 儲存並同步計畫'}
           </button>
         </form>
       </div>
@@ -208,7 +196,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
       <div className="card" style={{ border: '1px solid var(--danger-light)' }}>
         <h2 style={{ fontSize: '1.2rem', color: 'var(--danger)', marginBottom: '0.75rem' }}>⚠️ 危險區域 (Danger Zone)</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginBottom: '1.25rem' }}>
-          以下操作將會清空或抹除您的學習紀錄，將同步更新於本機緩存與 Supabase 雲端資料庫。
+          {isGuest ? '以下操作只會影響此裝置上的訪客學習紀錄。' : '以下操作會清除學習紀錄並同步更新本機與 Supabase；不會刪除登入帳號。'}
         </p>
         <div className="flex gap-2">
           <button 
@@ -216,7 +204,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
             style={{ flex: 1, color: 'var(--danger)', borderColor: 'var(--danger)' }}
             onClick={handleClearClick}
           >
-            🧹 清空雲端/本機紀錄
+            {isGuest ? '🧹 清空訪客紀錄' : '🧹 清空雲端/本機紀錄'}
           </button>
           
           <button 
@@ -224,7 +212,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
             style={{ flex: 1 }}
             onClick={handleDeleteClick}
           >
-            🗑️ 抹除雲端資料並登出
+            {isGuest ? '🚪 清除訪客資料並離開' : '🚪 清除學習資料並登出'}
           </button>
         </div>
       </div>

@@ -69,7 +69,7 @@ export default function Home({ currentUser, setCurrentPage }) {
           ⚠️ 目前版本限制說明
         </h3>
         <p style={{ fontSize: '0.875rem', color: 'hsl(38, 92%, 20%)', lineHeight: '1.6' }}>
-          目前 V1.3 為「本機獨立運作版本」，所有學習紀錄皆安全儲存在您的本機瀏覽器（localStorage）中。
+          {currentUser.isGuest ? '訪客模式的學習紀錄會保存在目前瀏覽器；清除網站資料或更換裝置前請留意資料不會自動移轉。' : '登入使用者會優先同步學習紀錄；雲端暫時不可用時，仍會保留本機副本並顯示同步狀態。'}
           此外，由於現階段未引入大型外部音檔與專有版權圖片，<strong>Listening (聽力演練) 與 Mock Test (模擬測驗) 為 Demo 示範用途</strong>，
           其中聽力採瀏覽器語音合成（TTS）朗讀，模擬考則特別重新定位為「文字題 Mini Mock」，以確保數據真實與合法合規。
         </p>

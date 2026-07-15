@@ -17,8 +17,6 @@ export default function Result({ setCurrentPage, activeMockResult }) {
     totalQuestions, 
     correctCount, 
     score, 
-    lScore = 0, 
-    rScore = 0, 
     listeningCorrect = 0, 
     listeningTotal = 0, 
     readingCorrect = 0, 
@@ -28,7 +26,9 @@ export default function Result({ setCurrentPage, activeMockResult }) {
     wrongList = [] 
   } = activeMockResult;
 
-  const accuracy = Math.round((correctCount / totalQuestions) * 100);
+  const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+  const estimateLow = Math.max(10, Math.floor((score - 35) / 5) * 5);
+  const estimateHigh = Math.min(990, Math.ceil((score + 35) / 5) * 5);
   const lAccuracy = listeningTotal > 0 ? Math.round((listeningCorrect / listeningTotal) * 100) : 0;
   const rAccuracy = readingTotal > 0 ? Math.round((readingCorrect / readingTotal) * 100) : 0;
 
@@ -65,23 +65,23 @@ export default function Result({ setCurrentPage, activeMockResult }) {
             color: 'white',
             boxShadow: 'var(--shadow-lg)'
           }}>
-            <span style={{ fontSize: '0.85rem', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '1px' }}>預估總分</span>
-            <span style={{ fontSize: '2.8rem', fontWeight: 800, fontFamily: 'var(--font-display)', lineHeight: '1' }}>{score}</span>
-            <span style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '2px' }}>滿分 990</span>
+            <span style={{ fontSize: '0.85rem', opacity: 0.9, letterSpacing: '1px' }}>非官方區間估計</span>
+            <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'var(--font-display)', lineHeight: '1' }}>{estimateLow}–{estimateHigh}</span>
+            <span style={{ fontSize: '0.7rem', opacity: 0.85, marginTop: '6px', maxWidth: '130px' }}>僅依本次 Mini Mock 換算，不代表正式 TOEIC 成績</span>
           </div>
         </div>
 
         {/* Score Grid details */}
         <div className="grid grid-cols-4 gap-2" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
           <div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>聽力成績 (L)</div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--primary)' }}>{lScore} 分</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>正確率: {lAccuracy}%</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>聽力題</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-sub)' }}>{listeningTotal > 0 ? `${lAccuracy}%` : '未納入'}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>Mini Mock 目前以文字題為主</div>
           </div>
           <div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>閱讀成績 (R)</div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--secondary)' }}>{rScore} 分</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>正確率: {rAccuracy}%</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>閱讀正確率</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--secondary)' }}>{rAccuracy}%</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>{readingCorrect} / {readingTotal} 題</div>
           </div>
           <div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>總答對題數</div>
@@ -93,7 +93,7 @@ export default function Result({ setCurrentPage, activeMockResult }) {
             <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)' }}>
               {Math.floor(timeSpent / 60)} 分 {timeSpent % 60} 秒
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>估計專注度: 高</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>本次作答時間紀錄</div>
           </div>
         </div>
       </div>

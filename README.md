@@ -38,7 +38,7 @@ npm.cmd run dev
 | `npm run validate:visuals` | 驗證原創 SVG manifest、尺寸、大小、安全引用與 PWA 快取 |
 | `npm run test:node` | 執行 baseline 與 domain 單元測試 |
 | `npm run test:component` | 執行 Vitest / React Testing Library 測試 |
-| `npm run test:e2e` | 執行桌面與手機 Playwright 流程 |
+| `npm run test:e2e` | 以受控 Vite runner 執行桌面與手機 Playwright 流程，結束後自動清理伺服器 |
 | `npm run audit:deps` | 檢查 high 以上的 npm 已知弱點 |
 | `npm run verify:ci` | 題庫、測試、lint 與 build 完整閘門 |
 | `npm run verify:baseline` | 先檢查受保護資產，再執行完整閘門 |
@@ -86,7 +86,7 @@ Copy-Item -LiteralPath .env.example -Destination .env.local
 
 ## Production 檢查與部署步驟
 
-本專案沒有在本次升級中自行 push、merge 或部署。人工發布前應依序執行：
+本專案只允許 Preview 部署；不得由此流程直接升級 production、push 或 merge。部署前應依序執行：
 
 ```powershell
 git status --short
@@ -98,7 +98,14 @@ npm.cmd run audit:deps
 npm.cmd run test:e2e
 ```
 
-接著在 Vercel Preview 設定公開 Supabase 環境變數，套用 migrations，完成人工驗收後才決定是否升級 production。不要把 service-role key 放入 Vercel 前端環境變數。
+接著使用 `vercel deploy` 建立 Preview（不要加 `--prod`），在 Preview 設定公開 Supabase 環境變數並套用 migrations。可用下列方式在 production build／Preview 上額外執行 PWA 離線驗收：
+
+```powershell
+$env:PLAYWRIGHT_BASE_URL='https://your-preview.vercel.app'
+npm.cmd run test:e2e
+```
+
+完成人工驗收後才決定是否升級 production。不要把 service-role key 放入 Vercel 前端環境變數。
 
 ## 已知限制
 

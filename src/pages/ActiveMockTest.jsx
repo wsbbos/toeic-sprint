@@ -1,269 +1,134 @@
-import { useState, useEffect } from 'react';
-import DocumentRenderer from '../components/documents/DocumentRenderer.jsx';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
+import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx'
+import {
+  buildMiniMockResult,
+  MINI_MOCK_DURATION_SECONDS,
+  selectMiniMockQuestions,
+} from '../services/miniMockService.js'
 
 export default function ActiveMockTest({ setCurrentPage, onMockExamSubmitted, questions = [] }) {
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [answers, setAnswers] = useState({}); // questionId -> selectedChoice
-  const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 mins for Mini Mock
+  const activeQuestions = useMemo(() => selectMiniMockQuestions(questions), [questions])
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [answers, setAnswers] = useState({})
+  const [timeLeft, setTimeLeft] = useState(MINI_MOCK_DURATION_SECONDS)
+  const answersRef = useRef({})
+  const timeLeftRef = useRef(MINI_MOCK_DURATION_SECONDS)
+  const submittedRef = useRef(false)
 
-  // Select strictly 20 complete text questions from Part 5 (12 items) and Part 7 (8 items)
-  const activeQuestions = (() => {
-    const validQuestions = questions.filter(q => 
-      q && 
-      q.id &&
-      q.question && 
-      q.choices && 
-      Object.keys(q.choices).length >= 4 && // Standard multiple-choice
-      q.correctAnswer && 
-      q.explanation &&
-      (q.part === 5 || q.part === 7) // Pure text questions, ignore listening parts 1-4
-    );
+  const submitExam = useCallback(() => {
+    if (submittedRef.current) return
+    submittedRef.current = true
+    const result = buildMiniMockResult(activeQuestions, answersRef.current, timeLeftRef.current)
+    onMockExamSubmitted?.(result)
+    setCurrentPage('result')
+  }, [activeQuestions, onMockExamSubmitted, setCurrentPage])
 
-    const part5 = validQuestions.filter(q => q.part === 5);
-    const part7 = validQuestions.filter(q => q.part === 7);
-
-    // Try to get 12 from Part 5 and 8 from Part 7
-    let selectedPart5 = part5.slice(0, 12);
-    let selectedPart7 = part7.slice(0, 8);
-
-    // Robust fallback: if one part has fewer questions, take more from the other part to make total 20
-    if (selectedPart5.length < 12) {
-      const extraNeeded = 12 - selectedPart5.length;
-      selectedPart7 = part7.slice(0, 8 + extraNeeded);
-    } else if (selectedPart7.length < 8) {
-      const extraNeeded = 8 - selectedPart7.length;
-      selectedPart5 = part5.slice(0, 12 + extraNeeded);
-    }
-
-    const combined = [...selectedPart5, ...selectedPart7];
-    return combined.slice(0, 20); // Cap at strictly 20 questions
-  })();
-
-  const submitExam = () => {
-    let correctCount = 0;
-    const wrongList = [];
-
-    activeQuestions.forEach(q => {
-      const userAns = answers[q.id] || '';
-      const isCorrect = userAns === q.correctAnswer;
-
-      if (isCorrect) {
-        correctCount++;
-      } else {
-        wrongList.push({
-          questionId: q.id,
-          part: q.part,
-          question: q.question,
-          passage: q.passage || '',
-          document: q.document || null,
-          choices: q.choices,
-          userAnswer: userAns || '無作答',
-          correctAnswer: q.correctAnswer,
-          explanation: q.explanation,
-          difficulty: q.difficulty,
-          tags: q.tags
-        });
-      }
-    });
-
-    const wrongCount = wrongList.length;
-    const totalCount = activeQuestions.length;
-    const timeSpent = 15 * 60 - timeLeft;
-
-    // Scale score out of 990 purely on reading correct percentages
-    // score = Math.round((correctCount / totalQuestions) * 980 + 10)
-    // rounded to standard 5-point intervals
-    const totalQuestions = totalCount || 1;
-    let rawScore = Math.round((correctCount / totalQuestions) * 980 + 10);
-    let score = Math.round(rawScore / 5) * 5;
-    
-    if (score > 990) score = 990;
-    if (score < 10) score = 10;
-
-    // This is a pure reading text mock, so lScore is 0 (or minimum 5), rScore represents the full scaled reading score
-    const lScore = 0;
-    const rScore = score;
-    const listeningCorrect = 0;
-    const listeningTotal = 0;
-    const readingCorrect = correctCount;
-    const readingTotal = totalQuestions;
-
-    const questionOutcomes = activeQuestions.map(q => {
-      const userAns = answers[q.id] || '';
-      const isCorrect = userAns === q.correctAnswer;
-      return {
-        questionId: q.id,
-        part: q.part,
-        tags: q.tags || [],
-        isCorrect: isCorrect
-      };
-    });
-
-    const resultPayload = {
-      id: 'mock_' + Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      mode: 'Mini Mock',
-      totalQuestions: totalCount,
-      correctCount,
-      wrongCount,
-      score,
-      lScore,
-      rScore,
-      listeningCorrect,
-      listeningTotal,
-      readingCorrect,
-      readingTotal,
-      timeSpent,
-      wrongList,
-      questionOutcomes
-    };
-
-    onMockExamSubmitted(resultPayload);
-    setCurrentPage('result');
-  };
-
-  const handleAutoSubmit = () => {
-    alert('時間到！系統已自動幫您提交試卷。');
-    submitExam();
-  };
-
-  // Timer logic
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleAutoSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!activeQuestions.length) return undefined
+    const timer = window.setInterval(() => {
+      if (submittedRef.current) return window.clearInterval(timer)
+      const next = Math.max(0, timeLeftRef.current - 1)
+      timeLeftRef.current = next
+      setTimeLeft(next)
+      if (next === 0) {
+        window.clearInterval(timer)
+        window.alert('時間到！系統已自動幫您提交試卷。')
+        submitExam()
+      }
+      return undefined
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [activeQuestions.length, submitExam])
 
-  const handleSelect = (qId, choice) => {
-    setAnswers(prev => ({
-      ...prev,
-      [qId]: choice
-    }));
-  };
+  useEffect(() => {
+    const warnBeforeUnload = (event) => {
+      if (submittedRef.current) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warnBeforeUnload)
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload)
+  }, [])
+
+  const handleSelect = (questionId, choice) => {
+    setAnswers((previous) => {
+      const next = { ...previous, [questionId]: choice }
+      answersRef.current = next
+      return next
+    })
+  }
 
   const handleConfirmSubmit = () => {
-    if (confirm('確定要提前交卷嗎？')) {
-      submitExam();
-    }
-  };
+    if (!submittedRef.current && window.confirm('確定要提前交卷嗎？')) submitExam()
+  }
 
-  const q = activeQuestions[currentIdx];
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60)
+    return `${minutes.toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
+  }
 
-  const formatTime = (sec) => {
-    const mins = Math.floor(sec / 60);
-    const secs = sec % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  if (!activeQuestions.length) {
+    return (
+      <EmptyLearningState
+        variant="empty"
+        title="目前沒有可用的模擬考題目"
+        description="題庫暫時無法建立 Mini Mock，請返回模擬考中心後再試一次。"
+        actionLabel="返回模擬考中心"
+        onAction={() => setCurrentPage('mock-test')}
+      />
+    )
+  }
 
-  if (activeQuestions.length === 0) return null;
+  const question = activeQuestions[currentIdx]
 
   return (
-    <div className="practice-container">
-      <div className="flex justify-between align-center" style={{ marginBottom: '1.5rem' }}>
+    <main data-testid="active-mock-test" className="practice-container" aria-labelledby="mock-title">
+      <header className="flex justify-between align-center" style={{ marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>📝 Mini Mock Test (模擬測驗中)</h2>
+          <h1 id="mock-title" style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>📝 Mini Mock Test（模擬測驗中）</h1>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-sub)' }}>考試中不顯示正誤解析，交卷後生成報告</span>
         </div>
-        <div style={{ 
-          fontSize: '1.4rem', 
-          fontWeight: 800, 
-          fontFamily: 'var(--font-display)', 
-          color: timeLeft < 120 ? 'var(--danger)' : 'var(--text-main)',
-          padding: '0.25rem 0.75rem',
-          backgroundColor: timeLeft < 120 ? 'var(--danger-light)' : 'hsl(220, 10%, 93%)',
-          borderRadius: 'var(--radius-sm)'
-        }}>
+        <div aria-label={`剩餘時間 ${formatTime(timeLeft)}`} style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-display)', color: timeLeft < 120 ? 'var(--danger)' : 'var(--text-main)', padding: '0.25rem 0.75rem', backgroundColor: timeLeft < 120 ? 'var(--danger-light)' : 'hsl(220, 10%, 93%)', borderRadius: 'var(--radius-sm)' }}>
           ⏱️ {formatTime(timeLeft)}
         </div>
-      </div>
+      </header>
 
-      {/* Index list */}
-      <div className="card flex gap-1 justify-between align-center" style={{ padding: '0.75rem 1rem', overflowX: 'auto', marginBottom: '1.5rem' }}>
+      <nav className="card flex gap-1 justify-between align-center" aria-label="模擬考題目導覽" style={{ padding: '0.75rem 1rem', overflowX: 'auto', marginBottom: '1.5rem' }}>
         <div className="flex gap-1">
-          {activeQuestions.map((item, idx) => (
-            <button
-              key={idx}
-              className={`btn btn-sm ${currentIdx === idx ? 'btn-primary' : answers[item.id] ? 'btn-secondary' : 'btn-outline'}`}
-              style={{ minWidth: '35px', padding: '0.25rem' }}
-              onClick={() => setCurrentIdx(idx)}
-            >
-              {idx + 1}
+          {activeQuestions.map((item, index) => (
+            <button key={item.id} className={`btn btn-sm ${currentIdx === index ? 'btn-primary' : answers[item.id] ? 'btn-secondary' : 'btn-outline'}`} style={{ minWidth: '35px', padding: '0.25rem' }} onClick={() => setCurrentIdx(index)} aria-label={`前往第 ${index + 1} 題`}>
+              {index + 1}
             </button>
           ))}
         </div>
-        
-        <button className="btn btn-danger btn-sm" onClick={handleConfirmSubmit}>
-          💾 立即交卷
-        </button>
-      </div>
+        <button className="btn btn-danger btn-sm" onClick={handleConfirmSubmit}>💾 立即交卷</button>
+      </nav>
 
-      {/* Question Card */}
-      <div className="card" style={{ padding: '2rem' }}>
+      <article className="card" style={{ padding: '2rem' }}>
         <div className="flex justify-between align-center" style={{ marginBottom: '1rem' }}>
-          <span className="badge badge-new">Part {q.part}</span>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>第 {currentIdx + 1} / 20 題</span>
+          <span className="badge badge-new">Part {question.part}</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>第 {currentIdx + 1} / {activeQuestions.length} 題</span>
         </div>
-
-        {q.passage && <DocumentRenderer passage={q.passage} document={q.document} compact />}
-
-        <h3 style={{ fontSize: '1.15rem', marginBottom: '1.5rem', fontWeight: 600 }}>
-          {q.question}
-        </h3>
-
-        <div className="choice-container">
-          {Object.entries(q.choices || {}).map(([key, value]) => {
-            const isSelected = answers[q.id] === key;
+        {question.passage && <DocumentRenderer passage={question.passage} document={question.document} compact />}
+        <h2 style={{ fontSize: '1.15rem', marginBottom: '1.5rem', fontWeight: 600 }}>{question.question}</h2>
+        <div className="choice-container" role="radiogroup" aria-label="答案選項">
+          {Object.entries(question.choices || {}).map(([key, value]) => {
+            const isSelected = answers[question.id] === key
             return (
-              <button 
-                key={key} 
-                className={`choice-btn ${isSelected ? 'selected' : ''}`}
-                onClick={() => handleSelect(q.id, key)}
-              >
-                <span className="choice-letter">{key}</span>
-                <span>{value}</span>
+              <button key={key} role="radio" aria-checked={isSelected} className={`choice-btn ${isSelected ? 'selected' : ''}`} onClick={() => handleSelect(question.id, key)}>
+                <span className="choice-letter">{key}</span><span>{value}</span>
               </button>
-            );
+            )
           })}
         </div>
-
         <div className="flex justify-between gap-2" style={{ marginTop: '2rem' }}>
-          <button 
-            className="btn btn-outline" 
-            style={{ flex: 1 }}
-            disabled={currentIdx === 0}
-            onClick={() => setCurrentIdx(prev => prev - 1)}
-          >
-            ◀ 上一題
-          </button>
-          
-          {currentIdx + 1 < activeQuestions.length ? (
-            <button 
-              className="btn btn-secondary" 
-              style={{ flex: 1 }}
-              onClick={() => setCurrentIdx(prev => prev + 1)}
-            >
-              下一題 ▶
-            </button>
-          ) : (
-            <button 
-              className="btn btn-primary" 
-              style={{ flex: 1 }}
-              onClick={handleConfirmSubmit}
-            >
-              交卷 ➔
-            </button>
-          )}
+          <button className="btn btn-outline" style={{ flex: 1 }} disabled={currentIdx === 0} onClick={() => setCurrentIdx((previous) => previous - 1)}>◀ 上一題</button>
+          {currentIdx + 1 < activeQuestions.length
+            ? <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setCurrentIdx((previous) => previous + 1)}>下一題 ▶</button>
+            : <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleConfirmSubmit}>交卷 ➔</button>}
         </div>
-      </div>
-    </div>
-  );
+      </article>
+    </main>
+  )
 }

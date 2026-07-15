@@ -60,7 +60,7 @@ export default function MockTest({ setCurrentPage, onStartMockTest }) {
           <li>本文字題 Mini Mock 模擬考計時器啟動後，中途無法暫停，請確保有充足的時間作答。</li>
           <li>作答過程中「不會」顯示任何即時解析或正誤提示，交卷後方可查看結果與精美解析報告。</li>
           <li>交卷後，所有答錯題目將自動匯入至「錯題本」，以便後續追蹤。</li>
-          <li>考試結果將生成估算分數 (10-990分，純閱讀折算) 並列入學習數據統計中。</li>
+          <li>考試結果會顯示非官方區間估計，僅供本次練習比較，不代表正式 TOEIC 成績。</li>
         </ul>
       </div>
     </div>

@@ -8,22 +8,22 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
     <>
       <nav className="navbar">
         <div className="nav-container">
-          <a 
-            href="#home" 
-            className="nav-brand" 
-            onClick={(e) => { 
-              e.preventDefault(); 
-              if (currentUser) setCurrentPage('home'); 
+          <a
+            href="#home"
+            className="nav-brand"
+            onClick={(e) => {
+              e.preventDefault();
+              if (currentUser) setCurrentPage('home');
             }}
           >
             <span>🚀 TOEIC Sprint</span>
           </a>
-          
+
           {currentUser && (
             <ul className="nav-links">
               <li>
-                <a 
-                  href="#home" 
+                <a
+                  href="#home"
                   className={`nav-link ${currentPage === 'home' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('home'); }}
                 >
@@ -31,8 +31,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 </a>
               </li>
               <li>
-                <a 
-                  href="#dashboard" 
+                <a
+                  href="#dashboard"
                   className={`nav-link ${currentPage === 'dashboard' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('dashboard'); }}
                 >
@@ -40,8 +40,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 </a>
               </li>
               <li>
-                <a 
-                  href="#practice" 
+                <a
+                  href="#practice"
                   className={`nav-link ${currentPage === 'practice-center' || currentPage === 'question-practice' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('practice-center'); }}
                 >
@@ -49,8 +49,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 </a>
               </li>
               <li>
-                <a 
-                  href="#vocab" 
+                <a
+                  href="#vocab"
                   className={`nav-link ${currentPage === 'vocabulary' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('vocabulary'); }}
                 >
@@ -58,8 +58,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 </a>
               </li>
               <li>
-                <a 
-                  href="#wrongbook" 
+                <a
+                  href="#wrongbook"
                   className={`nav-link ${currentPage === 'wrong-book' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('wrong-book'); }}
                 >
@@ -67,8 +67,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 </a>
               </li>
               <li>
-                <a 
-                  href="#mocktest" 
+                <a
+                  href="#mocktest"
                   className={`nav-link ${currentPage === 'mock-test' || currentPage === 'result' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('mock-test'); }}
                 >
@@ -76,8 +76,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 </a>
               </li>
               <li>
-                <a 
-                  href="#friends" 
+                <a
+                  href="#friends"
                   className={`nav-link ${currentPage === 'friends' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('friends'); }}
                 >
@@ -85,8 +85,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 </a>
               </li>
               <li>
-                <a 
-                  href="#settings" 
+                <a
+                  href="#settings"
                   className={`nav-link ${currentPage === 'settings' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setCurrentPage('settings'); }}
                 >
@@ -108,17 +108,17 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>
                   {currentUser.username}
                 </span>
-                <button 
-                  className="btn btn-outline btn-sm" 
+                <button
+                  className="btn btn-outline btn-sm"
                   onClick={onLogout}
                   title="登出 / 切換帳號"
                 >
                   切換帳號
                 </button>
                 {/* Mobile Hamburger Button */}
-                <button 
+                <button
                   type="button"
-                  className="mobile-menu-btn" 
+                  className="mobile-menu-btn"
                   onClick={() => setIsDrawerOpen(true)}
                   aria-label="開啟選單"
                 >
@@ -166,41 +166,41 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
       {/* Mobile Fixed Bottom Navigation Bar */}
       {currentUser && (
         <div className="mobile-bottom-tabs">
-          <div 
-            className={`mobile-tab-item ${currentPage === 'home' ? 'active' : ''}`} 
+          <button type="button"
+            className={`mobile-tab-item ${currentPage === 'home' ? 'active' : ''}`}
             onClick={() => setCurrentPage('home')}
           >
             <span className="tab-icon">🏠</span>
             <span>首頁</span>
-          </div>
-          <div 
-            className={`mobile-tab-item ${currentPage === 'dashboard' ? 'active' : ''}`} 
+          </button>
+          <button type="button"
+            className={`mobile-tab-item ${currentPage === 'dashboard' ? 'active' : ''}`}
             onClick={() => setCurrentPage('dashboard')}
           >
             <span className="tab-icon">📊</span>
             <span>總覽</span>
-          </div>
-          <div 
-            className={`mobile-tab-item ${currentPage === 'practice-center' || currentPage === 'question-practice' ? 'active' : ''}`} 
+          </button>
+          <button type="button"
+            className={`mobile-tab-item ${currentPage === 'practice-center' || currentPage === 'question-practice' ? 'active' : ''}`}
             onClick={() => setCurrentPage('practice-center')}
           >
             <span className="tab-icon">📖</span>
             <span>練習</span>
-          </div>
-          <div 
-            className={`mobile-tab-item ${currentPage === 'wrong-book' ? 'active' : ''}`} 
+          </button>
+          <button type="button"
+            className={`mobile-tab-item ${currentPage === 'wrong-book' ? 'active' : ''}`}
             onClick={() => setCurrentPage('wrong-book')}
           >
             <span className="tab-icon">📓</span>
             <span>錯題本</span>
-          </div>
-          <div 
-            className={`mobile-tab-item ${currentPage === 'settings' ? 'active' : ''}`} 
+          </button>
+          <button type="button"
+            className={`mobile-tab-item ${currentPage === 'settings' ? 'active' : ''}`}
             onClick={() => setCurrentPage('settings')}
           >
             <span className="tab-icon">⚙️</span>
             <span>設定</span>
-          </div>
+          </button>
         </div>
       )}
     </>

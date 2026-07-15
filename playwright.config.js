@@ -7,12 +7,7 @@ const baseURL = externalBaseURL || 'http://127.0.0.1:4174'
 export default defineConfig({
   testDir: './tests/e2e', timeout: 30000, fullyParallel: false, retries: 1,
   use: { baseURL, trace: 'retain-on-failure', video: 'off' },
-  webServer: externalBaseURL ? undefined : {
-    command: 'npm run dev -- --host 127.0.0.1 --port 4174',
-    url: baseURL,
-    reuseExistingServer: true,
-    timeout: 120000,
-  },
+
   projects: [
     { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile-chromium', use: { ...devices['Pixel 5'] } },

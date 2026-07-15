@@ -19,7 +19,7 @@ import {
 } from '../services/localUserRepository';
 import {
   recordMockResult,
-  recordPracticeAnswer,
+  recordPracticeOutcomes,
   recordRetake,
   removeWrongQuestion,
   resetLearningData,
@@ -293,10 +293,8 @@ export function useAppController() {
     await safeLogout();
   }, [handleClearData, safeLogout]);
 
-  const handleAnswerSubmitted = useCallback((question, userAnswer, isCorrect) => (
-    updateActiveUser((user) => (
-      recordPracticeAnswer(user, question, userAnswer, isCorrect)
-    ))
+  const handlePracticeCompleted = useCallback((outcomes) => (
+    updateActiveUser((user) => recordPracticeOutcomes(user, outcomes))
   ), [updateActiveUser]);
 
   const handleMockExamSubmitted = useCallback((result) => {
@@ -341,7 +339,7 @@ export function useAppController() {
   }, [currentUser]);
 
   const actions = useMemo(() => ({
-    onAnswerSubmitted: handleAnswerSubmitted,
+    onPracticeCompleted: handlePracticeCompleted,
     onClearData: handleClearData,
     onDeleteAccount: handleDeleteAccount,
     onGuestLogin: handleGuestLogin,
@@ -359,7 +357,7 @@ export function useAppController() {
     setCurrentPage,
     setPracticeFilter,
   }), [
-    handleAnswerSubmitted,
+    handlePracticeCompleted,
     handleClearData,
     handleDeleteAccount,
     handleGuestLogin,

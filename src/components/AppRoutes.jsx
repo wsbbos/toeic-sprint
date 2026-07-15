@@ -56,7 +56,7 @@ export default function AppRoutes({
           currentUser={currentUser}
           setCurrentPage={actions.setCurrentPage}
           practiceFilter={practiceFilter}
-          onAnswerSubmitted={actions.onAnswerSubmitted}
+          onPracticeCompleted={actions.onPracticeCompleted}
           onToggleFavorite={actions.onToggleFavorite}
         />
       );

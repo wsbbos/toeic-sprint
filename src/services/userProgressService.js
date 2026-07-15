@@ -97,6 +97,19 @@ export function recordPracticeAnswer(
   return next;
 }
 
+export function recordPracticeOutcomes(user, outcomes = [], now = new Date()) {
+  return outcomes.reduce((current, outcome) => {
+    if (!outcome?.question || !outcome.userAnswer) return current;
+    return recordPracticeAnswer(
+      current,
+      outcome.question,
+      outcome.userAnswer,
+      outcome.isCorrect,
+      now,
+    );
+  }, user);
+}
+
 export function recordMockResult(user, result, now = new Date()) {
   const next = cloneProfile(user);
   next.mockTestHistory.push({
