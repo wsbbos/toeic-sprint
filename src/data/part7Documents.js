@@ -30,7 +30,7 @@ export const part7DocumentMetadata = Object.freeze({
   p5: {
     type: 'email',
     title: 'Shipment Complaint — Invoice CH-9921',
-    fields: { To: 'Customer Support', From: 'Julia Vance, Green Tech Corp.', Sent: 'After May 25' },
+    fields: { To: 'Customer Support', From: 'Julia Vance, Green Tech Corp.' },
     attachment: 'Damage photos · Invoice CH-9921',
   },
   p6: {

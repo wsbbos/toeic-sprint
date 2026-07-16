@@ -120,7 +120,7 @@ export default function RetakePractice({ setCurrentPage, retakeList = [], onReta
               正確答案是 <strong>{currentItem.correctAnswer}</strong>
             </p>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '0.5rem' }}>
-              <strong>中文解析：</strong> {currentItem.explanation}
+              <strong>解析：</strong> {currentItem.explanation}
             </div>
           </div>
         )}

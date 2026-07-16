@@ -1,0 +1,91 @@
+.result-review {
+  display: grid;
+  gap: 1rem;
+}
+
+.result-review-header,
+.result-review-summary {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.result-review-header p {
+  color: var(--text-sub);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.result-review-actions,
+.result-review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.result-filter {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-sub);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+}
+
+.result-filter.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.result-filter:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.result-review-items {
+  display: grid;
+  gap: 1rem;
+}
+
+.result-review-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: clip;
+}
+
+.result-review-summary {
+  padding: 1rem;
+}
+
+.result-review-summary h3 {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-top: 0.35rem;
+}
+
+.result-review-status {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+}
+
+.result-review-status.is-correct { background: var(--success-light); color: var(--success); }
+.result-review-status.is-incorrect { background: var(--danger-light); color: var(--danger); }
+.result-review-status.is-unanswered { background: hsl(220, 10%, 92%); color: var(--text-sub); }
+.result-review-item > .explanation-panel { border: 0; border-radius: 0; border-top: 1px solid var(--border-color); box-shadow: none; }
+.result-review-empty { background: var(--bg-card); border: 1px dashed var(--border-color); border-radius: var(--radius-md); color: var(--text-sub); padding: 1.25rem; text-align: center; }
+
+@media (max-width: 640px) {
+  .result-review-header,
+  .result-review-summary { align-items: stretch; flex-direction: column; }
+  .result-review-actions > *,
+  .result-review-summary > button { flex: 1; }
+}

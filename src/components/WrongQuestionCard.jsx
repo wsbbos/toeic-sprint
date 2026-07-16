@@ -74,7 +74,7 @@ export default function WrongQuestionCard({ item, onUpdateReason, onUpdateStatus
       </div>
 
       <div style={{ fontSize: '0.85rem', color: 'var(--text-sub)', marginBottom: '1.25rem', borderLeft: '3px solid var(--primary)', paddingLeft: '0.5rem' }}>
-        <strong>中文解析：</strong>{item.explanation}
+        <strong>解析：</strong>{item.explanation}
       </div>
 
       {/* Actions */}

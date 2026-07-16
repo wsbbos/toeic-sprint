@@ -30,6 +30,7 @@
 .document-metrics strong, .document-metrics span { display: block; }
 .document-metrics strong { color: var(--document-accent); font-size: 1.25rem; }
 .document-metrics span { margin-top: .15rem; color: var(--document-muted); font-size: .75rem; }
+.document-scroll-hint { display: none; margin: 1rem 1.5rem -.75rem; color: var(--document-muted); font-size: .78rem; font-weight: 700; }
 .document-table-scroll { margin: 1.2rem 1.5rem 0; overflow-x: auto; border: 1px solid hsl(220 16% 86%); border-radius: var(--radius-md); outline-offset: 3px; }
 .document-table-scroll:focus-visible { outline: 3px solid color-mix(in srgb, var(--document-accent) 60%, white); }
 .document-table-scroll table { width: 100%; min-width: 520px; border-collapse: collapse; background: white; font-size: .88rem; }
@@ -59,12 +60,14 @@
 .document-table_chart { --document-accent: hsl(245, 58%, 50%); }
 .document-compact { margin: .8rem auto 1rem; box-shadow: none; }
 .document-compact .document-body { max-height: 240px; overflow-y: auto; }
+.document-evidence-view .document-body { max-height: none; overflow: visible; }
 
 @media (max-width: 640px) {
   .business-document { border-radius: var(--radius-md); }
   .document-heading, .document-body, .document-fields, .document-thread { padding-left: 1rem; padding-right: 1rem; }
   .document-fields { grid-template-columns: 1fr; }
   .document-table-scroll, .document-metrics { margin-left: 1rem; margin-right: 1rem; }
+  .document-scroll-hint { display: flex; margin-left: 1rem; margin-right: 1rem; }
   .document-callouts, .document-action, .document-attachment { margin-left: 1rem; margin-right: 1rem; }
   .document-table-scroll table { min-width: 460px; }
 }

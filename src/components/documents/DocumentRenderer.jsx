@@ -86,12 +86,15 @@ function DocumentMetrics({ metrics, highlightTerms }) {
 function DocumentTable({ model, highlightTerms }) {
   if (!model.rows.length) return null
   return (
-    <div className="document-table-scroll" tabIndex={0} aria-label={`${model.title} table region`}>
-      <table aria-label={model.title}>
-        {model.columns.length > 0 && <thead><tr>{model.columns.map((column) => <th key={column} scope="col"><HighlightText text={column} terms={highlightTerms} /></th>)}</tr></thead>}
-        <tbody>{model.rows.map((row, rowIndex) => <tr key={`${row.join('-')}-${rowIndex}`}>{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`}><HighlightText text={cell} terms={highlightTerms} /></td>)}</tr>)}</tbody>
-      </table>
-    </div>
+    <>
+      <p className="document-scroll-hint">左右滑動查看完整表格</p>
+      <div className="document-table-scroll" tabIndex={0} aria-label={`${model.title} table region`}>
+        <table aria-label={model.title}>
+          {model.columns.length > 0 && <thead><tr>{model.columns.map((column) => <th key={column} scope="col"><HighlightText text={column} terms={highlightTerms} /></th>)}</tr></thead>}
+          <tbody>{model.rows.map((row, rowIndex) => <tr key={`${row.join('-')}-${rowIndex}`}>{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`}><HighlightText text={cell} terms={highlightTerms} /></td>)}</tr>)}</tbody>
+        </table>
+      </div>
+    </>
   )
 }
 
@@ -118,7 +121,7 @@ export default function DocumentRenderer({ passage = '', document = {}, compact 
 
   return (
     <article
-      className={`business-document document-${model.type}${compact ? ' document-compact' : ''}`}
+      className={`business-document document-${model.type}${compact ? ' document-compact' : ''}${compact && highlightTerms.length ? ' document-evidence-view' : ''}`}
       data-testid="business-document"
       data-document-type={model.type}
       aria-label={model.title}

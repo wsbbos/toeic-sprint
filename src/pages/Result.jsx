@@ -1,4 +1,4 @@
-import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx';
+import ResultReviewList from '../components/explanations/ResultReviewList.jsx';
 import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx';
 import VisualAsset from '../components/visuals/VisualAsset.jsx';
 
@@ -22,9 +22,18 @@ export default function Result({ setCurrentPage, activeMockResult }) {
     readingCorrect = 0, 
     readingTotal = 0, 
     timeSpent, 
-    wrongCount, 
-    wrongList = [] 
+    wrongCount = 0,
+    incorrectCount = wrongCount,
+    unansweredCount = 0,
+    wrongList = [],
+    unansweredList = [],
+    reviewItems = [],
   } = activeMockResult;
+  const confirmedWrongList = wrongList.filter((item) => item.userAnswer && item.userAnswer !== '無作答');
+  const legacyUnansweredList = wrongList.filter((item) => !item.userAnswer || item.userAnswer === '無作答');
+  const reviewOutcomes = reviewItems.length > 0 ? reviewItems : [...confirmedWrongList, ...legacyUnansweredList, ...unansweredList];
+  const displayedIncorrectCount = Number.isFinite(Number(incorrectCount)) ? Number(incorrectCount) : confirmedWrongList.length;
+  const displayedUnansweredCount = Math.max(Number(unansweredCount) || 0, legacyUnansweredList.length + unansweredList.length);
 
   const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
   const estimateLow = Math.max(10, Math.floor((score - 35) / 5) * 5);
@@ -34,7 +43,7 @@ export default function Result({ setCurrentPage, activeMockResult }) {
 
   // Calculate dynamic weakness tags of incorrect answers
   const tagMap = {};
-  wrongList.forEach(q => {
+  confirmedWrongList.forEach(q => {
     (q.tags || []).forEach(tag => {
       tagMap[tag] = (tagMap[tag] || 0) + 1;
     });
@@ -86,7 +95,7 @@ export default function Result({ setCurrentPage, activeMockResult }) {
           <div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>總答對題數</div>
             <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--success)' }}>{correctCount} / {totalQuestions}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>總正確率: {accuracy}%</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>正確率 {accuracy}% · 答錯 {displayedIncorrectCount} · 未作答 {displayedUnansweredCount}</div>
           </div>
           <div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>作答消耗時間</div>
@@ -124,21 +133,9 @@ export default function Result({ setCurrentPage, activeMockResult }) {
         </div>
       )}
 
-      {/* Mistakes list in Mock */}
-      {wrongList.length > 0 && (
+      {reviewOutcomes.length > 0 && (
         <div id="mock-mistakes-section" className="card" style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>❌ 本次測驗錯題摘要 ({wrongCount})</h2>
-          <div className="flex flex-col gap-2">
-            {wrongList.map((item, idx) => (
-              <ExplanationPanel
-                key={item.questionId || idx}
-                question={item}
-                userAnswer={item.userAnswer}
-                correctAnswer={item.correctAnswer}
-                index={idx}
-              />
-            ))}
-          </div>
+          <ResultReviewList outcomes={reviewOutcomes} />
         </div>
       )}
 

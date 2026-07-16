@@ -58,11 +58,11 @@ export default function PracticeCenter({ setCurrentPage, setPracticeFilter }) {
 
         <article className="card">
           <LearningVisual variant="result" size="icon" decorative />
-          <span className="badge badge-new">Full Simulation</span>
-          <h2 style={{ margin: '0.8rem 0 0.4rem' }}>Part 5 完整模擬</h2>
-          <p style={{ color: 'var(--text-sub)' }}>100 題、75 分鐘倒數，交卷後一次查看完整解析。</p>
+          <span className="badge badge-new">Part 5 Endurance</span>
+          <h2 style={{ margin: '0.8rem 0 0.4rem' }}>Part 5 100 題計時練習</h2>
+          <p style={{ color: 'var(--text-sub)' }}>100 題、75 分鐘，專注訓練 Part 5 作答耐力；不是完整 TOEIC 模擬考。</p>
           <button className="btn btn-accent" style={{ marginTop: '1rem', width: '100%' }} onClick={() => start({ type: 'full_mock', mode: 'full_mock', count: 100, timed: true, durationSeconds: 4500 })}>
-            開始完整模擬
+            開始 Part 5 計時練習
           </button>
         </article>
 

@@ -149,7 +149,7 @@ test('mobile core routes fit the viewport and keep usable button targets', async
   await assertLayout('vocabulary')
 
   await openDrawerRoute('#mocktest')
-  await expect(page.getByRole('heading', { name: /TOEIC 模擬考試中心/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /文字題 Mini Mock 中心/ })).toBeVisible()
   await assertLayout('mock test')
 
   await openDrawerRoute('#friends')

@@ -305,11 +305,13 @@ a {
 }
 
 .nav-container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   display: flex;
   align-items: center;
+  gap: clamp(0.5rem, 1vw, 1rem);
   justify-content: space-between;
+  padding: 0 0.5rem;
 }
 
 .nav-brand {
@@ -320,21 +322,32 @@ a {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  flex: 1 1 auto;
+  gap: clamp(0.2rem, 0.65vw, 0.75rem);
+  justify-content: center;
   list-style: none;
   align-items: center;
+  min-width: 0;
 }
 
 .nav-link {
+  display: block;
+  font-size: clamp(0.78rem, 0.73rem + 0.14vw, 0.9rem);
   font-weight: 500;
   color: var(--text-sub);
-  padding: 0.4rem 0.8rem;
+  padding: 0.4rem clamp(0.35rem, 0.55vw, 0.65rem);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
+
+.nav-account { flex: 0 0 auto; white-space: nowrap; }
+.nav-username { max-width: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .nav-link:hover, .nav-link.active {
   color: var(--primary);
@@ -609,6 +622,13 @@ a {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
+}
+
+@media (min-width: 769px) and (max-width: 1120px) {
+  .nav-brand { font-size: 1.15rem; }
+  .nav-account .streak-badge,
+  .nav-account .score-badge,
+  .nav-account .nav-username { display: none; }
 }
 
 @media (max-width: 1024px) {

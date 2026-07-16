@@ -1,10 +1,18 @@
 import LearningVisual from '../components/visuals/LearningVisual.jsx';
 import VisualAsset from '../components/visuals/VisualAsset.jsx';
+import { getActiveDraftSummaries } from '../services/resumeDraftService.js';
+import '../styles/resume-cards.css';
 
 // src/pages/Home.jsx
 
-export default function Home({ currentUser, setCurrentPage }) {
+const formatLastActivity = (value) => new Intl.DateTimeFormat('zh-TW', {
+  month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
+}).format(new Date(value));
+
+export default function Home({ currentUser, setCurrentPage, setPracticeFilter }) {
   if (!currentUser) return null;
+  const ownerId = currentUser.isGuest ? 'guest-local' : currentUser.id || 'guest-local';
+  const draftSummaries = getActiveDraftSummaries(undefined, ownerId);
 
   return (
     <div className="flex flex-col gap-4 practice-container" style={{ marginTop: '1.5rem', maxWidth: '900px', margin: '1.5rem auto' }}>
@@ -57,6 +65,45 @@ export default function Home({ currentUser, setCurrentPage }) {
           </button>
         </div>
       </div>
+
+      {draftSummaries.length > 0 && (
+        <section className="card" aria-labelledby="resume-practice-title">
+          <div className="flex justify-between align-center gap-2 flex-wrap">
+            <div>
+              <span className="badge badge-review">Resume</span>
+              <h2 id="resume-practice-title" style={{ marginTop: '0.45rem' }}>繼續未完成練習</h2>
+            </div>
+            <span style={{ color: 'var(--text-sub)', fontSize: '0.82rem' }}>答案已保存在這個瀏覽器</span>
+          </div>
+          <div className="resume-card-list">
+            {draftSummaries.map((draft) => (
+              <article className="resume-card-item" key={draft.kind}>
+                <div>
+                  <h3>{draft.title}</h3>
+                  <div className="resume-card-meta">
+                    <span>已作答 {draft.answeredCount} / {draft.totalQuestions} 題</span>
+                    <time dateTime={draft.updatedAt}>最後作答 {formatLastActivity(draft.updatedAt)}</time>
+                  </div>
+                  <div className="resume-progress" aria-label={`已完成 ${draft.answeredCount} / ${draft.totalQuestions} 題`}>
+                    <span style={{ width: `${Math.round((draft.answeredCount / draft.totalQuestions) * 100)}%` }} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  aria-label={`繼續 ${draft.title}`}
+                  onClick={() => {
+                    if (draft.kind === 'practice') setPracticeFilter?.(draft.config);
+                    setCurrentPage(draft.kind === 'practice' ? 'question-practice' : 'mock-test-active');
+                  }}
+                >
+                  繼續作答
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Honest Version Disclaimer Warning Box */}
       <div className="card" style={{ 

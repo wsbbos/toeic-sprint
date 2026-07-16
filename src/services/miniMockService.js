@@ -20,6 +20,23 @@ export function selectMiniMockQuestions(questions = []) {
   return [...selectedPart5, ...selectedPart7].slice(0, 20)
 }
 
+const createReviewItem = ({ question, userAnswer, isCorrect, status }) => ({
+  questionId: question.id,
+  part: question.part,
+  question: question.question,
+  passage: question.passage || '',
+  document: question.document || null,
+  choices: { ...(question.choices || {}) },
+  userAnswer,
+  correctAnswer: question.correctAnswer,
+  explanation: question.explanation,
+  category: question.category || '',
+  difficulty: question.difficulty || 'medium',
+  tags: [...(question.tags || [])],
+  isCorrect,
+  status,
+})
+
 export function buildMiniMockResult(
   questions,
   answers = {},
@@ -28,6 +45,7 @@ export function buildMiniMockResult(
 ) {
   const outcomes = questions.map((question) => {
     const userAnswer = answers[question.id] || ''
+    const isCorrect = userAnswer === question.correctAnswer
     return {
       question,
       questionId: question.id,
@@ -36,25 +54,18 @@ export function buildMiniMockResult(
       difficulty: question.difficulty || 'medium',
       tags: [...(question.tags || [])],
       userAnswer,
-      isCorrect: userAnswer === question.correctAnswer,
+      isCorrect,
+      status: isCorrect ? 'correct' : userAnswer ? 'incorrect' : 'unanswered',
     }
   })
   const correctCount = outcomes.filter((outcome) => outcome.isCorrect).length
+  const incorrectOutcomes = outcomes.filter((outcome) => outcome.status === 'incorrect')
+  const unansweredOutcomes = outcomes.filter((outcome) => outcome.status === 'unanswered')
   const totalQuestions = questions.length
-  const wrongList = outcomes.filter((outcome) => !outcome.isCorrect).map(({ question, userAnswer }) => ({
-    questionId: question.id,
-    part: question.part,
-    question: question.question,
-    passage: question.passage || '',
-    document: question.document || null,
-    choices: { ...(question.choices || {}) },
-    userAnswer: userAnswer || '無作答',
-    correctAnswer: question.correctAnswer,
-    explanation: question.explanation,
-    category: question.category || '',
-    difficulty: question.difficulty || 'medium',
-    tags: [...(question.tags || [])],
-  }))
+  const answeredCount = totalQuestions - unansweredOutcomes.length
+  const wrongList = incorrectOutcomes.map(createReviewItem)
+  const unansweredList = unansweredOutcomes.map(createReviewItem)
+  const reviewItems = outcomes.map(createReviewItem)
   const rawScore = totalQuestions ? Math.round((correctCount / totalQuestions) * 980 + 10) : 10
   const score = Math.min(990, Math.max(10, Math.round(rawScore / 5) * 5))
 
@@ -63,8 +74,11 @@ export function buildMiniMockResult(
     date: now.toISOString().split('T')[0],
     mode: 'Mini Mock',
     totalQuestions,
+    answeredCount,
     correctCount,
-    wrongCount: wrongList.length,
+    incorrectCount: incorrectOutcomes.length,
+    wrongCount: incorrectOutcomes.length,
+    unansweredCount: unansweredOutcomes.length,
     score,
     lScore: 0,
     rScore: score,
@@ -74,6 +88,8 @@ export function buildMiniMockResult(
     readingTotal: totalQuestions,
     timeSpent: Math.max(0, MINI_MOCK_DURATION_SECONDS - Number(secondsRemaining || 0)),
     wrongList,
+    unansweredList,
+    reviewItems,
     questionOutcomes: outcomes.map((outcome) => ({
       questionId: outcome.questionId,
       part: outcome.part,
@@ -82,6 +98,7 @@ export function buildMiniMockResult(
       tags: outcome.tags,
       userAnswer: outcome.userAnswer,
       isCorrect: outcome.isCorrect,
+      status: outcome.status,
     })),
   }
 }

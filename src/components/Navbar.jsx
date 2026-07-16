@@ -137,7 +137,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
             </ul>
           )}
 
-          <div className="flex align-center gap-2">
+          <div className="nav-account flex align-center gap-2">
             {currentUser ? (
               <>
                 <div className="streak-badge">
@@ -146,7 +146,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 <div className="score-badge">
                   🎯 {currentUser.goals?.targetScore || 700}
                 </div>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>
+                <span className="nav-username" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-sub)' }}>
                   {currentUser.username}
                 </span>
                 <button

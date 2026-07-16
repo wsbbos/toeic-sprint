@@ -122,6 +122,6 @@ export default function AppRoutes({
       );
     case 'home':
     default:
-      return <Home currentUser={currentUser} setCurrentPage={actions.setCurrentPage} />;
+      return <Home currentUser={currentUser} setCurrentPage={actions.setCurrentPage} setPracticeFilter={actions.setPracticeFilter} />;
   }
 }

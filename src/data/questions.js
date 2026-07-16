@@ -271,10 +271,10 @@ const rawPart7Data = [
         type: "推論",
         question: "What does Ms. Vance demand from customer support?",
         choices: {
-          A: "A free sommelier service in the cafeteria",
+          A: "A replacement for all fifty chairs",
           B: "A replacement for the damaged items and a shipping fee refund",
-          C: "A 20% discount on all future annual software subscriptions",
-          D: "An extension of the corporate training probationary period"
+          C: "A refund for the entire chair order",
+          D: "Reimbursement for the postponed opening"
         },
         correctAnswer: "B",
         explanation: "倒數第二段指出「We demand a replacement for the damaged chairs immediately and a refund for the express shipping fee」，對應 B 選項。選 B。",

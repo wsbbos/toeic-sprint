@@ -113,6 +113,11 @@ export function recordPracticeOutcomes(user, outcomes = [], now = new Date()) {
 export function recordMockResult(user, result, now = new Date()) {
   const next = cloneProfile(user);
   if (result?.id && next.mockTestHistory.some((entry) => entry.id === result.id)) return next;
+  const unansweredCount = Math.max(0, Number(result.unansweredCount) || 0);
+  const answeredCount = Number.isFinite(Number(result.answeredCount))
+    ? Math.max(0, Number(result.answeredCount))
+    : Math.max(0, Number(result.totalQuestions) - unansweredCount);
+  const wrongItems = (result.wrongList || []).filter((item) => item?.userAnswer && item.userAnswer !== '無作答');
   next.mockTestHistory.push({
     id: result.id,
     date: result.date,
@@ -122,12 +127,14 @@ export function recordMockResult(user, result, now = new Date()) {
     wrongCount: result.wrongCount,
     score: result.score,
     timeSpent: result.timeSpent,
+    answeredCount,
+    unansweredCount,
   });
-  next.progress.totalQuestionsAnswered += result.totalQuestions;
+  next.progress.totalQuestionsAnswered += answeredCount;
   next.progress.totalCorrect += result.correctCount;
   next.progress.totalWrong += result.wrongCount;
 
-  (result.wrongList || []).forEach((wrongItem) => {
+  wrongItems.forEach((wrongItem) => {
     const existing = next.wrongBook.find((item) => item.questionId === wrongItem.questionId);
     if (existing) {
       existing.wrongCount = (existing.wrongCount || 1) + 1;
@@ -145,10 +152,12 @@ export function recordMockResult(user, result, now = new Date()) {
   });
 
   const todayRecord = getOrCreateDailyRecord(next, now);
-  todayRecord.questionsAnswered += result.totalQuestions;
+  todayRecord.questionsAnswered += answeredCount;
   todayRecord.studyMinutes += Math.round(result.timeSpent / 60);
 
-  (result.questionOutcomes || []).forEach((outcome) => {
+  (result.questionOutcomes || [])
+    .filter((outcome) => outcome.status !== 'unanswered' && outcome.userAnswer !== '')
+    .forEach((outcome) => {
     next.practiceHistory.push({
       questionId: outcome.questionId,
       part: outcome.part,
@@ -159,7 +168,7 @@ export function recordMockResult(user, result, now = new Date()) {
       answeredAt: now.toISOString(),
       date: result.date || dateKey(now),
     });
-  });
+    });
 
   return next;
 }

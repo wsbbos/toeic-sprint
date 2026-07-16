@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import AnswerChoiceGroup from '../components/AnswerChoiceGroup.jsx'
 import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
-import ExplanationPanel from '../components/explanations/ExplanationPanel.jsx'
+import ResultReviewList from '../components/explanations/ResultReviewList.jsx'
 import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx'
 import VisualAsset from '../components/visuals/VisualAsset.jsx'
 import { clearPracticeDraft, loadPracticeDraft, savePracticeDraft } from '../services/practiceDraftRepository.js'
@@ -90,19 +90,14 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
       <main data-testid="practice-result" className="practice-result" aria-labelledby="result-title">
         <section className="card result-hero"><VisualAsset className="result-hero-visual" name="result" decorative /><span className="badge badge-mastered">Completed</span><h1 id="result-title">練習結果</h1>
           <div className="result-metrics"><div><strong>{result.accuracy}%</strong><span>正確率</span></div><div><strong>{result.correctCount}/{result.totalQuestions}</strong><span>答對題數</span></div><div><strong>{formatTime(result.elapsedSeconds)}</strong><span>作答時間</span></div></div>
+          <p style={{ marginTop: '1rem', color: 'var(--text-sub)' }}>答錯 {result.incorrectCount} 題 · 未作答 {result.unansweredCount} 題</p>
         </section>
-        <section className="card"><h2>分類表現</h2><div className="category-results">{Object.entries(result.categoryPerformance).map(([category, stats]) => <div key={category}><span>{category.replaceAll('_', ' ')}</span><strong>{stats.correct}/{stats.total} · {stats.accuracy}%</strong></div>)}</div></section>
-        <section className="flex flex-col gap-3" aria-label="逐題解析">
-          {result.outcomes.map((outcome, index) => (
-            <ExplanationPanel
-              key={outcome.questionId}
-              question={outcome.question}
-              userAnswer={outcome.userAnswer}
-              correctAnswer={outcome.correctAnswer}
-              index={index}
-            />
-          ))}
-        </section>
+        <section className="card"><h2>分類表現</h2><div className="category-results">
+          {Object.entries(result.categoryPerformance).length > 0
+            ? Object.entries(result.categoryPerformance).map(([category, stats]) => <div key={category}><span>{category.replaceAll('_', ' ')}</span><strong>{stats.correct}/{stats.total} · {stats.accuracy}%</strong></div>)
+            : <p style={{ color: 'var(--text-sub)' }}>尚無已作答題目；未作答不會計入弱點分析。</p>}
+        </div></section>
+        <section className="card"><ResultReviewList outcomes={result.outcomes} /></section>
         <button className="btn btn-primary" onClick={() => setCurrentPage('practice-center')}>返回練習中心</button>
       </main>
     )

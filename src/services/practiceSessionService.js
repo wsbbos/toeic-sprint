@@ -82,19 +82,25 @@ export function submitPracticeSession(session, questions, now = new Date()) {
     const question = questionById.get(questionId)
     const userAnswer = session.answers[questionId] || null
     const correctAnswer = question?.correctAnswer || question?.answer
+    const isCorrect = Boolean(question && userAnswer === correctAnswer)
     return {
       question,
       questionId,
       userAnswer,
       correctAnswer,
-      isCorrect: Boolean(question && userAnswer === correctAnswer)
+      isCorrect,
+      status: isCorrect ? 'correct' : userAnswer ? 'incorrect' : 'unanswered'
     }
   })
   const correctCount = outcomes.filter((outcome) => outcome.isCorrect).length
+  const answeredCount = outcomes.filter((outcome) => outcome.status !== 'unanswered').length
+  const incorrectCount = outcomes.filter((outcome) => outcome.status === 'incorrect').length
+  const unansweredCount = outcomes.length - answeredCount
   const totalQuestions = outcomes.length
   const categoryPerformance = {}
 
   for (const outcome of outcomes) {
+    if (outcome.status === 'unanswered') continue
     const category = outcome.question?.category || outcome.question?.type || `Part ${outcome.question?.part || '?'}`
     const current = categoryPerformance[category] || { total: 0, correct: 0, accuracy: 0 }
     current.total += 1
@@ -106,8 +112,11 @@ export function submitPracticeSession(session, questions, now = new Date()) {
   const result = {
     sessionId: session.id,
     totalQuestions,
+    answeredCount,
     correctCount,
-    wrongCount: totalQuestions - correctCount,
+    incorrectCount,
+    wrongCount: incorrectCount,
+    unansweredCount,
     accuracy: totalQuestions ? Math.round((correctCount / totalQuestions) * 100) : 0,
     elapsedSeconds: Math.max(0, Math.round((now.getTime() - new Date(session.startedAt).getTime()) / 1000)),
     categoryPerformance,

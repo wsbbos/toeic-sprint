@@ -43,6 +43,12 @@ const part5SeedQuestions = [
     part: 'Part 5',
     question: 'All employees ------- the updated security policy before accessing the new database.',
     choices: { A: 'review', B: 'reviewed', C: 'must review', D: 'reviewing' },
+    choiceRoles: {
+      A: 'a base verb without an obligation marker',
+      B: 'a simple past form that conflicts with the general policy statement',
+      C: 'the modal must followed by the base verb review',
+      D: 'a gerund that cannot serve as the finite verb here'
+    },
     answer: 'C',
     explanation: 'The sentence expresses an obligation before accessing a system, so must review is the best choice.',
     grammarPoint: 'Modal verbs: must + base verb.',
@@ -54,6 +60,12 @@ const part5SeedQuestions = [
     part: 'Part 5',
     question: 'The revised contract ------- by the legal department yesterday afternoon.',
     choices: { A: 'approved', B: 'was approved', C: 'approves', D: 'approving' },
+    choiceRoles: {
+      A: 'a past participle missing the auxiliary required for passive voice',
+      B: 'the past passive form required by the receiver and time marker',
+      C: 'an active present-tense verb that conflicts with both meaning and yesterday',
+      D: 'a present participle without a finite auxiliary'
+    },
     answer: 'B',
     explanation: 'The contract receives the action, and yesterday afternoon marks past time, so the past passive form was approved is correct.',
     grammarPoint: 'Passive voice: was/were + past participle.',

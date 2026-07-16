@@ -76,7 +76,7 @@ export default function ExplanationPanel({ question = {}, userAnswer = '', corre
     <article className={`card explanation-panel explanation-${model.kind}`} data-testid="explanation-panel">
       <header className="explanation-heading">
         <div>
-          <span className={`result-status ${model.isCorrect ? 'is-correct' : 'is-wrong'}`}>
+          <span className={`result-status ${model.isCorrect ? 'is-correct' : userAnswer ? 'is-wrong' : 'is-unanswered'}`}>
             {model.isCorrect ? '答對' : userAnswer ? '待加強' : '未作答'}
           </span>
           <h3>第 {index + 1} 題 · Part {model.part}</h3>
