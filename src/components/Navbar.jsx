@@ -1,8 +1,49 @@
 // src/components/Navbar.jsx
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Navbar({ currentPage, setCurrentPage, currentUser, onLogout }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const drawerRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const closeButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (!isDrawerOpen) return undefined;
+
+    const drawer = drawerRef.current;
+    const menuButton = menuButtonRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsDrawerOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !drawer) return;
+
+      const focusable = [...drawer.querySelectorAll('a[href], button:not([disabled])')];
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      menuButton?.focus();
+    };
+  }, [isDrawerOpen]);
 
   return (
     <>
@@ -118,10 +159,13 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                 </button>
                 {/* Mobile Hamburger Button */}
                 <button
+                  ref={menuButtonRef}
                   type="button"
                   className="mobile-menu-btn"
                   onClick={() => setIsDrawerOpen(true)}
                   aria-label="開啟選單"
+                  aria-expanded={isDrawerOpen}
+                  aria-controls="mobile-navigation-drawer"
                 >
                   ☰
                 </button>
@@ -138,11 +182,11 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
       {/* Mobile sliding drawer menu overlay */}
       {currentUser && isDrawerOpen && (
         <>
-          <div className="mobile-drawer-overlay" onClick={() => setIsDrawerOpen(false)} />
-          <div className="mobile-drawer">
+          <div className="mobile-drawer-overlay" aria-hidden="true" onClick={() => setIsDrawerOpen(false)} />
+          <div id="mobile-navigation-drawer" ref={drawerRef} className="mobile-drawer" role="dialog" aria-modal="true" aria-label="主選單">
             <div className="drawer-header">
               <span className="drawer-title">🚀 TOEIC Sprint</span>
-              <button type="button" className="drawer-close" onClick={() => setIsDrawerOpen(false)}>✕</button>
+              <button ref={closeButtonRef} type="button" className="drawer-close" aria-label="關閉選單" onClick={() => setIsDrawerOpen(false)}>✕</button>
             </div>
             <div className="drawer-body">
               <a href="#home" className={`drawer-item ${currentPage === 'home' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setCurrentPage('home'); setIsDrawerOpen(false); }}>🏠 系統首頁</a>

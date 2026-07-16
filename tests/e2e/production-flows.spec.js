@@ -93,3 +93,66 @@ test('Part 7 business document remains readable on mobile', async ({ page, isMob
   const dimensions = await page.evaluate(() => ({ scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth }))
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1)
 })
+test('mobile core routes fit the viewport and keep usable button targets', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'mobile route sweep')
+  await enterAsGuest(page)
+
+  const menuButton = page.getByRole('button', { name: '開啟選單' })
+  await menuButton.click()
+  await expect(page.getByRole('dialog', { name: '主選單' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '關閉選單' })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: '主選單' })).toBeHidden()
+  await expect(menuButton).toBeFocused()
+
+  const assertLayout = async (label) => {
+    const metrics = await page.locator('.main-content').evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }))
+    expect(metrics.scrollWidth, `${label} horizontal overflow`).toBeLessThanOrEqual(metrics.clientWidth + 1)
+
+    const undersizedButtons = await page.locator('.main-content button:visible').evaluateAll((buttons) => (
+      buttons
+        .filter((button) => button.getBoundingClientRect().height < 43)
+        .map((button) => button.textContent?.trim() || button.getAttribute('aria-label') || 'unnamed')
+    ))
+    expect(undersizedButtons, `${label} undersized buttons`).toEqual([])
+  }
+
+  await expect(page.getByRole('heading', { name: 'TOEIC Sprint V1.3' })).toBeVisible()
+  await assertLayout('home')
+
+  await page.locator('.mobile-bottom-tabs .mobile-tab-item').nth(1).click()
+  await expect(page.getByRole('heading', { name: /學習總覽/ })).toBeVisible()
+  await assertLayout('dashboard')
+
+  await page.locator('.mobile-bottom-tabs .mobile-tab-item').nth(2).click()
+  await expect(page.getByTestId('practice-center')).toBeVisible()
+  await assertLayout('practice center')
+
+  await page.locator('.mobile-bottom-tabs .mobile-tab-item').nth(3).click()
+  await expect(page.getByRole('heading', { name: /錯題本與弱點診斷/ })).toBeVisible()
+  await assertLayout('wrong book')
+
+  await page.locator('.mobile-bottom-tabs .mobile-tab-item').nth(4).click()
+  await expect(page.getByRole('heading', { name: /學習計畫與系統設定/ })).toBeVisible()
+  await assertLayout('settings')
+
+  const openDrawerRoute = async (href) => {
+    await page.getByRole('button', { name: '開啟選單' }).click()
+    await page.locator(`.mobile-drawer a[href="${href}"]`).click()
+  }
+
+  await openDrawerRoute('#vocab')
+  await expect(page.getByRole('heading', { name: /TOEIC 核心單字庫/ })).toBeVisible()
+  await assertLayout('vocabulary')
+
+  await openDrawerRoute('#mocktest')
+  await expect(page.getByRole('heading', { name: /TOEIC 模擬考試中心/ })).toBeVisible()
+  await assertLayout('mock test')
+
+  await openDrawerRoute('#friends')
+  await expect(page.getByRole('heading', { name: '登入後使用讀書小隊' })).toBeVisible()
+  await assertLayout('study groups')
+})
