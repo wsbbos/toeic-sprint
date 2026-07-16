@@ -92,3 +92,19 @@ test('guest study groups degrade safely without cloud access', async ({ page, is
   await expect(page.getByRole('heading', { name: '登入後使用讀書小隊' })).toBeVisible()
   await expect(page.getByText(/訪客模式的核心練習仍可完整使用/)).toBeVisible()
 })
+
+test('answer choices support standard keyboard radio navigation', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop keyboard acceptance')
+  await page.getByTestId('guest-entry').click()
+  await page.locator('a[href="#practice"]').first().click()
+  await page.getByTestId('quick-10').click()
+
+  const choices = page.getByRole('radio')
+  await choices.first().focus()
+  await page.keyboard.press('ArrowDown')
+  await expect(choices.nth(1)).toBeFocused()
+  await expect(choices.nth(1)).toHaveAttribute('aria-checked', 'true')
+  await page.keyboard.press('End')
+  await expect(choices.nth(3)).toBeFocused()
+  await expect(choices.nth(3)).toHaveAttribute('aria-checked', 'true')
+})

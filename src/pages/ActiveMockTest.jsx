@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import AnswerChoiceGroup from '../components/AnswerChoiceGroup.jsx'
 import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
 import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx'
 import {
@@ -158,16 +159,11 @@ export default function ActiveMockTest({ currentUser, setCurrentPage, onMockExam
         </div>
         {question.passage && <DocumentRenderer passage={question.passage} document={question.document} compact />}
         <h2 style={{ fontSize: '1.15rem', marginBottom: '1.5rem', fontWeight: 600 }}>{question.question}</h2>
-        <div className="choice-container" role="radiogroup" aria-label="答案選項">
-          {Object.entries(question.choices || {}).map(([key, value]) => {
-            const isSelected = answers[question.id] === key
-            return (
-              <button key={key} role="radio" aria-checked={isSelected} className={`choice-btn ${isSelected ? 'selected' : ''}`} onClick={() => handleSelect(question.id, key)}>
-                <span className="choice-letter">{key}</span><span>{value}</span>
-              </button>
-            )
-          })}
-        </div>
+        <AnswerChoiceGroup
+          choices={question.choices}
+          selectedChoice={answers[question.id]}
+          onSelect={(choice) => handleSelect(question.id, choice)}
+        />
         <div className="flex justify-between gap-2" style={{ marginTop: '2rem' }}>
           <button className="btn btn-outline" style={{ flex: 1 }} disabled={currentIdx === 0} onClick={() => setCurrentIdx((previous) => previous - 1)}>◀ 上一題</button>
           {currentIdx + 1 < activeQuestions.length

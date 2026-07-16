@@ -1,5 +1,6 @@
 // src/pages/RetakePractice.jsx
 import { useState } from 'react';
+import AnswerChoiceGroup from '../components/AnswerChoiceGroup.jsx';
 
 export default function RetakePractice({ setCurrentPage, retakeList = [], onRetakeCompleted, onUpdateReason }) {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -12,6 +13,18 @@ export default function RetakePractice({ setCurrentPage, retakeList = [], onReta
   const handleSelect = (choice) => {
     if (submitted) return;
     setSelectedChoice(choice);
+  };
+
+  const getChoiceClassName = (key) => {
+    let className = 'choice-btn';
+    if (submitted) {
+      if (key === currentItem.correctAnswer) className += ' correct';
+      else if (key === selectedChoice) className += ' wrong';
+      else className += ' disabled';
+    } else if (key === selectedChoice) {
+      className += ' selected';
+    }
+    return className;
   };
 
   const errorReasons = [
@@ -72,10 +85,10 @@ export default function RetakePractice({ setCurrentPage, retakeList = [], onReta
 
       <div className="card" style={{ padding: '2rem' }}>
         {currentItem.passage && (
-          <div style={{ 
-            backgroundColor: 'hsl(220, 10%, 97%)', 
-            padding: '1.25rem', 
-            borderRadius: 'var(--radius-md)', 
+          <div style={{
+            backgroundColor: 'hsl(220, 10%, 97%)',
+            padding: '1.25rem',
+            borderRadius: 'var(--radius-md)',
             border: '1px solid var(--border-color)',
             marginBottom: '1.5rem',
             maxHeight: '260px',
@@ -91,31 +104,13 @@ export default function RetakePractice({ setCurrentPage, retakeList = [], onReta
           {currentItem.question}
         </h3>
 
-        <div className="choice-container">
-          {Object.entries(currentItem.choices || {}).map(([key, value]) => {
-            let btnClass = 'choice-btn';
-            if (submitted) {
-              if (key === currentItem.correctAnswer) btnClass += ' correct';
-              else if (key === selectedChoice) btnClass += ' wrong';
-              else btnClass += ' disabled';
-            } else if (key === selectedChoice) {
-              btnClass += ' selected';
-            }
-
-            return (
-              <button 
-                key={key} 
-                className={btnClass}
-                onClick={() => handleSelect(key)}
-                disabled={submitted}
-              >
-                <span className="choice-letter">{key}</span>
-                <span>{value}</span>
-              </button>
-            );
-          })}
-        </div>
-
+        <AnswerChoiceGroup
+          choices={currentItem.choices}
+          selectedChoice={selectedChoice}
+          onSelect={handleSelect}
+          disabled={submitted}
+          getChoiceClassName={getChoiceClassName}
+        />
         {submitted && (
           <div className={`explanation-box ${selectedChoice === currentItem.correctAnswer ? '' : 'incorrect'}`} style={{ marginBottom: '1rem' }}>
             <h4 style={{ fontWeight: 700, marginBottom: '0.5rem' }}>
@@ -138,7 +133,7 @@ export default function RetakePractice({ setCurrentPage, retakeList = [], onReta
             </h4>
             <div className="grid grid-cols-2 gap-1">
               {errorReasons.map(r => (
-                <button 
+                <button
                   key={r.value}
                   className="btn btn-outline btn-sm"
                   style={{ justifyContent: 'flex-start', backgroundColor: 'white' }}
@@ -153,8 +148,8 @@ export default function RetakePractice({ setCurrentPage, retakeList = [], onReta
 
         <div className="flex justify-between" style={{ marginTop: '2rem' }}>
           {!submitted ? (
-            <button 
-              className="btn btn-primary" 
+            <button
+              className="btn btn-primary"
               style={{ width: '100%' }}
               onClick={handleSubmit}
               disabled={!selectedChoice}
@@ -162,8 +157,8 @@ export default function RetakePractice({ setCurrentPage, retakeList = [], onReta
               提交答案
             </button>
           ) : (
-            <button 
-              className="btn btn-accent" 
+            <button
+              className="btn btn-accent"
               style={{ width: '100%' }}
               onClick={handleNext}
               disabled={showReasonSelect} // Force choosing reason before proceeding
