@@ -30,11 +30,13 @@ export function selectPracticeQuestions(questions, config = {}, random = Math.ra
   return shuffle(candidates, random).slice(0, clampCount(config.count, defaultCount))
 }
 
-export function createPracticeSession(questions, config = {}, now = new Date()) {
+export function createPracticeSession(questions, config = {}, now = new Date(), ownerId = 'guest-local') {
   const startedAt = now.toISOString()
   return {
     id: `practice-${now.getTime()}`,
-    config: { ...config, count: questions.length },
+    version: 2,
+    ownerId,
+    config: { ...config, requestedCount: clampCount(config.count, questions.length), count: questions.length },
     questionIds: questions.map((question) => question.id),
     answers: {},
     markedQuestionIds: [],

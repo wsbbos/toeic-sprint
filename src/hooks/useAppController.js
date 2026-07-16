@@ -54,6 +54,11 @@ export function useAppController() {
   const [selectedLegacyUserToImport, setSelectedLegacyUserToImport] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
   const handlingStaleSessionRef = useRef(false);
+  const currentUserRef = useRef(currentUser);
+  const commitCurrentUser = useCallback((user) => {
+    currentUserRef.current = user;
+    setCurrentUser(user);
+  }, []);
 
   const clearLocalSession = useCallback(() => {
     clearAuthStorage();
@@ -62,10 +67,10 @@ export function useAppController() {
     } catch {
       // Storage may be unavailable in privacy mode.
     }
-    setCurrentUser(null);
+    commitCurrentUser(null);
     setCurrentSession(null);
     setCurrentPage('login');
-  }, []);
+  }, [commitCurrentUser]);
 
   const handleStaleSession = useCallback(async (error) => {
     if (!isStaleSessionError(error)) return false;
@@ -111,7 +116,7 @@ export function useAppController() {
     setCurrentSession(session);
 
     if (!session) {
-      if (event === 'INITIAL_SESSION' && currentUser?.isGuest) return;
+      if (event === 'INITIAL_SESSION' && currentUserRef.current?.isGuest) return;
       if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
         clearLocalSession();
       }
@@ -144,7 +149,7 @@ export function useAppController() {
         authUser,
         customUsername,
       );
-      setCurrentUser(user);
+      commitCurrentUser(user);
       saveCachedUser(undefined, user);
       setCurrentPage(user.goals?.examDate ? 'home' : 'onboarding');
       setSyncStatus('synced');
@@ -159,7 +164,7 @@ export function useAppController() {
     } catch (error) {
       await exposeSyncError(error);
     }
-  }, [clearLocalSession, currentUser?.isGuest, exposeSyncError, handleStaleSession, syncPublicStatsSafely]);
+  }, [clearLocalSession, commitCurrentUser, exposeSyncError, handleStaleSession, syncPublicStatsSafely]);
 
   const sessionStatus = useSupabaseSession({
     client: supabase,
@@ -186,22 +191,23 @@ export function useAppController() {
   }, [exposeSyncError, syncPublicStatsSafely]);
 
   const updateActiveUser = useCallback(async (transform) => {
-    if (!currentUser) return null;
-    const updated = normalizeUserProfile(transform(normalizeUserProfile(currentUser)));
-    setCurrentUser(updated);
+    const activeUser = currentUserRef.current;
+    if (!activeUser) return null;
+    const updated = normalizeUserProfile(transform(normalizeUserProfile(activeUser)));
+    commitCurrentUser(updated);
     saveCachedUser(undefined, updated);
     await syncWithCloud(updated);
     return updated;
-  }, [currentUser, syncWithCloud]);
+  }, [commitCurrentUser, syncWithCloud]);
 
   const handleGuestLogin = useCallback(() => {
     const guest = createGuestProfile();
-    setCurrentUser(guest);
+    commitCurrentUser(guest);
     setCurrentSession(null);
     saveCachedUser(undefined, guest);
     setSyncStatus('synced');
     setCurrentPage('home');
-  }, []);
+  }, [commitCurrentUser]);
 
   const handleLoginSuccess = useCallback((session, customUsername) => (
     handleSessionChange(session, 'SIGNED_IN', customUsername)
@@ -218,13 +224,13 @@ export function useAppController() {
       email: currentUser.email,
       username: currentUser.username || legacyUser.username,
     });
-    setCurrentUser(mergedUser);
+    commitCurrentUser(mergedUser);
     saveCachedUser(undefined, mergedUser);
     await syncWithCloud(mergedUser);
     markLegacyDataImported(undefined, currentUser.id);
     setShowImportModal(false);
     window.alert('本機學習資料已匯入。');
-  }, [currentUser, syncWithCloud]);
+  }, [commitCurrentUser, currentUser, syncWithCloud]);
 
   const dismissImportModal = useCallback(() => {
     if (currentUser?.id) {
@@ -253,7 +259,7 @@ export function useAppController() {
 
       const cloudUser = await fetchCloudUser(supabase, authUser);
       if (cloudUser) {
-        setCurrentUser(cloudUser);
+        commitCurrentUser(cloudUser);
         saveCachedUser(undefined, cloudUser);
         await syncPublicStatsSafely(cloudUser, authUser.id);
       } else {
@@ -264,7 +270,7 @@ export function useAppController() {
     } catch (error) {
       await exposeSyncError(error);
     }
-  }, [currentUser, exposeSyncError, syncPublicStatsSafely]);
+  }, [commitCurrentUser, currentUser, exposeSyncError, syncPublicStatsSafely]);
 
   const safeLogout = useCallback(async () => {
     try {

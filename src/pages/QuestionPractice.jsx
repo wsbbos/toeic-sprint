@@ -17,15 +17,17 @@ import { extractAudioTranscript, isSpeechSupported, speakText, stopSpeaking } fr
 const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 
 export default function QuestionPractice({ currentUser, setCurrentPage, practiceFilter, onAnswerSubmitted, onPracticeCompleted, onToggleFavorite, questions = [] }) {
+  const ownerId = currentUser?.isGuest ? 'guest-local' : currentUser?.id || 'guest-local'
   const questionById = useMemo(() => new Map(questions.map((question) => [question.id, question])), [questions])
   const [session, setSession] = useState(() => {
-    const draft = loadPracticeDraft()
+    const draft = loadPracticeDraft(undefined, ownerId)
     const requestedConfig = practiceFilter || { type: 'part5', count: 10 }
-    const draftMatchesConfig = ['type', 'mode', 'category', 'difficulty', 'timed'].every((key) => (draft?.config?.[key] || null) === (requestedConfig[key] || null))
+    const draftMatchesConfig = ['type', 'mode', 'category', 'difficulty', 'timed', 'durationSeconds'].every((key) => (draft?.config?.[key] || null) === (requestedConfig[key] || null))
+      && Number(draft?.config?.requestedCount ?? draft?.config?.count ?? 0) === Number(requestedConfig.count ?? 0)
     const draftIsUsable = draftMatchesConfig && draft?.questionIds.every((id) => questions.some((question) => question.id === id))
     if (draftIsUsable) return draft
-    const selected = selectPracticeQuestions(questions, practiceFilter || { type: 'part5', count: 10 })
-    return createPracticeSession(selected, practiceFilter || { type: 'part5', count: 10 })
+    const selected = selectPracticeQuestions(questions, requestedConfig)
+    return createPracticeSession(selected, requestedConfig, new Date(), ownerId)
   })
   const [result, setResult] = useState(session.result)
   const [elapsedSeconds, setElapsedSeconds] = useState(() => Math.max(0, Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000)))
@@ -41,9 +43,9 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
 
   useEffect(() => {
     if (session.status !== 'active') return undefined
-    savePracticeDraft(session)
+    savePracticeDraft(session, undefined, ownerId)
     return undefined
-  }, [session])
+  }, [ownerId, session])
 
   useEffect(() => {
     if (session.status !== 'active') return undefined
@@ -64,8 +66,8 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
     else trackedOutcomes.forEach((outcome) => onAnswerSubmitted?.(outcome.question, outcome.userAnswer, outcome.isCorrect))
     setSession(submitted.session)
     setResult(submitted.result)
-    clearPracticeDraft()
-  }, [onAnswerSubmitted, onPracticeCompleted, questions, session])
+    clearPracticeDraft(undefined, ownerId)
+  }, [onAnswerSubmitted, onPracticeCompleted, ownerId, questions, session])
 
   useEffect(() => {
     // Timer expiry is an external time event; submit once when the countdown reaches zero.
