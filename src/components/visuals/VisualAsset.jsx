@@ -3,6 +3,7 @@ import { getVisualAsset } from '../../assets/visuals/manifest.js'
 import LearningVisual from './LearningVisual.jsx'
 import '../../styles/visual-assets.css'
 
+/** @param {{ name?: string, alt?: string, priority?: boolean, decorative?: boolean, className?: string, sizes?: string }} props */
 export default function VisualAsset({ name = 'empty', alt, priority, decorative = false, className = '', sizes = '(max-width: 640px) 180px, 280px' }) {
   const asset = getVisualAsset(name)
   const isPriority = priority ?? Boolean(asset.priority)

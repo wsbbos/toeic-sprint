@@ -12,7 +12,7 @@ export default function Dashboard({ currentUser, setCurrentPage, todayRecord, se
     const today = new Date();
     target.setHours(0,0,0,0);
     today.setHours(0,0,0,0);
-    const diffTime = target - today;
+    const diffTime = target.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays >= 0 ? diffDays : 0;
   };

@@ -45,6 +45,7 @@ const ARTWORK = Object.freeze({
   weakness: WeaknessArtwork,
 })
 
+/** @param {{ variant?: string, label?: string, decorative?: boolean, size?: string, tone?: string, className?: string }} props */
 export default function LearningVisual({ variant = 'empty', label, decorative = false, size = 'medium', tone = 'default', className = '' }) {
   const resolvedVariant = LEARNING_VISUAL_VARIANTS.includes(variant) ? variant : 'empty'
   const Artwork = ARTWORK[resolvedVariant]

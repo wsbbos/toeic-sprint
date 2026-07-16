@@ -97,7 +97,6 @@ export default function AppRoutes({
     case 'retake-practice':
       return (
         <RetakePractice
-          currentUser={currentUser}
           setCurrentPage={actions.setCurrentPage}
           retakeList={retakeList}
           onRetakeCompleted={actions.onRetakeCompleted}

@@ -92,7 +92,7 @@ export function useAppController() {
     }
   }, [handleStaleSession]);
 
-  const syncPublicStatsSafely = useCallback(async (user, sessionUserId) => {
+  const syncPublicStatsSafely = useCallback(async (user, sessionUserId = user?.id) => {
     try {
       await syncPublicStatsToCloud(supabase, user, sessionUserId || user?.id);
     } catch (error) {

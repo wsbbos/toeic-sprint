@@ -24,7 +24,7 @@ export function updateReviewSchedule(item, isCorrect, now = new Date()) {
 export function getDueReviews(wrongBook = [], now = new Date()) {
   return wrongBook
     .filter((item) => !item.nextReviewAt || new Date(item.nextReviewAt).getTime() <= now.getTime())
-    .sort((left, right) => new Date(left.nextReviewAt || 0) - new Date(right.nextReviewAt || 0))
+    .sort((left, right) => new Date(left.nextReviewAt || 0).getTime() - new Date(right.nextReviewAt || 0).getTime())
 }
 
 function aggregate(history, field) {

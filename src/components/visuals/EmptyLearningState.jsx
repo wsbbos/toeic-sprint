@@ -1,5 +1,6 @@
 import VisualAsset from './VisualAsset.jsx'
 
+/** @param {{ variant?: string, title: string, description?: string, actionLabel?: string, onAction?: () => void, compact?: boolean }} props */
 export default function EmptyLearningState({ variant = 'empty', title, description, actionLabel, onAction, compact = false }) {
   return (
     <section

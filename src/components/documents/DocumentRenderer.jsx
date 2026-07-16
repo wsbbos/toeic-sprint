@@ -86,7 +86,7 @@ function DocumentMetrics({ metrics, highlightTerms }) {
 function DocumentTable({ model, highlightTerms }) {
   if (!model.rows.length) return null
   return (
-    <div className="document-table-scroll" tabIndex="0" aria-label={`${model.title} table region`}>
+    <div className="document-table-scroll" tabIndex={0} aria-label={`${model.title} table region`}>
       <table aria-label={model.title}>
         {model.columns.length > 0 && <thead><tr>{model.columns.map((column) => <th key={column} scope="col"><HighlightText text={column} terms={highlightTerms} /></th>)}</tr></thead>}
         <tbody>{model.rows.map((row, rowIndex) => <tr key={`${row.join('-')}-${rowIndex}`}>{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`}><HighlightText text={cell} terms={highlightTerms} /></td>)}</tr>)}</tbody>
@@ -109,6 +109,7 @@ function DocumentThread({ messages, highlightTerms }) {
   )
 }
 
+/** @param {{ passage?: string, document?: Record<string, any>, compact?: boolean, highlightTerms?: string[] }} props */
 export default function DocumentRenderer({ passage = '', document = {}, compact = false, highlightTerms = [] }) {
   const model = createDocumentModel({ passage, document })
   const tableType = ['invoice', 'schedule', 'table_chart'].includes(model.type)

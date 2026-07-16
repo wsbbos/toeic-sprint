@@ -89,6 +89,7 @@ const locateEvidence = (question) => {
   return { evidence: '', evidenceLabel: '', evidenceSource: '' }
 }
 
+/** @param {{ question?: Record<string, any>, userAnswer?: string, correctAnswer?: string }} [options] */
 export function createExplanationModel({ question = {}, userAnswer = '', correctAnswer } = {}) {
   const resolvedCorrectAnswer = correctAnswer || question.correctAnswer || question.answer || ''
   const base = {

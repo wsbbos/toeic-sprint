@@ -6,6 +6,16 @@ const port = 4174
 const localBaseURL = `http://${host}:${port}`
 const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL
 
+const runViteBuild = () => {
+  const result = spawnSync(
+    process.execPath,
+    ['./node_modules/vite/bin/vite.js', 'build'],
+    { stdio: 'inherit' },
+  )
+  if (result.error) throw result.error
+  if (result.status !== 0) throw new Error(`Vite production build failed with exit code ${result.status}`)
+}
+
 const waitForServer = async (url, timeoutMs = 30000) => {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
@@ -33,7 +43,7 @@ const runPlaywright = (baseURL) => {
   const environment = {
     ...process.env,
     PLAYWRIGHT_BASE_URL: baseURL,
-    PLAYWRIGHT_LOCAL_DEV: externalBaseURL ? '0' : '1',
+    PLAYWRIGHT_LOCAL_PREVIEW: externalBaseURL ? '0' : '1',
   }
   delete environment.FORCE_COLOR
   delete environment.NO_COLOR
@@ -52,9 +62,16 @@ const runPlaywright = (baseURL) => {
 let server
 try {
   if (!externalBaseURL) {
+    runViteBuild()
     server = spawn(
       process.execPath,
-      ['./node_modules/vite/bin/vite.js', '--host', host, '--port', String(port)],
+      [
+        './node_modules/vite/bin/vite.js',
+        'preview',
+        '--host', host,
+        '--port', String(port),
+        '--strictPort',
+      ],
       { stdio: 'ignore', windowsHide: true, detached: true },
     )
     server.unref()

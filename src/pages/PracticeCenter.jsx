@@ -13,7 +13,7 @@ const CATEGORY_LABELS = {
 }
 
 export default function PracticeCenter({ setCurrentPage, setPracticeFilter }) {
-  const [count, setCount] = useState(20)
+  const [count, setCount] = useState('20')
   const [category, setCategory] = useState('all')
   const [difficulty, setDifficulty] = useState('all')
   const [timed, setTimed] = useState(false)

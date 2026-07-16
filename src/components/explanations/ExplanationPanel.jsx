@@ -69,6 +69,7 @@ function Part7Lesson({ model, question }) {
   )
 }
 
+/** @param {{ question?: Record<string, any>, userAnswer?: string, correctAnswer?: string, index?: number }} props */
 export default function ExplanationPanel({ question = {}, userAnswer = '', correctAnswer, index = 0 }) {
   const model = createExplanationModel({ question, userAnswer, correctAnswer })
   return (

@@ -21,7 +21,6 @@ export default function App() {
         currentPage={app.currentPage}
         setCurrentPage={app.actions.setCurrentPage}
         currentUser={app.currentUser}
-        users={[]}
         onLogout={app.safeLogout}
       />
 

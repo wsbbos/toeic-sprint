@@ -12,7 +12,7 @@ export function isSpeechSupported() {
  * Speaks the given English text using SpeechSynthesis.
  * @param {string} text Plaintext to read aloud
  * @param {number} rate Speed of pronunciation (e.g. 1.0 is normal, 0.7 is slower)
- * @param {Function|null} onEnd Optional callback executed when voice completes
+ * @param {(() => void)|null} onEnd Optional callback executed when voice completes
  * @returns {boolean} Success status
  */
 export function speakText(text, rate = 1.0, onEnd = null) {

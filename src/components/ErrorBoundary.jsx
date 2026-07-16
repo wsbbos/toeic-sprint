@@ -51,7 +51,7 @@ export default class ErrorBoundary extends React.Component {
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.75rem' }}>
               系統發生非預期錯誤
             </h2>
-            <p style={{ color: '#4b5563', fontSize: '#0.95rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+            <p style={{ color: '#4b5563', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
               抱歉，應用程式在執行過程中遇到了致命的例外狀況。為了確保您的本地學習資料完整，系統已自動暫停執行。
             </p>
 
@@ -91,8 +91,8 @@ export default class ErrorBoundary extends React.Component {
                   transition: 'background-color 0.2s',
                   flex: 1
                 }}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#4338ca'}
-                onMouseOut={(e) => e.target.style.backgroundColor = '#4f46e5'}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#4338ca'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4f46e5'}
               >
                 🔄 重新整理
               </button>
@@ -113,12 +113,12 @@ export default class ErrorBoundary extends React.Component {
                   flex: 1
                 }}
                 onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#f9fafb';
-                  e.target.style.color = '#111827';
+                  e.currentTarget.style.backgroundColor = '#f9fafb';
+                  e.currentTarget.style.color = '#111827';
                 }}
                 onMouseOut={(e) => {
-                  e.target.style.backgroundColor = '#ffffff';
-                  e.target.style.color = '#374151';
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.color = '#374151';
                 }}
               >
                 🏠 返回首頁

@@ -78,6 +78,7 @@ const normalizeRows = (rows) => Array.isArray(rows)
   ? rows.map((row) => Array.isArray(row) ? row.map((cell) => String(cell ?? '')) : Object.values(row || {}).map((cell) => String(cell ?? '')))
   : []
 
+/** @param {{ passage?: string, document?: Record<string, any> }} [options] */
 export function createDocumentModel({ passage = '', document = {} } = {}) {
   const legacy = parseLegacyPassage(passage)
   const explicitFields = normalizeFields(document.fields)
