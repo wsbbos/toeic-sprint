@@ -103,11 +103,14 @@ test('error sanitizer masks tokens and Supabase project URLs', () => {
     details: 'refresh token missing',
   });
 
-  assert.equal(sanitized.code, 'PGRST301');
-  assert.equal(sanitized.message.includes('private-project'), false);
-  assert.equal(sanitized.message.includes('eyJhbGci'), false);
-  assert.equal(sanitized.message.includes('[PROTECTED_JWT]'), true);
+  assert.equal(sanitized.code, 'SYNC_FAILED');
+  assert.equal(sanitized.message, '雲端同步暫時失敗，本機資料已保留。');
+  assert.equal(JSON.stringify(sanitized).includes('private-project'), false);
+  assert.equal(JSON.stringify(sanitized).includes('eyJhbGci'), false);
   assert.equal(isStaleSessionError({ code: 'refresh_token_not_found' }), true);
+  const circular = {};
+  circular.self = circular;
+  assert.doesNotThrow(() => sanitizeError({ message: circular }));
 });
 
 test('default user profiles are normalized without sharing mutable collections', () => {

@@ -30,3 +30,16 @@ test('guest can clear local learning data with two confirmations and no email er
   expect(window.prompt).toHaveBeenCalledTimes(1)
   expect(window.confirm).toHaveBeenCalledTimes(1)
 })
+test('sync failures show recovery guidance without backend diagnostics', () => {
+  render(<Settings
+    currentUser={{ id: 'user-1', email: 'learner@example.com', username: 'Learner', goals: {} }}
+    onSaveGoals={vi.fn()}
+    onClearData={vi.fn()}
+    onDeleteAccount={vi.fn()}
+    onManualSync={vi.fn()}
+    syncStatus="failed"
+    syncError={{ message: 'private SQL detail', code: '42501', details: 'row policy internals' }}
+  />)
+  expect(screen.getByRole('alert')).toHaveTextContent('本機資料已保留')
+  expect(screen.queryByText(/private SQL|42501|row policy/)).not.toBeInTheDocument()
+})

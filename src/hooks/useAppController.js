@@ -43,7 +43,6 @@ export function useAppController() {
     const cached = loadCachedUser();
     return cached ? normalizeUserProfile(cached) : null;
   });
-  const [currentSession, setCurrentSession] = useState(null);
   const [currentPage, setCurrentPage] = useState('login');
   const [practiceFilter, setPracticeFilter] = useState('');
   const [activeMockResult, setActiveMockResult] = useState(null);
@@ -69,7 +68,6 @@ export function useAppController() {
       // Storage may be unavailable in privacy mode.
     }
     commitCurrentUser(null);
-    setCurrentSession(null);
     setCurrentPage('login');
   }, [commitCurrentUser]);
 
@@ -81,7 +79,7 @@ export function useAppController() {
     try {
       await signOutWithTimeout(supabase);
     } catch (signOutError) {
-      console.warn('Stale session sign-out failed; local cleanup continued.', signOutError);
+      console.warn('Stale session sign-out failed; local cleanup continued.', sanitizeError(signOutError));
     } finally {
       clearLocalSession();
       handlingStaleSessionRef.current = false;
@@ -114,7 +112,6 @@ export function useAppController() {
     event = 'UNKNOWN',
     customUsername = null,
   ) => {
-    setCurrentSession(session);
 
     if (!session) {
       if (event === 'INITIAL_SESSION' && currentUserRef.current?.isGuest) return;
@@ -213,7 +210,6 @@ export function useAppController() {
   const handleGuestLogin = useCallback(() => {
     const guest = createGuestProfile();
     commitCurrentUser(guest);
-    setCurrentSession(null);
     saveCachedUser(undefined, guest);
     setSyncStatus('synced');
     setCurrentPage('home');
@@ -294,8 +290,8 @@ export function useAppController() {
     }
   }, [clearLocalSession]);
 
-  const handleSaveGoals = useCallback((goals) => {
-    updateActiveUser((user) => ({
+  const handleSaveGoals = useCallback(async (goals) => {
+    await updateActiveUser((user) => ({
       ...user,
       goals: { ...user.goals, ...goals },
     }));
@@ -396,7 +392,6 @@ export function useAppController() {
     actions,
     activeMockResult,
     currentPage,
-    currentSession,
     currentUser,
     importModal: {
       onDismiss: dismissImportModal,

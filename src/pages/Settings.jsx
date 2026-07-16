@@ -5,13 +5,13 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
   const [targetScore, setTargetScore] = useState(currentUser?.goals?.targetScore || 700);
   const [examDate, setExamDate] = useState(currentUser?.goals?.examDate || '');
   const [dailyVocabularyGoal, setDailyVocabularyGoal] = useState(currentUser?.goals?.dailyVocabularyGoal || 30);
-  const [dailyQuestionGoal, setDailyQuestionGoal] = useState(currentUser?.goals?.dailyQuestionGoal || 50);
-  const [dailyStudyMinutesGoal, setDailyStudyMinutesGoal] = useState(currentUser?.goals?.dailyStudyMinutesGoal || 60);
+  const [dailyQuestionGoal, setDailyQuestionGoal] = useState(currentUser?.goals?.dailyQuestionGoal || 30);
+  const [dailyStudyMinutesGoal, setDailyStudyMinutesGoal] = useState(currentUser?.goals?.dailyStudyMinutesGoal || 45);
   const isGuest = Boolean(currentUser?.isGuest || !currentUser?.email);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    onSaveGoals({
+    await onSaveGoals({
       targetScore: Number(targetScore),
       examDate,
       dailyVocabularyGoal: Number(dailyVocabularyGoal),
@@ -83,8 +83,8 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
       </div>
 
       {/* Cloud Status Panel */}
-      <div className="card" style={{ 
-        borderLeft: '5px solid var(--secondary)', 
+      <div className="card" style={{
+        borderLeft: '5px solid var(--secondary)',
         backgroundColor: 'var(--secondary-light)',
         padding: '1.25rem 1.5rem',
         display: 'flex',
@@ -103,10 +103,10 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
             <strong>同步狀態：</strong>
-            <span style={{ 
-              fontSize: '0.8rem', 
-              fontWeight: 700, 
-              padding: '0.25rem 0.5rem', 
+            <span style={{
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              padding: '0.25rem 0.5rem',
               borderRadius: 'var(--radius-sm)',
               color: syncInfo.color,
               backgroundColor: syncInfo.bg
@@ -115,26 +115,28 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
             </span>
           </div>
 
-          {/* Sync Error Diagnostic Summary */}
+          {/* User-safe recovery guidance; raw backend diagnostics stay out of the DOM. */}
           {syncStatus === 'failed' && syncError && (
-            <div style={{
-              marginTop: '0.75rem',
-              padding: '0.75rem 1rem',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fee2e2',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              color: '#991b1b'
-            }}>
-              <strong style={{ display: 'block', marginBottom: '0.25rem' }}>🔍 錯誤診斷摘要：</strong>
-              <div style={{ fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                <div>• 訊息: {syncError.message}</div>
-                <div>• 代碼: {syncError.code}</div>
-                <div>• 細節: {syncError.details}</div>
-              </div>
+            <div
+              role="alert"
+              aria-live="assertive"
+              style={{
+                marginTop: '0.75rem',
+                padding: '0.75rem 1rem',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fee2e2',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                color: '#991b1b',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem',
+              }}
+            >
+              <strong>雲端同步暫時失敗，本機資料已保留。</strong>
+              <span>請確認網路後重新同步；若持續發生，請稍後再試。</span>
             </div>
           )}
-
           {!isGuest && (
             <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
               <button
@@ -155,8 +157,8 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
         <h2 style={{ fontSize: '1.2rem', marginBottom: '1.25rem' }}>🎯 調整我的每日目標</h2>
         <form onSubmit={handleSave} className="flex flex-col gap-3">
           <div className="form-group">
-            <label className="form-label">目標 TOEIC 分數</label>
-            <select className="form-input" value={targetScore} onChange={(e) => setTargetScore(Number(e.target.value))}>
+            <label className="form-label" htmlFor="target-score">目標 TOEIC 分數</label>
+            <select id="target-score" className="form-input" value={targetScore} onChange={(e) => setTargetScore(Number(e.target.value))}>
               <option value={550}>550分</option>
               <option value={730}>730分</option>
               <option value={860}>860分</option>
@@ -167,22 +169,22 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
           </div>
 
           <div className="form-group">
-            <label className="form-label">預計考試日期</label>
-            <input type="date" className="form-input" value={examDate} onChange={(e) => setExamDate(e.target.value)} required />
+            <label className="form-label" htmlFor="exam-date">預計考試日期</label>
+            <input id="exam-date" type="date" className="form-input" value={examDate} onChange={(e) => setExamDate(e.target.value)} required />
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             <div className="form-group">
-              <label className="form-label">每日單字目標</label>
-              <input type="number" className="form-input" value={dailyVocabularyGoal} onChange={(e) => setDailyVocabularyGoal(Number(e.target.value))} min={5} max={200} />
+              <label className="form-label" htmlFor="daily-vocabulary-goal">每日單字目標</label>
+              <input id="daily-vocabulary-goal" type="number" className="form-input" value={dailyVocabularyGoal} onChange={(e) => setDailyVocabularyGoal(Number(e.target.value))} min={5} max={200} />
             </div>
             <div className="form-group">
-              <label className="form-label">每日題目目標</label>
-              <input type="number" className="form-input" value={dailyQuestionGoal} onChange={(e) => setDailyQuestionGoal(Number(e.target.value))} min={5} max={200} />
+              <label className="form-label" htmlFor="daily-question-goal">每日題目目標</label>
+              <input id="daily-question-goal" type="number" className="form-input" value={dailyQuestionGoal} onChange={(e) => setDailyQuestionGoal(Number(e.target.value))} min={5} max={200} />
             </div>
             <div className="form-group">
-              <label className="form-label">每日學習分鐘</label>
-              <input type="number" className="form-input" value={dailyStudyMinutesGoal} onChange={(e) => setDailyStudyMinutesGoal(Number(e.target.value))} min={5} max={480} />
+              <label className="form-label" htmlFor="daily-study-minutes-goal">每日學習分鐘</label>
+              <input id="daily-study-minutes-goal" type="number" className="form-input" value={dailyStudyMinutesGoal} onChange={(e) => setDailyStudyMinutesGoal(Number(e.target.value))} min={5} max={480} />
             </div>
           </div>
 
@@ -199,16 +201,18 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
           {isGuest ? '以下操作只會影響此裝置上的訪客學習紀錄。' : '以下操作會清除學習紀錄並同步更新本機與 Supabase；不會刪除登入帳號。'}
         </p>
         <div className="flex gap-2">
-          <button 
-            className="btn btn-outline" 
+          <button
+            type="button"
+            className="btn btn-outline"
             style={{ flex: 1, color: 'var(--danger)', borderColor: 'var(--danger)' }}
             onClick={handleClearClick}
           >
             {isGuest ? '🧹 清空訪客紀錄' : '🧹 清空雲端/本機紀錄'}
           </button>
-          
-          <button 
-            className="btn btn-danger" 
+
+          <button
+            type="button"
+            className="btn btn-danger"
             style={{ flex: 1 }}
             onClick={handleDeleteClick}
           >

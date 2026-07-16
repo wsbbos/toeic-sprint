@@ -109,6 +109,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
                   {currentUser.username}
                 </span>
                 <button
+                  type="button"
                   className="btn btn-outline btn-sm"
                   onClick={onLogout}
                   title="登出 / 切換帳號"

@@ -37,10 +37,11 @@ export default function Onboarding({ currentUser, onSaveGoals }) {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="form-group">
-          <label className="form-label">🎯 目標 TOEIC 分數</label>
-          <select 
-            className="form-input" 
-            value={targetScore} 
+          <label className="form-label" htmlFor="onboarding-target-score">🎯 目標 TOEIC 分數</label>
+          <select
+            id="onboarding-target-score"
+            className="form-input"
+            value={targetScore}
             onChange={(e) => setTargetScore(Number(e.target.value))}
           >
             <option value={550}>550分 (綠色證書 - 基礎商務)</option>
@@ -53,11 +54,12 @@ export default function Onboarding({ currentUser, onSaveGoals }) {
         </div>
 
         <div className="form-group">
-          <label className="form-label">📅 預計考試日期</label>
-          <input 
-            type="date" 
-            className="form-input" 
-            value={examDate} 
+          <label className="form-label" htmlFor="onboarding-exam-date">📅 預計考試日期</label>
+          <input
+            id="onboarding-exam-date"
+            type="date"
+            className="form-input"
+            value={examDate}
             onChange={(e) => setExamDate(e.target.value)}
             required
           />
@@ -65,10 +67,11 @@ export default function Onboarding({ currentUser, onSaveGoals }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="form-group">
-            <label className="form-label">📖 每日單字學習目標</label>
-            <select 
-              className="form-input" 
-              value={dailyVocabularyGoal} 
+            <label className="form-label" htmlFor="onboarding-vocabulary-goal">📖 每日單字學習目標</label>
+            <select
+              id="onboarding-vocabulary-goal"
+              className="form-input"
+              value={dailyVocabularyGoal}
               onChange={(e) => setDailyVocabularyGoal(Number(e.target.value))}
             >
               <option value={10}>10 個單字 (輕鬆熱身)</option>
@@ -79,10 +82,11 @@ export default function Onboarding({ currentUser, onSaveGoals }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">📝 每日題目練習目標</label>
-            <select 
-              className="form-input" 
-              value={dailyQuestionGoal} 
+            <label className="form-label" htmlFor="onboarding-question-goal">📝 每日題目練習目標</label>
+            <select
+              id="onboarding-question-goal"
+              className="form-input"
+              value={dailyQuestionGoal}
               onChange={(e) => setDailyQuestionGoal(Number(e.target.value))}
             >
               <option value={15}>15 題 (維持語感)</option>
@@ -95,10 +99,11 @@ export default function Onboarding({ currentUser, onSaveGoals }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="form-group">
-            <label className="form-label">⏱️ 每日學習時間目標</label>
-            <select 
-              className="form-input" 
-              value={dailyStudyMinutesGoal} 
+            <label className="form-label" htmlFor="onboarding-study-minutes-goal">⏱️ 每日學習時間目標</label>
+            <select
+              id="onboarding-study-minutes-goal"
+              className="form-input"
+              value={dailyStudyMinutesGoal}
               onChange={(e) => setDailyStudyMinutesGoal(Number(e.target.value))}
             >
               <option value={20}>20 分鐘 (微習慣養成)</option>
@@ -109,10 +114,11 @@ export default function Onboarding({ currentUser, onSaveGoals }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">📊 每週模擬測驗目標</label>
-            <select 
-              className="form-input" 
-              value={weeklyMockTestGoal} 
+            <label className="form-label" htmlFor="onboarding-mock-goal">📊 每週模擬測驗目標</label>
+            <select
+              id="onboarding-mock-goal"
+              className="form-input"
+              value={weeklyMockTestGoal}
               onChange={(e) => setWeeklyMockTestGoal(Number(e.target.value))}
             >
               <option value={1}>每週 1 回 (維持節奏)</option>
@@ -121,9 +127,9 @@ export default function Onboarding({ currentUser, onSaveGoals }) {
           </div>
         </div>
 
-        <button 
-          type="submit" 
-          className="btn btn-primary onboarding-submit-btn" 
+        <button
+          type="submit"
+          className="btn btn-primary onboarding-submit-btn"
           style={{ width: '100%', marginTop: '1rem', fontSize: '1.1rem', padding: '1rem' }}
         >
           🚀 開啟我的 TOEIC Sprint 訓練！

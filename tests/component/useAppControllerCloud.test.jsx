@@ -112,5 +112,9 @@ test('manual sync failure preserves local learning data and exposes a retryable 
   await act(async () => result.current.actions.onManualSync())
   expect(result.current.currentUser?.id).toBe(mocks.authUser.id)
   expect(result.current.syncStatus).toBe('failed')
-  expect(result.current.syncError).toMatchObject({ message: 'network unavailable' })
+  expect(result.current.syncError).toMatchObject({
+    code: 'NETWORK_UNAVAILABLE',
+    message: '雲端同步暫時失敗，本機資料已保留。',
+  })
+  expect(JSON.stringify(result.current.syncError)).not.toContain('network unavailable')
 })

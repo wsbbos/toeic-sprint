@@ -2,6 +2,27 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
+const getAuthErrorMessage = (error, action = 'login') => {
+  const message = String(error?.message || '').toLowerCase();
+
+  if (message.includes('invalid login credentials')) {
+    return '❌ 帳號或密碼錯誤！請再次確認。';
+  }
+  if (message.includes('email not confirmed')) {
+    return '❌ 請先完成信箱驗證後再登入。';
+  }
+  if (/rate limit|too many/.test(message)) {
+    return '❌ 嘗試次數過多，請稍後再試。';
+  }
+  if (action === 'register' && /already registered|already exists/.test(message)) {
+    return '❌ 此信箱可能已註冊，請改用登入或稍後再試。';
+  }
+
+  return action === 'register'
+    ? '❌ 註冊失敗，請確認資料或稍後再試。'
+    : '❌ 登入失敗，請確認帳號狀態或稍後再試。';
+};
+
 export default function Login({ onLoginSuccess }) {
   // Login States
   const [loginEmail, setLoginEmail] = useState('');
@@ -58,22 +79,15 @@ export default function Login({ onLoginSuccess }) {
       });
 
       if (error) {
-        if (error.message === 'Invalid login credentials') {
-          setLoginError('❌ 帳號或密碼錯誤！請再次確認。');
-        } else {
-          setLoginError(`❌ 登入失敗：${error.message}`);
-        }
-        setLoginLoading(false);
+        setLoginError(getAuthErrorMessage(error));
         return;
       }
-
       if (data?.session) {
         // Authenticated successfully!
-        onLoginSuccess(data.session, null); // passing session and no custom registration profile details
+        await onLoginSuccess(data.session, null); // passing session and no custom registration profile details
       }
-    } catch (err) {
-      console.error('Supabase Login Error:', err);
-      setLoginError('❌ 網路或系統服務異常，請重試！');
+    } catch {
+      setLoginError('❌ 登入失敗，請確認網路後稍後再試。');
     } finally {
       setLoginLoading(false);
     }
@@ -126,16 +140,14 @@ export default function Login({ onLoginSuccess }) {
       });
 
       if (error) {
-        setRegError(`❌ 註冊失敗：${error.message}`);
-        setRegLoading(false);
+        setRegError(getAuthErrorMessage(error, 'register'));
         return;
       }
-
       if (data?.user) {
         // Check if session is already active (auto-sign in enabled in Supabase)
         if (data.session) {
           alert('🎉 帳號註冊且登入成功！');
-          onLoginSuccess(data.session, trimmedUsername); // Pass username to save in cloud app_data
+          await onLoginSuccess(data.session, trimmedUsername); // Pass username to save in cloud app_data
         } else {
           setRegSuccessMsg('✉️ 註冊成功！驗證郵件已發送至您的信箱，請至信箱點擊確認連結後登入。');
           setRegEmail('');
@@ -145,9 +157,8 @@ export default function Login({ onLoginSuccess }) {
           setShowAddForm(false);
         }
       }
-    } catch (err) {
-      console.error('Supabase Registration Error:', err);
-      setRegError('❌ 網路或系統服務異常，請重試！');
+    } catch {
+      setRegError('❌ 註冊失敗，請確認網路後稍後再試。');
     } finally {
       setRegLoading(false);
     }
@@ -155,7 +166,7 @@ export default function Login({ onLoginSuccess }) {
 
   return (
     <div className="practice-container flex flex-col gap-3" style={{ marginTop: '2rem' }}>
-      
+
       {/* Brand Header */}
       <div className="card" style={{ textAlign: 'center', padding: '2.5rem' }}>
         <span style={{ fontSize: '3rem', display: 'block', animation: 'float 3s ease-in-out infinite' }}>🚀</span>
@@ -163,12 +174,12 @@ export default function Login({ onLoginSuccess }) {
           TOEIC Sprint V2.1
         </h1>
         <p style={{ color: 'var(--text-sub)' }}>
-          真正雲端帳號系統 • 跨裝置即時學習同步中心 ☁️
+          雲端帳號 • 跨裝置可靠學習同步 ☁️
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        
+
         {/* LEFT COLUMN: Login Panel */}
         <div className="card flex flex-col gap-3">
           <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', borderBottom: '2px solid var(--border-color)', paddingBottom: '0.5rem' }}>
@@ -177,11 +188,13 @@ export default function Login({ onLoginSuccess }) {
 
           <form onSubmit={handleLoginSubmit} className="flex flex-col gap-3" style={{ marginTop: '0.5rem' }}>
             <div className="form-group">
-              <label className="form-label">電子信箱 Email</label>
-              <input 
-                type="email" 
-                className="form-input" 
-                placeholder="example@email.com" 
+              <label className="form-label" htmlFor="login-email">電子信箱 Email</label>
+              <input
+                id="login-email"
+                autoComplete="email"
+                type="email"
+                className="form-input"
+                placeholder="example@email.com"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 required
@@ -190,19 +203,22 @@ export default function Login({ onLoginSuccess }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">密碼 Password</label>
+              <label className="form-label" htmlFor="login-password">密碼 Password</label>
               <div style={{ position: 'relative' }}>
-                <input 
-                  type={showLoginPassword ? "text" : "password"} 
-                  className="form-input" 
-                  placeholder="請輸入密碼" 
+                <input
+                  id="login-password"
+                  autoComplete="current-password"
+                  type={showLoginPassword ? "text" : "password"}
+                  className="form-input"
+                  placeholder="請輸入密碼"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   required
                   disabled={loginLoading}
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
+                  aria-label={showLoginPassword ? '隱藏密碼' : '顯示密碼'}
                   style={{
                     position: 'absolute',
                     right: '0.75rem',
@@ -211,7 +227,9 @@ export default function Login({ onLoginSuccess }) {
                     border: 'none',
                     background: 'none',
                     cursor: 'pointer',
-                    fontSize: '1rem'
+                    fontSize: '1rem',
+                    minWidth: '44px',
+                    minHeight: '44px'
                   }}
                   onClick={() => setShowLoginPassword(!showLoginPassword)}
                   disabled={loginLoading}
@@ -222,14 +240,14 @@ export default function Login({ onLoginSuccess }) {
             </div>
 
             {loginError && (
-              <div style={{ color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+              <div role="alert" aria-live="assertive" style={{ color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600 }}>
                 {loginError}
               </div>
             )}
 
-            <button 
-              type="submit" 
-              className="btn btn-primary" 
+            <button
+              type="submit"
+              className="btn btn-primary"
               style={{ width: '100%', padding: '0.75rem', marginTop: '0.5rem' }}
               disabled={loginLoading}
             >
@@ -243,16 +261,16 @@ export default function Login({ onLoginSuccess }) {
           <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', borderBottom: '2px solid var(--border-color)', paddingBottom: '0.5rem' }}>
             ➕ 註冊全新雲端帳號
           </h2>
-          
+
           <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
-            建立雲端帳號後，您可以在手機、平板與電腦等多台裝置登入相同信箱，所有做題、單字與模擬考記錄將即時安全同步。
+            建立帳號後可在多台裝置登入。網路可用時會同步學習紀錄；暫時失敗時仍會保留本機紀錄。
           </p>
 
           {regSuccessMsg && (
-            <div className="card" style={{ 
-              backgroundColor: 'var(--success-light)', 
-              color: 'var(--success)', 
-              fontSize: '0.9rem', 
+            <div role="status" aria-live="polite" className="card" style={{
+              backgroundColor: 'var(--success-light)',
+              color: 'var(--success)',
+              fontSize: '0.9rem',
               fontWeight: 600,
               lineHeight: '1.5',
               padding: '1rem',
@@ -266,10 +284,12 @@ export default function Login({ onLoginSuccess }) {
           {showAddForm ? (
             <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3" style={{ animation: 'fadeIn 0.3s ease-out' }}>
               <div className="form-group">
-                <label className="form-label">✉️ 電子信箱 Email</label>
-                <input 
-                  type="email" 
-                  className="form-input" 
+                <label className="form-label" htmlFor="register-email">✉️ 電子信箱 Email</label>
+                <input
+                  id="register-email"
+                  autoComplete="email"
+                  type="email"
+                  className="form-input"
                   placeholder="your-email@example.com"
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
@@ -279,10 +299,12 @@ export default function Login({ onLoginSuccess }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">👤 使用者暱稱 Username</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
+                <label className="form-label" htmlFor="register-username">👤 使用者暱稱 Username</label>
+                <input
+                  id="register-username"
+                  autoComplete="username"
+                  type="text"
+                  className="form-input"
                   placeholder="輸入您的英文名字或暱稱"
                   value={regUsername}
                   onChange={(e) => setRegUsername(e.target.value)}
@@ -292,19 +314,22 @@ export default function Login({ onLoginSuccess }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">🔒 設定安全密碼 (至少 6 位數)</label>
+                <label className="form-label" htmlFor="register-password">🔒 設定安全密碼 (至少 6 位數)</label>
                 <div style={{ position: 'relative' }}>
-                  <input 
-                    type={showRegPassword ? "text" : "password"} 
-                    className="form-input" 
-                    placeholder="請輸入密碼" 
+                  <input
+                    id="register-password"
+                    autoComplete="new-password"
+                    type={showRegPassword ? "text" : "password"}
+                    className="form-input"
+                    placeholder="請輸入密碼"
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     required
                     disabled={regLoading}
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
+                  aria-label={showRegPassword ? '隱藏密碼' : '顯示密碼'}
                     style={{
                       position: 'absolute',
                       right: '0.75rem',
@@ -313,7 +338,9 @@ export default function Login({ onLoginSuccess }) {
                       border: 'none',
                       background: 'none',
                       cursor: 'pointer',
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                    minWidth: '44px',
+                    minHeight: '44px'
                     }}
                     onClick={() => setShowRegPassword(!showRegPassword)}
                     disabled={regLoading}
@@ -324,11 +351,13 @@ export default function Login({ onLoginSuccess }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">✍️ 再次確認密碼</label>
-                <input 
-                  type="password" 
-                  className="form-input" 
-                  placeholder="再次輸入相同密碼" 
+                <label className="form-label" htmlFor="register-password-confirm">✍️ 再次確認密碼</label>
+                <input
+                  id="register-password-confirm"
+                  autoComplete="new-password"
+                  type="password"
+                  className="form-input"
+                  placeholder="再次輸入相同密碼"
                   value={regConfirmPassword}
                   onChange={(e) => setRegConfirmPassword(e.target.value)}
                   required
@@ -337,7 +366,7 @@ export default function Login({ onLoginSuccess }) {
               </div>
 
               {regError && (
-                <div style={{ color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+                <div role="alert" aria-live="assertive" style={{ color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600 }}>
                   {regError}
                 </div>
               )}
@@ -346,9 +375,9 @@ export default function Login({ onLoginSuccess }) {
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={regLoading}>
                   {regLoading ? '帳號建立中...' : '確認註冊 ➔'}
                 </button>
-                <button 
-                  type="button" 
-                  className="btn btn-outline" 
+                <button
+                  type="button"
+                  className="btn btn-outline"
                   style={{ flex: 1 }}
                   onClick={() => {
                     setShowAddForm(false);
@@ -361,8 +390,9 @@ export default function Login({ onLoginSuccess }) {
               </div>
             </form>
           ) : (
-            <button 
-              className="btn btn-primary" 
+            <button
+              type="button"
+              className="btn btn-primary"
               style={{ width: '100%', marginTop: 'auto', padding: '1rem' }}
               onClick={() => {
                 setShowAddForm(true);

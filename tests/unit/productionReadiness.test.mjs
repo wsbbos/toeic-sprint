@@ -40,3 +40,16 @@ test('study-group UI never reads auth tokens or logs raw RPC payloads', async ()
   assert.doesNotMatch(source, /localStorage|access_token|VITE_SUPABASE_URL|VITE_SUPABASE_ANON_KEY/)
   assert.doesNotMatch(source, /console\.log\s*\(/)
 })
+
+test('user-facing failure states never render raw backend diagnostics', async () => {
+  const [login, settings, boundary] = await Promise.all([
+    read('src/pages/Login.jsx'),
+    read('src/pages/Settings.jsx'),
+    read('src/components/ErrorBoundary.jsx'),
+  ])
+
+  assert.doesNotMatch(login, /error\.message|console\.error/)
+  assert.doesNotMatch(settings, /syncError\.(message|code|details)/)
+  assert.doesNotMatch(boundary, /this\.state\.error|error\.toString\(\)/)
+  assert.match(boundary, /APP_RENDER_FAILURE/)
+})

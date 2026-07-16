@@ -39,8 +39,7 @@ export function speakText(text, rate = 1.0, onEnd = null) {
 
     window.speechSynthesis.speak(utterance);
     return true;
-  } catch (err) {
-    console.error('SpeechSynthesis Failed:', err);
+  } catch {
     return false;
   }
 }

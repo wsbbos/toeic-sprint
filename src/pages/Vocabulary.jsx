@@ -9,7 +9,7 @@ export default function Vocabulary({ currentUser, onWordStatusChanged, vocabular
   const [flippedCards, setFlippedCards] = useState({}); // cardId -> boolean
 
   const categories = [
-    'Business', 'Office', 'Meeting', 'Travel', 'Hotel', 
+    'Business', 'Office', 'Meeting', 'Travel', 'Hotel',
     'Finance', 'Hiring', 'Customer Service', 'Shipping', 'Restaurant'
   ];
 
@@ -19,10 +19,10 @@ export default function Vocabulary({ currentUser, onWordStatusChanged, vocabular
   };
 
   const filteredVocab = vocabulary.filter(vocab => {
-    const matchesSearch = vocab.word.toLowerCase().includes(search.toLowerCase()) || 
+    const matchesSearch = vocab.word.toLowerCase().includes(search.toLowerCase()) ||
                           vocab.meaningZh.includes(search);
     const matchesCategory = !categoryFilter || vocab.category === categoryFilter;
-    
+
     const wordStatus = getWordStatus(vocab.id);
     const matchesStatus = !statusFilter || wordStatus === statusFilter;
 
@@ -68,19 +68,21 @@ export default function Vocabulary({ currentUser, onWordStatusChanged, vocabular
       {/* Filter and Search controls */}
       <div className="card grid grid-cols-3 gap-2" style={{ padding: '1rem 1.5rem' }}>
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">🔍 搜尋單字或中文</label>
-          <input 
-            type="text" 
-            className="form-input" 
-            placeholder="例如: collaborate 或 合作" 
+          <label className="form-label" htmlFor="vocabulary-search">🔍 搜尋單字或中文</label>
+          <input
+            id="vocabulary-search"
+            type="text"
+            className="form-input"
+            placeholder="例如: collaborate 或 合作"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">📂 商業分類篩選</label>
-          <select 
+          <label className="form-label" htmlFor="vocabulary-category">📂 商業分類篩選</label>
+          <select
+            id="vocabulary-category"
             className="form-input"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -91,8 +93,9 @@ export default function Vocabulary({ currentUser, onWordStatusChanged, vocabular
         </div>
 
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">🏷️ 掌握度狀態篩選</label>
-          <select 
+          <label className="form-label" htmlFor="vocabulary-status">🏷️ 掌握度狀態篩選</label>
+          <select
+            id="vocabulary-status"
             className="form-input"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -120,7 +123,7 @@ export default function Vocabulary({ currentUser, onWordStatusChanged, vocabular
             const currentStatus = getWordStatus(vocab.id);
 
             return (
-              <VocabularyCard 
+              <VocabularyCard
                 key={vocab.id}
                 vocab={vocab}
                 isFlipped={isFlipped}
