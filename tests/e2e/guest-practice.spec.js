@@ -81,3 +81,14 @@ test('empty wrong book uses the shared review illustration', async ({ page, isMo
   await expect(page.getByTestId('learning-empty-state')).toBeVisible()
   await expect(page.locator('[data-visual="review"]').last()).toBeVisible()
 })
+test('guest study groups degrade safely without cloud access', async ({ page, isMobile }) => {
+  await page.getByTestId('guest-entry').click()
+  if (isMobile) {
+    await page.getByRole('button', { name: '開啟選單' }).click()
+    await page.locator('.mobile-drawer a[href="#friends"]').click()
+  } else {
+    await page.locator('a[href="#friends"]').first().click()
+  }
+  await expect(page.getByRole('heading', { name: '登入後使用讀書小隊' })).toBeVisible()
+  await expect(page.getByText(/訪客模式的核心練習仍可完整使用/)).toBeVisible()
+})

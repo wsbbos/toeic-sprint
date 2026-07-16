@@ -1,461 +1,195 @@
-// src/pages/Friends.jsx
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { useCallback, useEffect, useState } from 'react'
+import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx'
+import { supabase } from '../lib/supabase'
+import {
+  createStudyGroup,
+  fetchStudyGroupLeaderboard,
+  fetchStudyGroups,
+  generateInviteCode,
+  getStudyGroupErrorMessage,
+  joinStudyGroup,
+  normalizeInviteCode,
+} from '../services/studyGroupService.js'
 
-export default function Friends({ currentUser, currentSession }) {
-  // Joined Groups States
-  const [groups, setGroups] = useState([]);
-  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
-  const [activeGroupId, setActiveGroupId] = useState(null);
+export default function Friends({ currentUser }) {
+  const [groups, setGroups] = useState([])
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
+  const [activeGroupId, setActiveGroupId] = useState(null)
+  const [groupMembers, setGroupMembers] = useState([])
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false)
+  const [sortBy, setSortBy] = useState('today_completion_rate')
+  const [newGroupName, setNewGroupName] = useState('')
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
+  const [createdInviteCode, setCreatedInviteCode] = useState('')
+  const [createdGroupName, setCreatedGroupName] = useState('')
+  const [createdGroupId, setCreatedGroupId] = useState('')
+  const [inviteCodeInput, setInviteCodeInput] = useState('')
+  const [isJoiningGroup, setIsJoiningGroup] = useState(false)
+  const [pageError, setPageError] = useState('')
 
-  // Leaderboard States
-  const [groupMembers, setGroupMembers] = useState([]);
-  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
-  const [sortBy, setSortBy] = useState('today_completion_rate'); // today_completion_rate | streak_days | total_questions_answered | mock_high_score
+  const currentUserId = currentUser?.id || ''
+  const cloudAvailable = Boolean(supabase && currentUserId && !currentUser?.isGuest)
 
-  // Form States
-  const [newGroupName, setNewGroupName] = useState('');
-  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [createdInviteCode, setCreatedInviteCode] = useState('');
-  const [createdGroupName, setCreatedGroupName] = useState('');
-  const [createdGroupId, setCreatedGroupId] = useState('');
-
-  const [inviteCodeInput, setInviteCodeInput] = useState('');
-  const [isJoiningGroup, setIsJoiningGroup] = useState(false);
-
-  const getStoredSupabaseAccessToken = () => {
-    try {
-      const authKey = Object.keys(localStorage).find(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
-      if (!authKey) return '';
-
-      const storedAuth = JSON.parse(localStorage.getItem(authKey) || '{}');
-      return storedAuth?.access_token
-        || storedAuth?.currentSession?.access_token
-        || storedAuth?.session?.access_token
-        || '';
-    } catch (err) {
-      console.warn('Error reading localStorage token:', err);
-      return '';
-    }
-  };
-
-  // Query study groups user belongs to
   const fetchGroups = useCallback(async () => {
-    setIsLoadingGroups(true);
+    if (!cloudAvailable) return []
+    setIsLoadingGroups(true)
     try {
-      const { data, error } = await supabase
-        .from('group_members')
-        .select(`
-          group_id,
-          role,
-          study_groups (
-            id,
-            name,
-            invite_code,
-            owner_id
-          )
-        `)
-        .eq('user_id', currentUser.id);
-
-      if (error) {
-        console.error('Error fetching joined groups:', error);
-        alert('❌ 小隊列表讀取失敗，請重試！');
-        setIsLoadingGroups(false);
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        setGroups([]);
-        setActiveGroupId(null);
-        setIsLoadingGroups(false);
-        return;
-      }
-
-      // Map joined groups and fetch their aggregate member counts
-      const groupList = data
-        .filter(m => m.study_groups) // safeguard
-        .map(m => ({
-          id: m.study_groups.id,
-          name: m.study_groups.name,
-          invite_code: m.study_groups.invite_code,
-          owner_id: m.study_groups.owner_id,
-          myRole: m.role || 'member',
-          memberCount: 0
-        }));
-
-      for (let g of groupList) {
-        const { count, error: countErr } = await supabase
-          .from('group_members')
-          .select('*', { count: 'exact', head: true })
-          .eq('group_id', g.id);
-        
-        if (!countErr) {
-          g.memberCount = count || 0;
-        }
-      }
-
-      setGroups(groupList);
-      
-      // Default to select first group if none active using functional updater to avoid dependency loop
-      setActiveGroupId(prev => {
-        if (!prev && groupList.length > 0) {
-          return groupList[0].id;
-        }
-        return prev;
-      });
-    } catch (err) {
-      console.error('Exception during groups fetch:', err);
-      alert('❌ 小隊列表讀取失敗，請重試！');
+      const groupList = await fetchStudyGroups(supabase, currentUserId)
+      setGroups(groupList)
+      setActiveGroupId((previous) => (
+        groupList.some((group) => group.id === previous) ? previous : groupList[0]?.id || null
+      ))
+      setPageError('')
+      return groupList
+    } catch (error) {
+      setPageError(getStudyGroupErrorMessage(error))
+      return []
     } finally {
-      setIsLoadingGroups(false);
+      setIsLoadingGroups(false)
     }
-  }, [currentUser.id]);
+  }, [cloudAvailable, currentUserId])
 
-  // Query active group leaderboard stats from user_public_stats
   const fetchLeaderboard = useCallback(async (groupId) => {
-    setLoadingLeaderboard(true);
+    if (!cloudAvailable || !groupId) return
+    setLoadingLeaderboard(true)
     try {
-      // 1. Fetch group members
-      const { data: members, error: membersErr } = await supabase
-        .from('group_members')
-        .select('user_id, display_name, role')
-        .eq('group_id', groupId);
-
-      if (membersErr) {
-        console.error('Error fetching group members:', membersErr);
-        setLoadingLeaderboard(false);
-        return;
-      }
-
-      if (!members || members.length === 0) {
-        setGroupMembers([]);
-        setLoadingLeaderboard(false);
-        return;
-      }
-
-      // 2. Fetch public stats for those member IDs
-      const memberIds = members.map(m => m.user_id);
-      const { data: stats, error: statsErr } = await supabase
-        .from('user_public_stats')
-        .select('user_id, display_name, streak_days, today_completion_rate, total_questions_answered, total_wrong_count, mock_high_score, updated_at')
-        .in('user_id', memberIds);
-
-      if (statsErr) {
-        console.error('Error fetching public stats:', statsErr);
-      }
-
-      // 3. Combine statistics
-      const combined = members.map(m => {
-        const userStats = stats?.find(s => s.user_id === m.user_id) || {
-          streak_days: 0,
-          today_completion_rate: 0,
-          total_questions_answered: 0,
-          total_wrong_count: 0,
-          mock_high_score: 0,
-          updated_at: null
-        };
-
-        return {
-          user_id: m.user_id,
-          display_name: m.display_name || userStats.display_name || '匿名戰友',
-          role: m.role || 'member',
-          ...userStats
-        };
-      });
-
-      // 4. Sort dynamically
-      const sorted = [...combined].sort((a, b) => {
-        const valA = Number(a[sortBy]) || 0;
-        const valB = Number(b[sortBy]) || 0;
-        return valB - valA; // Descending
-      });
-
-      setGroupMembers(sorted);
-    } catch (err) {
-      console.error('Exception during leaderboard fetch:', err);
+      setGroupMembers(await fetchStudyGroupLeaderboard(supabase, groupId, sortBy))
+      setPageError('')
+    } catch (error) {
+      setGroupMembers([])
+      setPageError(getStudyGroupErrorMessage(error))
     } finally {
-      setLoadingLeaderboard(false);
+      setLoadingLeaderboard(false)
     }
-  }, [sortBy]);
+  }, [cloudAvailable, sortBy])
 
-  // Load Groups on Mount
   useEffect(() => {
+    if (!cloudAvailable) return undefined
+    let active = true
     Promise.resolve().then(() => {
-      setIsCreatingGroup(false); // Safeguard: Force reset to prevent stale state loading locks on mount
-      if (currentUser) {
-        fetchGroups();
-      }
-    });
-  }, [currentUser, fetchGroups]);
+      if (active) fetchGroups()
+    })
+    return () => { active = false }
+  }, [cloudAvailable, fetchGroups])
 
-  // Load Leaderboard when Active Group or Sorting changes
   useEffect(() => {
-    if (activeGroupId) {
-      Promise.resolve().then(() => {
-        fetchLeaderboard(activeGroupId);
-      });
-    } else {
-      Promise.resolve().then(() => {
-        setGroupMembers([]);
-      });
-    }
-  }, [activeGroupId, sortBy, fetchLeaderboard]);
+    if (!cloudAvailable || !activeGroupId) return undefined
+    let active = true
+    Promise.resolve().then(() => {
+      if (active) fetchLeaderboard(activeGroupId)
+    })
+    return () => { active = false }
+  }, [activeGroupId, cloudAvailable, fetchLeaderboard])
 
-  // Create new study group
   const handleCreateGroup = async () => {
-    console.log('REAL CREATE GROUP BUTTON HANDLER FIRED')
-
-    if (!currentUser) {
-      alert('請先登入')
-      return;
-    }
-
-    if (!supabase) {
-      alert('Supabase 尚未初始化')
-      return;
-    }
-
-    const groupName = newGroupName;
-    if (groupName.trim().length < 2) {
-      alert('小隊名稱至少需要 2 個字')
-      return;
-    }
-
-    const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase()
-
     setIsCreatingGroup(true)
-
-    console.log('STEP A: before getSession')
-
+    setPageError('')
     try {
-      const sessionResult = await Promise.race([
-        supabase.auth.getSession(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('GET_SESSION_TIMEOUT')), 8000)
-        )
-      ])
-
-      console.log('STEP B: after getSession', sessionResult)
-
-      const session = sessionResult?.data?.session
-
-      if (!session?.access_token) {
-        console.error('No access token found', sessionResult)
-        alert('登入狀態失效，請重新登入')
-        await supabase.auth.signOut()
-        return
-      }
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-      const params = {
-        p_name: groupName.trim(),
-        p_invite_code: inviteCode
-      }
-
-      console.log('STEP C: raw fetch url', `${supabaseUrl}/rest/v1/rpc/create_study_group`)
-      console.log('STEP D: raw fetch body', params)
-
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 12000)
-
-      try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/rpc/create_study_group`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify(params),
-          signal: controller.signal
-        })
-
-        clearTimeout(timeoutId)
-
-        const text = await response.text()
-
-        console.log('STEP E: raw fetch response status', response.status)
-        console.log('STEP F: raw fetch response text', text)
-
-        if (!response.ok) {
-          alert('建立小隊失敗：' + text)
-          return
-        }
-
-        let parsedData = null;
-        try {
-          parsedData = JSON.parse(text);
-        } catch (parseErr) {
-          console.warn('Response was not JSON:', parseErr);
-        }
-        const createdGroup = parsedData && parsedData[0] ? parsedData[0] : (parsedData || {});
-        const createdId = createdGroup.id || createdGroup.group_id || (typeof createdGroup === 'string' ? createdGroup : null);
-
-        setCreatedInviteCode(inviteCode);
-        setCreatedGroupName(groupName.trim());
-        setCreatedGroupId(createdId || JSON.stringify(createdGroup));
-        setNewGroupName('');
-
-        // Auto refresh the group list and select the newly created group
-        await fetchGroups();
-        if (createdId) {
-          setActiveGroupId(createdId);
-        }
-
-        alert('建立成功，邀請碼：' + inviteCode);
-      } catch (err) {
-        clearTimeout(timeoutId)
-        console.error('Raw fetch exception:', err)
-
-        if (err.name === 'AbortError') {
-          alert('RPC 請求逾時')
-        } else {
-          alert('建立小隊發生錯誤：' + err.message)
-        }
-      }
-    } catch (sessionErr) {
-      console.error('Session retrieval failed or timed out:', sessionErr)
-      alert('無法取得使用者登入階段資訊：' + sessionErr.message)
+      const inviteCode = generateInviteCode()
+      const created = await createStudyGroup(supabase, newGroupName, inviteCode)
+      setCreatedInviteCode(created.inviteCode)
+      setCreatedGroupName(newGroupName.trim())
+      setCreatedGroupId(created.groupId)
+      setNewGroupName('')
+      await fetchGroups()
+      setActiveGroupId(created.groupId)
+      window.alert(`建立成功，邀請碼：${created.inviteCode}`)
+    } catch (error) {
+      const message = getStudyGroupErrorMessage(error)
+      setPageError(message)
+      window.alert(message)
     } finally {
-      console.log('STEP G: finally reset loading')
       setIsCreatingGroup(false)
     }
-  };
+  }
 
-  // Join group by invite code
-  const handleJoinGroup = async (e) => {
-    e.preventDefault();
-    const inviteCode = inviteCodeInput.trim().replace(/\s+/g, '').toUpperCase();
-    const rpcName = 'join_study_group_by_invite_code';
-
-    console.log('JOIN STEP 1: handler fired');
-    console.log('JOIN normalized invite code:', inviteCode);
-
-    if (inviteCode.length < 6) {
-      alert('請輸入 6 位邀請碼');
-      return;
-    }
-
-    const knownGroup = groups.find(group => group.invite_code?.toUpperCase() === inviteCode);
+  const handleJoinGroup = async (event) => {
+    event.preventDefault()
+    const inviteCode = normalizeInviteCode(inviteCodeInput)
+    const knownGroup = groups.find((group) => group.invite_code?.toUpperCase() === inviteCode)
     if (knownGroup) {
-      console.log('JOIN rpc name:', rpcName);
-      console.log('JOIN rpc result:', { status: 'already_member', source: 'loaded_groups' });
-      console.log('JOIN error message:', '');
-      alert('你已經在這個小隊');
-      setActiveGroupId(knownGroup.id);
-      await fetchLeaderboard(knownGroup.id);
-      return;
+      setActiveGroupId(knownGroup.id)
+      await fetchLeaderboard(knownGroup.id)
+      window.alert('你已經在這個小隊')
+      return
     }
 
-    setIsJoiningGroup(true);
-
+    setIsJoiningGroup(true)
+    setPageError('')
     try {
-      // Do not call supabase.auth.getSession() here; it can hang in stale auth states.
-      const accessToken = currentSession?.access_token || getStoredSupabaseAccessToken();
-      console.log('JOIN STEP 3: has accessToken =', Boolean(accessToken));
-
-      if (!accessToken) {
-        alert('登入狀態失效，請重新登入');
-        return;
+      const result = await joinStudyGroup(supabase, inviteCode)
+      if (result.status === 'not_found') {
+        window.alert('找不到此邀請碼')
+        return
       }
-
-      console.log('JOIN rpc name:', rpcName);
-      const { data, error } = await supabase.rpc(rpcName, {
-        p_invite_code: inviteCode
-      });
-
-      console.log('JOIN rpc result:', data || null);
-      console.log('JOIN error message:', error?.message || '');
-
-      if (error) {
-        alert('加入失敗，請稍後再試');
-        return;
+      if (!['joined', 'already_member'].includes(result.status)) {
+        throw new Error('Unexpected study-group response')
       }
-
-      const result = Array.isArray(data) ? data[0] : data;
-      const status = result?.status;
-      const groupId = result?.group_id;
-
-      if (status === 'not_found') {
-        alert('找不到此邀請碼');
-        return;
+      setInviteCodeInput('')
+      await fetchGroups()
+      if (result.groupId) {
+        setActiveGroupId(result.groupId)
+        await fetchLeaderboard(result.groupId)
       }
-
-      if (status === 'already_member') {
-        alert('你已經在這個小隊');
-        if (groupId) {
-          setActiveGroupId(groupId);
-          await fetchLeaderboard(groupId);
-        }
-        return;
-      }
-
-      if (status !== 'joined') {
-        alert('加入失敗，請稍後再試');
-        return;
-      }
-
-      alert('🎉 成功加入讀書小隊！');
-      setInviteCodeInput('');
-
-      try {
-        await fetchGroups();
-        if (groupId) {
-          setActiveGroupId(groupId);
-          await fetchLeaderboard(groupId);
-        }
-      } catch (refreshErr) {
-        console.error('List refresh failed after joining:', refreshErr);
-        alert('加入成功，但列表刷新失敗，請重新整理');
-      }
-    } catch (err) {
-      console.error('Join group exception:', err);
-      console.log('JOIN error message:', err.message || '');
-      alert('加入失敗，請稍後再試');
+      window.alert(result.status === 'joined' ? '🎉 成功加入讀書小隊！' : '你已經在這個小隊')
+    } catch (error) {
+      const message = getStudyGroupErrorMessage(error)
+      setPageError(message)
+      window.alert(message)
     } finally {
-      setIsJoiningGroup(false);
+      setIsJoiningGroup(false)
     }
-  };
-  const handleCopyCode = (code) => {
-    navigator.clipboard.writeText(code);
-    alert(`📋 邀請碼「${code}」已複製至剪貼簿！`);
-  };
+  }
 
-  if (!currentUser) return null;
+  const handleCopyCode = async (code) => {
+    try {
+      await navigator.clipboard.writeText(code)
+      window.alert(`📋 邀請碼「${code}」已複製至剪貼簿！`)
+    } catch {
+      setPageError('無法存取剪貼簿，請手動複製邀請碼。')
+    }
+  }
 
-  // Extract active user statistics safely
-  const streak = currentUser.progress?.streakDays || 0;
-  const totalAnswered = currentUser.progress?.totalQuestionsAnswered || 0;
+  if (!cloudAvailable) {
+    return (
+      <EmptyLearningState
+        variant="empty"
+        title="登入後使用讀書小隊"
+        description={currentUser?.isGuest
+          ? '訪客模式的核心練習仍可完整使用；讀書小隊需要登入，才能依 RLS 安全讀取成員資料。'
+          : '目前未設定 Supabase，請先完成公開環境變數與資料庫 migration。'}
+      />
+    )
+  }
 
-  const mockTestHistory = currentUser.mockTestHistory || [];
-  const mockHighScore = mockTestHistory.length > 0
-    ? Math.max(...mockTestHistory.map(h => h.score))
-    : 0;
-
-  // Calculate today's record numbers
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayRecord = currentUser.dailyRecords?.find(r => r.date === todayStr) || {
+  const streak = Number(currentUser.progress?.streakDays || 0)
+  const totalAnswered = Number(currentUser.progress?.totalQuestionsAnswered || 0)
+  const mockScores = (currentUser.mockTestHistory || []).map((history) => Number(history.score)).filter(Number.isFinite)
+  const mockHighScore = mockScores.length ? Math.max(...mockScores) : 0
+  const todayStr = new Date().toISOString().split('T')[0]
+  const todayRecord = currentUser.dailyRecords?.find((record) => record.date === todayStr) || {
     wordsLearned: 0,
     questionsAnswered: 0,
-    studyMinutes: 0
-  };
-
-  const wordsGoal = currentUser.goals?.dailyVocabularyGoal || 30;
-  const questionsGoal = currentUser.goals?.dailyQuestionGoal || 50;
-  const studyGoal = currentUser.goals?.dailyStudyMinutesGoal || 60;
-
-  const wP = Math.min((todayRecord.wordsLearned / wordsGoal) * 100, 100);
-  const qP = Math.min((todayRecord.questionsAnswered / questionsGoal) * 100, 100);
-  const sP = Math.min((todayRecord.studyMinutes / studyGoal) * 100, 100);
-  const completionRate = Math.round((wP + qP + sP) / 3);
-
-  const activeGroup = groups.find(g => g.id === activeGroupId);
-
+    studyMinutes: 0,
+  }
+  const wordsGoal = Number(currentUser.goals?.dailyVocabularyGoal || 30)
+  const questionsGoal = Number(currentUser.goals?.dailyQuestionGoal || 30)
+  const studyGoal = Number(currentUser.goals?.dailyStudyMinutesGoal || 45)
+  const wP = Math.min((Number(todayRecord.wordsLearned || 0) / wordsGoal) * 100, 100)
+  const qP = Math.min((Number(todayRecord.questionsAnswered || 0) / questionsGoal) * 100, 100)
+  const sP = Math.min((Number(todayRecord.studyMinutes || 0) / studyGoal) * 100, 100)
+  const completionRate = Math.round((wP + qP + sP) / 3)
+  const activeGroup = groups.find((group) => group.id === activeGroupId)
   return (
     <div className="flex flex-col gap-3 practice-container" style={{ maxWidth: '950px', margin: '0 auto' }}>
-      
+      {pageError && (
+        <div className="card" role="alert" aria-live="assertive" style={{ padding: '1rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+          <strong>雲端小隊暫時無法更新</strong>
+          <p style={{ margin: '0.35rem 0 0.75rem' }}>{pageError}</p>
+          <button type="button" className="btn btn-outline btn-sm" onClick={fetchGroups}>重新載入</button>
+        </div>
+      )}
+
       {/* Cloud Profile Header Summary */}
       <div className="card" style={{ padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
         <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -465,7 +199,7 @@ export default function Friends({ currentUser, currentSession }) {
             </h1>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>信箱: {currentUser.email}</span>
           </div>
-          <span className="badge badge-success">雲端連線正常</span>
+          <span className="badge badge-new">登入帳號 · 雲端小隊</span>
         </div>
 
         <div className="grid grid-cols-4 gap-2" style={{ marginBottom: '1rem' }}>
@@ -498,8 +232,9 @@ export default function Friends({ currentUser, currentSession }) {
           </h3>
           <form onSubmit={(e) => { e.preventDefault(); handleCreateGroup(); }} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">小隊名稱</label>
+              <label className="form-label" htmlFor="study-group-name">小隊名稱</label>
               <input
+                id="study-group-name"
                 type="text"
                 placeholder="例如：金色證書衝刺班 / TOEIC 每日打卡群"
                 className="form-input"
@@ -510,8 +245,7 @@ export default function Friends({ currentUser, currentSession }) {
               />
             </div>
             <button
-              type="button"
-              onClick={handleCreateGroup}
+              type="submit"
               className="btn btn-primary"
               disabled={isCreatingGroup || !newGroupName.trim()}
               style={{ width: '100%', marginTop: '0.25rem' }}
@@ -559,9 +293,12 @@ export default function Friends({ currentUser, currentSession }) {
           </h3>
           <form onSubmit={handleJoinGroup} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">輸入小隊邀請碼</label>
+              <label className="form-label" htmlFor="study-group-invite">輸入小隊邀請碼</label>
               <input
+                id="study-group-invite"
                 type="text"
+                inputMode="text"
+                autoComplete="off"
                 placeholder="輸入 6 位英文/數字邀請碼"
                 className="form-input"
                 value={inviteCodeInput}
@@ -617,13 +354,11 @@ export default function Friends({ currentUser, currentSession }) {
             {groups.map(g => {
               const isActive = g.id === activeGroupId;
               return (
-                <div
+                <article
                   key={g.id}
-                  onClick={() => setActiveGroupId(g.id)}
                   className="card"
                   style={{
                     padding: '1rem',
-                    cursor: 'pointer',
                     transition: 'all 0.2s',
                     border: isActive ? '2px solid var(--secondary)' : '1px solid var(--border-color)',
                     backgroundColor: isActive ? 'var(--secondary-light)' : '#ffffff',
@@ -631,6 +366,23 @@ export default function Friends({ currentUser, currentSession }) {
                     overflow: 'hidden'
                   }}
                 >
+                  <button
+                    type="button"
+                    tabIndex={0}
+                    aria-label={`選擇小隊 ${g.name}`}
+                    aria-pressed={isActive}
+                    onClick={() => setActiveGroupId(g.id)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: 0,
+                      border: 0,
+                      background: 'transparent',
+                      color: 'inherit',
+                      textAlign: 'left',
+                      cursor: 'pointer'
+                    }}
+                  >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                     <span style={{
                       fontSize: '0.75rem',
@@ -649,11 +401,13 @@ export default function Friends({ currentUser, currentSession }) {
                   <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {g.name}
                   </h4>
+                  </button>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-sub)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '0.5rem' }}>
                     <span>邀請碼: <strong style={{ color: 'var(--text-main)', fontFamily: 'monospace' }}>{g.invite_code}</strong></span>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      type="button"
+                      aria-label={`複製 ${g.name} 邀請碼`}
+                      onClick={() => {
                         handleCopyCode(g.invite_code);
                       }}
                       style={{
@@ -663,13 +417,15 @@ export default function Friends({ currentUser, currentSession }) {
                         fontSize: '0.75rem',
                         fontWeight: 600,
                         cursor: 'pointer',
-                        padding: '2px'
+                        minWidth: '44px',
+                        minHeight: '36px',
+                        padding: '0.35rem 0.5rem'
                       }}
                     >
                       複製
                     </button>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
@@ -692,13 +448,14 @@ export default function Friends({ currentUser, currentSession }) {
                 🏆 「{activeGroup.name}」好友排行榜
               </h2>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
-                同舟共濟，即時查看隊友真實進度（每小時更新）
+                同舟共濟，查看隊友最近一次同步的學習進度
               </span>
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}>
-              <span style={{ fontWeight: 600, color: 'var(--text-sub)' }}>排序依據：</span>
+              <label htmlFor="group-leaderboard-sort" style={{ fontWeight: 600, color: 'var(--text-sub)' }}>排序依據：</label>
               <select
+                id="group-leaderboard-sort"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 style={{

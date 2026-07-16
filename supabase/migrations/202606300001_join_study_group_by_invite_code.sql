@@ -1,3 +1,20 @@
+-- Bootstrap the tables referenced by this historical RPC so a fresh migration run is valid.
+create table if not exists public.study_groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(trim(name)) between 2 and 80),
+  invite_code text not null unique check (invite_code ~ '^[A-Z0-9]{6,10}$'),
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.group_members (
+  group_id uuid not null references public.study_groups(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  display_name text not null default '匿名戰友' check (char_length(display_name) between 1 and 80),
+  role text not null default 'member' check (role in ('owner', 'member')),
+  joined_at timestamptz not null default now(),
+  primary key (group_id, user_id)
+);
 -- Safely join a study group by invite code without exposing study_groups rows to non-members.
 create or replace function public.join_study_group_by_invite_code(p_invite_code text)
 returns jsonb
@@ -8,7 +25,7 @@ as $$
 declare
   v_invite_code text := upper(regexp_replace(trim(coalesce(p_invite_code, '')), '[[:space:]]+', '', 'g'));
   v_group_id public.study_groups.id%type;
-  v_display_name text;
+  v_display_name text := coalesce(nullif(split_part(coalesce(auth.jwt() ->> 'email', ''), '@', 1), ''), '匿名戰友');
 begin
   if auth.uid() is null then
     raise exception 'not_authenticated' using errcode = '28000';
@@ -36,11 +53,6 @@ begin
     );
   end if;
 
-  select nullif(p.username, '')
-    into v_display_name
-  from public.profiles p
-  where p.id = auth.uid()
-  limit 1;
 
   begin
     insert into public.group_members (group_id, user_id, display_name, role)

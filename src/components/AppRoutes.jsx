@@ -20,7 +20,6 @@ const WrongBook = lazy(() => import('../pages/WrongBook.jsx'));
 export default function AppRoutes({
   currentPage,
   currentUser,
-  currentSession,
   practiceFilter,
   activeMockResult,
   retakeList,
@@ -104,7 +103,7 @@ export default function AppRoutes({
         />
       );
     case 'friends':
-      return <Friends currentUser={currentUser} currentSession={currentSession} />;
+      return <Friends currentUser={currentUser} />;
     case 'settings':
       return (
         <Settings

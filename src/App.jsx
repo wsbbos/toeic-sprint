@@ -29,7 +29,6 @@ export default function App() {
           <AppRoutes
             currentPage={app.currentPage}
             currentUser={app.currentUser}
-            currentSession={app.currentSession}
             practiceFilter={app.practiceFilter}
             activeMockResult={app.activeMockResult}
             retakeList={app.retakeList}

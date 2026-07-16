@@ -34,3 +34,9 @@ test('application source avoids direct HTML injection and embedded service keys'
   assert.doesNotMatch(combined, /dangerouslySetInnerHTML|\.innerHTML\s*=|\beval\s*\(/)
   assert.doesNotMatch(combined, /service_role|SUPABASE_SERVICE_ROLE_KEY|eyJ[a-zA-Z0-9_-]{20,}/)
 })
+
+test('study-group UI never reads auth tokens or logs raw RPC payloads', async () => {
+  const source = await read('src/pages/Friends.jsx')
+  assert.doesNotMatch(source, /localStorage|access_token|VITE_SUPABASE_URL|VITE_SUPABASE_ANON_KEY/)
+  assert.doesNotMatch(source, /console\.log\s*\(/)
+})
