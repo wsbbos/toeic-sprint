@@ -2,6 +2,7 @@ import { listeningQuestionBank } from './listeningQuestionBank.js';
 import { part5QuestionBank } from './part5QuestionBank.js';
 import { getPart7DocumentMetadata } from './part7Documents.js';
 import { getPart7Evidence } from './part7Evidence.js';
+import { PART7_SCHEMA_VERSION } from './part7Schema.js';
 
 // src/data/questions.js
 
@@ -18,13 +19,13 @@ const rawPart7Data = [
         type: "主旨",
         question: "What is the main purpose of the notice?",
         choices: {
-          A: "To announce scheduled server maintenance",
-          B: "To inform staff about an office relocation",
+          A: "To inform staff about an office relocation",
+          B: "To announce scheduled server maintenance",
           C: "To introduce a new public transit route",
           D: "To recruit facility management assistants"
         },
-        correctAnswer: "B",
-        explanation: "公告標題為 NOTICE OF OFFICE RELOCATION，且首句說明總部將於7月15日搬遷至西雅圖市中心，故主旨是告知員工辦公室搬遷的消息。選 B。",
+        correctAnswer: "A",
+        explanation: "公告標題為 NOTICE OF OFFICE RELOCATION，且首句說明總部將於7月15日搬遷至西雅圖市中心，故主旨是告知員工辦公室搬遷的消息。選 A。",
         difficulty: "Easy",
         tags: ["主旨題", "公司公告"]
       },
@@ -51,12 +52,12 @@ const rawPart7Data = [
         question: "What are employees asked to do by July 9?",
         choices: {
           A: "Access the company servers remotely",
-          B: "Pack their personal belongings",
+          B: "Attend a public transit training session",
           C: "Submit travel reimbursement invoices",
-          D: "Attend a public transit training session"
+          D: "Pack their personal belongings"
         },
-        correctAnswer: "B",
-        explanation: "最後一句明確指出「Employees are requested to pack their personal belongings by July 9」，故選 B。",
+        correctAnswer: "D",
+        explanation: "最後一句明確指出「Employees are requested to pack their personal belongings by July 9」，故選 D。",
         difficulty: "Medium",
         tags: ["細節題", "行動建議"]
       }
@@ -105,13 +106,13 @@ const rawPart7Data = [
         type: "細節",
         question: "What should attendees bring to the session?",
         choices: {
-          A: "A printed restaurant menu",
-          B: "A laptop and last quarter's sales report",
+          A: "A laptop and last quarter's sales report",
+          B: "A printed restaurant menu",
           C: "A signed hotel booking invoice",
           D: "A passport and visa itinerary"
         },
-        correctAnswer: "B",
-        explanation: "文中要求「Please bring a laptop and your copy of last quarter's sales summary report」，故選 B。",
+        correctAnswer: "A",
+        explanation: "文中要求「Please bring a laptop and your copy of last quarter's sales summary report」，故選 A。",
         difficulty: "Medium",
         tags: ["細節題", "攜帶物品"]
       }
@@ -128,13 +129,13 @@ const rawPart7Data = [
         type: "主旨",
         question: "What is the primary topic of the memo?",
         choices: {
-          A: "A software relocation protocol",
-          B: "An updated corporate travel policy",
+          A: "An updated corporate travel policy",
+          B: "A software relocation protocol",
           C: "A recruitment interview shortlist",
           D: "An international tourist itinerary"
         },
-        correctAnswer: "B",
-        explanation: "備忘錄主題為 Updated Corporate Travel Policy（更新的企業差旅政策），主要在規定縮減差旅預算。選 B。",
+        correctAnswer: "A",
+        explanation: "備忘錄主題為 Updated Corporate Travel Policy（更新的企業差旅政策），主要在規定縮減差旅預算。選 A。",
         difficulty: "Easy",
         tags: ["主旨題", "公司備忘錄"]
       },
@@ -162,11 +163,11 @@ const rawPart7Data = [
         choices: {
           A: "Within June 8",
           B: "By July 1",
-          C: "Within ten business days of returning",
-          D: "Before boarding the return flight"
+          C: "Before boarding the return flight",
+          D: "Within ten business days of returning"
         },
-        correctAnswer: "C",
-        explanation: "第二項後半句指出「Receipts must be submitted to claim reimbursement within ten business days of returning」，選 C。",
+        correctAnswer: "D",
+        explanation: "第二項後半句指出「Receipts must be submitted to claim reimbursement within ten business days of returning」，選 D。",
         difficulty: "Medium",
         tags: ["細節題", "期限定位"]
       }
@@ -216,12 +217,12 @@ const rawPart7Data = [
         question: "What benefit is offered to buyers who purchase before June 30?",
         choices: {
           A: "A free upgrade to business class",
-          B: "Complimentary 24/7 technical helpline support",
+          B: "Free delivery of administrative equipment",
           C: "A 50% discount on annual subscriptions",
-          D: "Free delivery of administrative equipment"
+          D: "Complimentary 24/7 technical helpline support"
         },
-        correctAnswer: "B",
-        explanation: "文末指出「Purchase before June 30 to receive complimentary 24/7 technical helpline support」，故選 B。",
+        correctAnswer: "D",
+        explanation: "文末指出「Purchase before June 30 to receive complimentary 24/7 technical helpline support」，故選 D。",
         difficulty: "Medium",
         tags: ["推論題", "活動優惠"]
       }
@@ -256,11 +257,11 @@ const rawPart7Data = [
         choices: {
           A: "On May 5",
           B: "On May 10",
-          C: "On May 25",
-          D: "On June 1"
+          C: "On June 1",
+          D: "On May 25"
         },
-        correctAnswer: "C",
-        explanation: "信中指出「the consignment did not arrive until May 25」，故實際抵達時間是5月25日。選 C。",
+        correctAnswer: "D",
+        explanation: "信中指出「the consignment did not arrive until May 25」，故實際抵達時間是5月25日。選 D。",
         difficulty: "Easy",
         tags: ["細節題", "時間定位"]
       },
@@ -293,13 +294,13 @@ const rawPart7Data = [
         type: "主旨",
         question: "What is the primary topic of the announcement?",
         choices: {
-          A: "A manufacturing defect in database software",
-          B: "The planned retirement of Mr. Kenneth Green",
+          A: "The planned retirement of Mr. Kenneth Green",
+          B: "A manufacturing defect in database software",
           C: "The establishment of a European subsidiary office",
           D: "An updated corporate invoice reimbursement policy"
         },
-        correctAnswer: "B",
-        explanation: "公告指出首席執行長 Mr. Kenneth Green 計劃於今年會計年度結束時退休，主旨為退休事宜。選 B。",
+        correctAnswer: "A",
+        explanation: "公告指出首席執行長 Mr. Kenneth Green 計劃於今年會計年度結束時退休，主旨為退休事宜。選 A。",
         difficulty: "Easy",
         tags: ["主旨題", "公司公告"]
       },
@@ -326,12 +327,12 @@ const rawPart7Data = [
         question: "By when does the board expect to announce the new CEO?",
         choices: {
           A: "By June 30",
-          B: "By next October",
+          B: "Within ten business days",
           C: "At the end of this fiscal year",
-          D: "Within ten business days"
+          D: "By next October"
         },
-        correctAnswer: "B",
-        explanation: "文末最後一句指出「The board expects to announce the official appointment of Mr. Green's successor by next October」，故選 B。",
+        correctAnswer: "D",
+        explanation: "文末最後一句指出「The board expects to announce the official appointment of Mr. Green's successor by next October」，故選 D。",
         difficulty: "Medium",
         tags: ["細節題", "時間估計"]
       }
@@ -380,13 +381,13 @@ const rawPart7Data = [
         type: "細節",
         question: "What are employees advised to do before Friday evening?",
         choices: {
-          A: "Submit travel reimbursement invoices",
-          B: "Save all active project documents locally",
+          A: "Save all active project documents locally",
+          B: "Submit travel reimbursement invoices",
           C: "Register for the sales training workshop",
           D: "Conduct a physical inventory audit check"
         },
-        correctAnswer: "B",
-        explanation: "文中建議「Employees are advised to save all active project documents to local drives before Friday evening」，即存在本地硬碟中。選 B。",
+        correctAnswer: "A",
+        explanation: "文中建議「Employees are advised to save all active project documents to local drives before Friday evening」，即存在本地硬碟中。選 A。",
         difficulty: "Medium",
         tags: ["細節題", "行動建議"]
       }
@@ -404,12 +405,12 @@ const rawPart7Data = [
         question: "What event is being advertised in the email?",
         choices: {
           A: "A grand banquet celebrating a software merger",
-          B: "The 15th Annual Marketing Summit",
+          B: "An airport terminal renovation press conference",
           C: "An orientation training session for new hires",
-          D: "An airport terminal renovation press conference"
+          D: "The 15th Annual Marketing Summit"
         },
-        correctAnswer: "B",
-        explanation: "郵件主旨與首句指明邀請參加 The 15th Annual Marketing Summit（第15屆年度行銷峰會）。選 B。",
+        correctAnswer: "D",
+        explanation: "郵件主旨與首句指明邀請參加 The 15th Annual Marketing Summit（第15屆年度行銷峰會）。選 D。",
         difficulty: "Easy",
         tags: ["主旨題", "活動邀請"]
       },
@@ -435,13 +436,13 @@ const rawPart7Data = [
         type: "推論",
         question: "How can a company qualify for the 15% discount?",
         choices: {
-          A: "By paying highway tolls in advance",
-          B: "By sending five or more attendees",
+          A: "By sending five or more attendees",
+          B: "By paying highway tolls in advance",
           C: "By booking a luxury hotel suite",
           D: "By outsourcing their shipping logistics"
         },
-        correctAnswer: "B",
-        explanation: "文末說明「Group discounts of 15% are available for corporate delegations of five or more attendees」，即指5人或以上與會。選 B。",
+        correctAnswer: "A",
+        explanation: "文末說明「Group discounts of 15% are available for corporate delegations of five or more attendees」，即指5人或以上與會。選 A。",
         difficulty: "Medium",
         tags: ["推論題", "優待資格"]
       }
@@ -458,13 +459,13 @@ const rawPart7Data = [
         type: "主旨",
         question: "What is being advertised in the text?",
         choices: {
-          A: "Luxury resort hotel accommodation packages",
-          B: "Commercial office spaces for lease",
+          A: "Commercial office spaces for lease",
+          B: "Luxury resort hotel accommodation packages",
           C: "Automobile maintenance and parking services",
           D: "Project management software annual subscriptions"
         },
-        correctAnswer: "B",
-        explanation: "標題 PRIME OFFICE SPACE AVAILABLE FOR LEASE（優質辦公室空間出租）表明這是一則商用不動產租賃廣告。選 B。",
+        correctAnswer: "A",
+        explanation: "標題 PRIME OFFICE SPACE AVAILABLE FOR LEASE（優質辦公室空間出租）表明這是一則商用不動產租賃廣告。選 A。",
         difficulty: "Easy",
         tags: ["主旨題", "商業廣告"]
       },
@@ -491,12 +492,12 @@ const rawPart7Data = [
         question: "Who should interested clients contact for a viewing?",
         choices: {
           A: "Sarah Miller",
-          B: "Robert Davis",
+          B: "Julia Vance",
           C: "Kenneth Green",
-          D: "Julia Vance"
+          D: "Robert Davis"
         },
-        correctAnswer: "B",
-        explanation: "最後一句指明「Contact leasing manager Robert Davis at rdavis@oakwood-center.com for viewing」，選 B。",
+        correctAnswer: "D",
+        explanation: "最後一句指明「Contact leasing manager Robert Davis at rdavis@oakwood-center.com for viewing」，選 D。",
         difficulty: "Easy",
         tags: ["細節題", "聯絡人定位"]
       }
@@ -567,6 +568,7 @@ rawPart7Data.forEach(passage => {
       id: question.id,
       part: 7,
       type: question.type,
+      passageId: passage.passageId,
       passage: passage.passage,
       document: getPart7DocumentMetadata(passage.passageId),
       evidence: getPart7Evidence(question.id),
@@ -576,6 +578,7 @@ rawPart7Data.forEach(passage => {
       explanation: question.explanation,
       difficulty: question.difficulty,
       tags: question.tags,
+      version: PART7_SCHEMA_VERSION,
       estimatedTime: question.type === '\u4e3b\u65e8' ? 45 : question.type === '\u7d30\u7bc0' ? 60 : 80
     });
   });

@@ -34,7 +34,7 @@ npm.cmd run dev
 | `npm run dev` | 啟動 Vite 開發伺服器 |
 | `npm run build` | 建立壓縮、分割過的 production bundle |
 | `npm run preview` | 本機預覽 production build |
-| `npm run validate:questions` | 驗證 Part 5 schema、重複、答案、解析與分布 |
+| `npm run validate:questions` | 驗證 Part 5／Part 7 schema、跨 Part ID、選項、答案、解析、原文 evidence 與分布 |
 | `npm run validate:visuals` | 驗證原創 SVG manifest、尺寸、大小、安全引用與 PWA 快取 |
 | `npm run test:node` | 執行 baseline 與 domain 單元測試 |
 | `npm run test:component` | 執行 Vitest / React Testing Library 測試 |
