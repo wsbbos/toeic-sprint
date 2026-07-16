@@ -120,7 +120,7 @@ test('mobile core routes fit the viewport and keep usable button targets', async
     expect(undersizedButtons, `${label} undersized buttons`).toEqual([])
   }
 
-  await expect(page.getByRole('heading', { name: 'TOEIC Sprint V1.3' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'TOEIC Sprint', exact: true })).toBeVisible()
   await assertLayout('home')
 
   await page.locator('.mobile-bottom-tabs .mobile-tab-item').nth(1).click()

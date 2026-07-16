@@ -195,7 +195,7 @@ export default function Dashboard({ currentUser, setCurrentPage, todayRecord, se
         <div className="flex justify-between align-center flex-col md:flex-row gap-2">
           <div>
             <span className="badge badge-mastered" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', marginBottom: '0.75rem', fontSize: '0.8rem' }}>
-              TOEIC SPRINT V1.3
+              TOEIC SPRINT
             </span>
             <h1 style={{ color: 'white', fontSize: '2rem', marginBottom: '0.5rem', fontFamily: 'var(--font-display)', fontWeight: 800 }}>
               ✨ 學習總覽：{currentUser.username}

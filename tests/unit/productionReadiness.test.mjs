@@ -53,3 +53,13 @@ test('user-facing failure states never render raw backend diagnostics', async ()
   assert.doesNotMatch(boundary, /this\.state\.error|error\.toString\(\)/)
   assert.match(boundary, /APP_RENDER_FAILURE/)
 })
+
+test('user-facing pages do not publish conflicting hard-coded version labels', async () => {
+  const pages = await Promise.all([
+    read('src/pages/Home.jsx'),
+    read('src/pages/Login.jsx'),
+    read('src/pages/Dashboard.jsx'),
+  ])
+
+  assert.doesNotMatch(pages.join('\n'), /TOEIC(?: SPRINT| Sprint) V\d|\bV\d+\.\d+\b/i)
+})

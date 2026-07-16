@@ -40,7 +40,7 @@ npm.cmd run dev
 | `npm run test:component` | 執行 Vitest / React Testing Library 測試 |
 | `npm run test:e2e` | 以受控 Vite runner 執行桌面與手機 Playwright 流程，結束後自動清理伺服器 |
 | `npm run audit:deps` | 檢查 high 以上的 npm 已知弱點 |
-| `npm run verify:ci` | 題庫、測試、lint 與 build 完整閘門 |
+| `npm run verify:ci` | 題庫、測試、lint、typecheck 與 build 完整閘門 |
 | `npm run verify:baseline` | 先檢查受保護資產，再執行完整閘門 |
 
 首次執行 E2E 如尚未安裝 Chromium：
@@ -60,7 +60,7 @@ src/
   hooks/        session 與 application controller
   services/     練習、進度、同步、驗證與儲存邏輯
   data/         Part 5、Part 7、單字與正式 schema
-  utils/        錯誤遮罩、storage、語音等工具
+  utils/        錯誤清理、語音等通用工具
 public/
   assets/visuals/ 原創、可快取的 SVG 插圖
 supabase/
@@ -112,6 +112,9 @@ npm.cmd run test:e2e
 - 真實信箱註冊、驗證信與跨裝置同步需要外部 Supabase 測試專案，無法在無憑證的本機 CI 中端到端驗證。
 - PWA 提供 app shell、原創視覺 precache 與同源 GET runtime cache；仍不包含背景資料同步或完整離線帳號功能。
 - 分數區間是非官方學習估算；正式成績仍以 ETS TOEIC 測驗為準。
+- 登入同步以整份 profile 的最新時間為準；兩台離線裝置同時修改後才上線時，不做欄位級衝突合併，較晚同步的完整 profile 可能覆蓋另一份變更。
+- 本機 profile 會保留最近 2,000 筆一般練習、100 筆 Mini Mock 與 730 天每日紀錄；累積統計、錯題與收藏不因歷史截斷而歸零。
+- Part 7 現有題庫沒有具充分證據可標示為 hard 的題目，驗證器會保留警告而不虛假調高難度。
 - 上線前仍應用真實手機、螢幕閱讀器與 Vercel Preview 做人工驗收。
 
 完整驗收紀錄與人工清單見 [docs/production-acceptance.md](docs/production-acceptance.md)。

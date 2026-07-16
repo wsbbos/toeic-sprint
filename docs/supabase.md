@@ -10,3 +10,5 @@ For cloud sync, configure only the public project URL and anonymous key, then ap
 - Anonymous users receive no table grants.
 
 If a sync request fails, the application keeps the locally saved update and exposes a retry state rather than blocking practice.
+
+Startup reconciliation compares the local and cloud profile activity timestamps and keeps the newer complete profile. This is intentionally a whole-profile last-write-wins policy: it prevents an older cloud snapshot from erasing newer local work, but it cannot merge simultaneous offline edits from two devices at field level. Treat that conflict model as a release limitation until operation-level sync is introduced.

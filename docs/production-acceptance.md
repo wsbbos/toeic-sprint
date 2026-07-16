@@ -1,58 +1,58 @@
-# Production MVP 驗收報告
+# Production release candidate 驗收紀錄
 
-日期：2026-07-15
+日期：2026-07-16
 
 分支：`feat/toeic-sprint-production-mvp`
 
 工作目錄：`C:\dev\toeic-sprint-original`
 
-## 自動驗收結果
+## 最後一輪自動驗收
 
-- Part 5：300 題；答案 A/B/C/D 各 75 題。
-- 難度：easy 77、medium 149、hard 74。
-- 類別：14 類，每類 20–24 題；Part 7 仍為獨立的 30 題。
-- Node baseline/domain tests：51 passed。
-- Component tests：28 passed。
-- Playwright development：11 passed、7 skipped；production build：12 passed、6 skipped（依 viewport 與 production-only 條件執行）。
-- ESLint：0 errors。
-- Production build：通過；初始 app chunk 42.01 kB（gzip 13.18 kB）。
-- npm audit：0 vulnerabilities。
-- 靜態安全掃描：未發現 `dangerouslySetInnerHTML`、直接 `innerHTML`、`eval`、service-role key 或硬編碼 JWT。
+以下結果來自同一份本機工作樹；完整輸出仍以終端紀錄與 CI 重跑結果為準。
 
-實際結果以最後一次 `npm run verify:ci`、`npm run audit:deps`、`npm run test:e2e` 與 production preview smoke test 的終端輸出為準。
+- `npm run validate:questions`：通過。Part 5 為 300 題，A/B/C/D 各 75 題，14 類、easy 77／medium 149／hard 74；Part 7 為 30 題、10 passages，A/B/C/D 為 8／8／7／7，所有答案 evidence 均存在原文。
+- Node baseline：2/2 passed；domain/unit：83/83 passed。
+- Vitest / React Testing Library：19 files、55/55 passed。
+- ESLint：0 errors；TypeScript `checkJs` typecheck：通過。
+- Production build：通過；主 app chunk 48.21 kB（gzip 14.91 kB），題庫、React、Supabase 與頁面維持分割載入。
+- Playwright production E2E：16 passed、8 skipped。Skipped cases 是專案設定中互斥的 desktop/mobile viewport 條件，不是關閉的功能測試。
+- `npm audit --audit-level=high`：0 vulnerabilities。
+- E2E runner 結束後沒有殘留 Vite listener；頁面監控未發現 `console.error`、`pageerror` 或 unhandled rejection。
 
-## 已驗收流程
+Part 7 驗證仍會輸出「沒有 hard 題」警告。這不是 schema failure；現有題目沒有足夠依據可安全改標 hard，因此保留誠實警告。
 
-- 訪客入口與 local storage fallback。
-- Part 5 快速練習、作答、提交與結果頁。
-- 錯題寫入、錯題本與重新作答入口。
-- 重整恢復、收藏與多題統計完整保存、題數不足保護與提交冪等性。
-- 桌面與 Pixel 5 viewport；手機頁面無整體橫向溢出。
-- Supabase 登入 component contract 與 migration/RLS 靜態驗證。
-- Part 7 已通過實際訪客閱讀流程與 baseline 保護，沒有混入 Part 5 題庫。
-- Mini Mock 倒數會使用最新答案，自動／手動交卷具防重複保護，結果只顯示非官方區間估計。
-- 訪客設定頁可安全清除本機資料，不會誤報雲端同步或因缺少 email 發生錯誤。
-- PWA manifest、service worker、icon 資產與 production 離線重開。
+## 已驗收流程與風險控制
 
-## 安全與效能決策
+- 訪客入口、local-first fallback、損壞 JSON 修復與 localStorage 寫入失敗提示。
+- Part 5 快速／自訂／分類／難度練習，Part 7 獨立閱讀流程與商務文件 renderer。
+- 作答、上一題、下一題、標記、收藏、提交確認、防重複提交、題數不足與結果解析。
+- 練習與 Mini Mock 重整恢復、倒數與最新答案交卷；draft 依使用者隔離。
+- 錯題本、錯題重練、間隔複習、弱點分析、學習趨勢與非官方分數區間標示。
+- 桌面與 Pixel 5 viewport；核心 route 無頁面級橫向溢出，可見按鈕高度至少 43px。
+- Answer choices 支援 radio 語意、方向鍵、Home/End、Space/Enter 與 roving focus。
+- Mobile navigation 支援 dialog 語意、focus trap、Escape 關閉、焦點還原與 body scroll lock。
+- Supabase 登入 component contract、失敗降級、profile owner 隔離、migration/RLS 靜態與 domain 驗證。
+- PWA manifest、service worker、icon／原創 SVG 資產與 production 離線 app-shell 重開。
+- UI 不再暴露 raw Supabase 錯誤、token、project URL 或衝突的硬編碼產品版本。
 
-- Vite 已升級至 8.1.4，修復 Windows 開發伺服器路徑繞過與 UNC credential disclosure 弱點。
-- Production 使用 Oxc minify；頁面、題庫、React 與 Supabase 依賴採 lazy loading / cache groups。
-- 已移除 runtime 未使用的 100 題舊 Part 5 重複資料。
-- Supabase client 會驗證 URL/key，設定錯誤或初始化失敗時回退本機模式。
-- 錯誤訊息會遮罩 token 與 Supabase project URL；前端不接受 service-role key。
+## 資料與同步邊界
 
-## 需要人工或外部環境驗收
+- 本機 profile 正規化會保留最近 2,000 筆一般練習、100 筆 Mini Mock 與 730 天每日紀錄；累積統計、錯題與收藏不因歷史截斷而歸零。
+- 登入同步採整份 profile 的 last-write-wins，會比較活動時間避免舊雲端快照覆蓋較新的本機進度。
+- 兩台離線裝置同時修改再上線時，尚未支援欄位級或 operation-level conflict merge；較晚同步的完整 profile 可能覆蓋另一份變更。
 
-- 使用真實 Supabase 測試帳號完成註冊信、登入、登出與兩台裝置同步。
+## 仍需人工或外部環境驗收
+
+- 使用真實 Supabase 測試帳號完成註冊信、登入、登出，以及兩台裝置的正常與衝突同步。
 - 在 Supabase Dashboard 確認 migrations 已依序套用，並以兩個帳號交叉驗證 RLS 隔離。
-- 在本次 Vercel Preview 重新執行公開 smoke test；若啟用 Supabase，再驗證登入與網路失敗降級。
-- 使用 iOS Safari / Android Chrome 實機驗證鍵盤遮擋、加入主畫面與離線重開。
-- 使用螢幕閱讀器與純鍵盤完成一次作答流程。
+- 在新的 Vercel Preview 重新執行公開 smoke test；若啟用 Supabase，再驗證登入與網路失敗降級。
+- 使用 iOS Safari／Android Chrome 實機驗證虛擬鍵盤、加入主畫面與離線重開。
+- 使用 NVDA、VoiceOver 或同等螢幕閱讀器完成登入、作答、交卷與錯題重練。
 
 ## 已知限制
 
-- 自動化登入測試使用 mocked Supabase contract；沒有外部帳號憑證時不會建立真實雲端資料。
-- PWA 是基本 app shell/runtime cache，不含背景同步與離線衝突合併。
-- TOEIC 區間只標示為非官方估算，不能宣稱精準預測正式分數。
-- 本次任務不會 push、merge、升級 production 或修改 Git remote；僅建立 Vercel Preview。
+- 自動化登入測試使用 mocked Supabase contract；沒有外部測試帳號時不建立真實雲端資料。
+- PWA 是 app shell／runtime cache，不含背景資料同步與完整離線帳號功能。
+- Part 7 目前僅 30 題，且沒有經內容證據支持的 hard 題。
+- TOEIC 區間僅為非官方學習估算，不能宣稱精準預測正式分數。
+- 本輪 hardening 沒有 push、merge、rebase、部署或修改 remote，既有 Vercel Preview 也未被覆蓋。

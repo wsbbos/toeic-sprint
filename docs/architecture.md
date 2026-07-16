@@ -28,6 +28,8 @@
 - `syncStatus` is one of `synced`, `syncing`, or `failed`.
 - Errors shown to UI are produced by `sanitizeError`; JWTs and Supabase project URLs are masked.
 - Malformed local JSON returns `null` instead of crashing application startup.
+- Local-storage write failures are surfaced in the app shell and Settings; guest mode never reports a successful save after a failed write.
+- Normalization retains the newest 2,000 practice entries, 100 mock results, and 730 daily records while preserving cumulative progress, mistakes, and favorites.
 - Initial session loading uses a shared status component.
 - Public leaderboard statistics are a deliberate projection and exclude email and private study payloads.
 
@@ -37,6 +39,7 @@
 - Part 7 stays inside the unified `questionsData` adapter and is not mixed into Part 5 source data.
 - Existing Supabase table names remain `profiles`, `user_data`, and `user_public_stats`.
 - Guest mode and offline fallback use the same repository/service boundaries and remain available when Supabase is absent or unavailable.
+- Cloud reconciliation is whole-profile last-write-wins. It prevents stale startup data from replacing newer progress, but it is not a field-level merge for simultaneous offline edits on multiple devices.
 
 
 ## Production loading boundary

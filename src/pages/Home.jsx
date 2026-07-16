@@ -26,7 +26,7 @@ export default function Home({ currentUser, setCurrentPage }) {
 
         <VisualAsset className="home-hero-visual" name="hero" alt="TOEIC Sprint 學習進度" priority />
         <h1 style={{ color: 'white', fontSize: '2.5rem', fontWeight: 800, marginBottom: '0.75rem', fontFamily: 'var(--font-display)' }}>
-          TOEIC Sprint V1.3
+          TOEIC Sprint
         </h1>
         <p style={{ fontSize: '1.15rem', opacity: 0.95, maxWidth: '650px', margin: '0 auto 2rem auto', lineHeight: '1.7' }}>
           目標導向的 TOEIC 訓練與互相監督系統。精準追蹤每日學習進度，從文法、單字卡訓練到文字題模擬考，幫您以最高效率獲取金色證書！
@@ -85,7 +85,7 @@ export default function Home({ currentUser, setCurrentPage }) {
             <LearningVisual variant="favorites" size="icon" decorative />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>核心單字卡</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
-              精選 TOEIC 常考核心詞彙，支援雙面卡片翻轉記憶、不熟/熟練狀態標記。V1.3 翻面後支援美音發音功能，全面加深字彙聽感！
+              精選 TOEIC 常考核心詞彙，支援雙面卡片翻轉記憶、不熟/熟練狀態標記；翻面後支援美音發音功能，全面加深字彙聽感！
             </p>
           </div>
           
@@ -117,7 +117,7 @@ export default function Home({ currentUser, setCurrentPage }) {
             <LearningVisual variant="weakness" size="icon" decorative />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>個人學習總覽</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-sub)', lineHeight: '1.5' }}>
-              全新 V1.3 大幅整合了原本冗餘的儀表板與統計頁面。將單字、題量、答題正確率、各 Part 佔比、考點弱點與歷史紀錄全面聚合展現。
+              學習總覽整合原本分散的儀表板與統計資訊，將單字、題量、答題正確率、各 Part 佔比、考點弱點與歷史紀錄全面聚合展現。
             </p>
           </div>
 

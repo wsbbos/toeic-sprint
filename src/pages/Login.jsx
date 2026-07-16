@@ -171,7 +171,7 @@ export default function Login({ onLoginSuccess }) {
       <div className="card" style={{ textAlign: 'center', padding: '2.5rem' }}>
         <span style={{ fontSize: '3rem', display: 'block', animation: 'float 3s ease-in-out infinite' }}>🚀</span>
         <h1 style={{ fontSize: '2.2rem', color: 'var(--primary)', marginBottom: '0.5rem', fontWeight: 800 }}>
-          TOEIC Sprint V2.1
+          TOEIC Sprint
         </h1>
         <p style={{ color: 'var(--text-sub)' }}>
           雲端帳號 • 跨裝置可靠學習同步 ☁️
