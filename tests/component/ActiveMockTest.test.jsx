@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import ActiveMockTest from '../../src/pages/ActiveMockTest.jsx'
+import { createMiniMockDraft, saveMiniMockDraft } from '../../src/services/miniMockDraftRepository.js'
 
 const questions = [
   { id: 'p5-1', part: 5, question: 'The report is -------.', choices: { A: 'ready', B: 'read', C: 'readily', D: 'reader' }, correctAnswer: 'A', explanation: 'A is correct.', category: 'word_form', difficulty: 'easy', tags: ['grammar'] },
@@ -8,6 +9,7 @@ const questions = [
 ]
 
 beforeEach(() => {
+  localStorage.clear()
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   vi.spyOn(window, 'alert').mockImplementation(() => {})
 })
@@ -37,4 +39,40 @@ test('Mini Mock shows a recoverable empty state when the bank is unavailable', (
   render(<ActiveMockTest questions={[]} setCurrentPage={setCurrentPage} onMockExamSubmitted={vi.fn()} />)
   fireEvent.click(screen.getByRole('button', { name: '返回模擬考中心' }))
   expect(setCurrentPage).toHaveBeenCalledWith('mock-test')
+})
+
+test('Mini Mock restores the current question and answers after remount', () => {
+  const props = {
+    currentUser: { id: 'guest-local', isGuest: true },
+    questions,
+    setCurrentPage: vi.fn(),
+    onMockExamSubmitted: vi.fn(),
+  }
+  const firstRender = render(<ActiveMockTest {...props} />)
+  fireEvent.click(screen.getByRole('radio', { name: /ready/ }))
+  fireEvent.click(screen.getByRole('button', { name: '前往第 2 題' }))
+  expect(screen.getByText('第 2 / 2 題')).toBeInTheDocument()
+  firstRender.unmount()
+
+  render(<ActiveMockTest {...props} />)
+  expect(screen.getByText('第 2 / 2 題')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: '前往第 1 題' }))
+  expect(screen.getByRole('radio', { name: /ready/ })).toHaveAttribute('aria-checked', 'true')
+})
+test('an expired restored Mini Mock auto-submits exactly once', async () => {
+  const ownerId = 'user-expired'
+  const startedAt = new Date(Date.now() - 5_000)
+  saveMiniMockDraft(createMiniMockDraft(
+    questions.map((question) => question.id),
+    ownerId,
+    startedAt,
+    1,
+  ), undefined, ownerId)
+  const onMockExamSubmitted = vi.fn()
+  const setCurrentPage = vi.fn()
+
+  render(<ActiveMockTest currentUser={{ id: ownerId }} questions={questions} setCurrentPage={setCurrentPage} onMockExamSubmitted={onMockExamSubmitted} />)
+
+  await waitFor(() => expect(onMockExamSubmitted).toHaveBeenCalledTimes(1))
+  expect(setCurrentPage).toHaveBeenCalledWith('result')
 })

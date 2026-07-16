@@ -55,6 +55,7 @@ export function useAppController() {
   const [showImportModal, setShowImportModal] = useState(false);
   const handlingStaleSessionRef = useRef(false);
   const currentUserRef = useRef(currentUser);
+  const syncQueueRef = useRef(Promise.resolve());
   const commitCurrentUser = useCallback((user) => {
     currentUserRef.current = user;
     setCurrentUser(user);
@@ -173,21 +174,27 @@ export function useAppController() {
     onError: exposeSyncError,
   });
 
-  const syncWithCloud = useCallback(async (user) => {
+  const syncWithCloud = useCallback((user) => {
     if (!user || user.isGuest || !isSupabaseConfigured) {
       setSyncStatus('synced');
-      return;
+      return Promise.resolve();
     }
 
-    setSyncStatus('syncing');
-    setSyncError(null);
-    try {
-      await saveCloudUser(supabase, user);
-      await syncPublicStatsSafely(user);
-      setSyncStatus('synced');
-    } catch (error) {
-      await exposeSyncError(error);
-    }
+    const pending = syncQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        setSyncStatus('syncing');
+        setSyncError(null);
+        try {
+          await saveCloudUser(supabase, user);
+          await syncPublicStatsSafely(user);
+          setSyncStatus('synced');
+        } catch (error) {
+          await exposeSyncError(error);
+        }
+      });
+    syncQueueRef.current = pending;
+    return pending;
   }, [exposeSyncError, syncPublicStatsSafely]);
 
   const updateActiveUser = useCallback(async (transform) => {

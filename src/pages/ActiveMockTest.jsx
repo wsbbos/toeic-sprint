@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import DocumentRenderer from '../components/documents/DocumentRenderer.jsx'
 import EmptyLearningState from '../components/visuals/EmptyLearningState.jsx'
 import {
@@ -6,37 +6,82 @@ import {
   MINI_MOCK_DURATION_SECONDS,
   selectMiniMockQuestions,
 } from '../services/miniMockService.js'
+import {
+  clearMiniMockDraft,
+  createMiniMockDraft,
+  loadMiniMockDraft,
+  saveMiniMockDraft,
+} from '../services/miniMockDraftRepository.js'
 
-export default function ActiveMockTest({ setCurrentPage, onMockExamSubmitted, questions = [] }) {
-  const activeQuestions = useMemo(() => selectMiniMockQuestions(questions), [questions])
-  const [currentIdx, setCurrentIdx] = useState(0)
-  const [answers, setAnswers] = useState({})
-  const [timeLeft, setTimeLeft] = useState(MINI_MOCK_DURATION_SECONDS)
-  const answersRef = useRef({})
-  const timeLeftRef = useRef(MINI_MOCK_DURATION_SECONDS)
+export default function ActiveMockTest({ currentUser, setCurrentPage, onMockExamSubmitted, questions = [] }) {
+  const ownerId = currentUser?.isGuest ? 'guest-local' : currentUser?.id || 'guest-local'
+  const [initialState] = useState(() => {
+    const initializedAt = new Date()
+    const questionById = new Map(questions.map((question) => [question.id, question]))
+    const restored = loadMiniMockDraft(undefined, ownerId)
+    if (restored?.questionIds.every((questionId) => questionById.has(questionId))) {
+      return {
+        draft: restored,
+        questions: restored.questionIds.map((questionId) => questionById.get(questionId)),
+        timeLeft: Math.max(0, Math.ceil((Date.parse(restored.endsAt) - initializedAt.getTime()) / 1000)),
+      }
+    }
+    const selected = selectMiniMockQuestions(questions)
+    return {
+      draft: createMiniMockDraft(
+        selected.map((question) => question.id),
+        ownerId,
+        initializedAt,
+        MINI_MOCK_DURATION_SECONDS,
+      ),
+      questions: selected,
+      timeLeft: MINI_MOCK_DURATION_SECONDS,
+    }
+  })
+  const activeQuestions = initialState.questions
+  const [currentIdx, setCurrentIdx] = useState(initialState.draft.currentIndex)
+  const [answers, setAnswers] = useState(initialState.draft.answers)
+  const [timeLeft, setTimeLeft] = useState(initialState.timeLeft)
+  const answersRef = useRef(initialState.draft.answers)
+  const timeLeftRef = useRef(initialState.timeLeft)
+  const endsAtRef = useRef(Date.parse(initialState.draft.endsAt))
   const submittedRef = useRef(false)
 
   const submitExam = useCallback(() => {
     if (submittedRef.current) return
     submittedRef.current = true
     const result = buildMiniMockResult(activeQuestions, answersRef.current, timeLeftRef.current)
+    clearMiniMockDraft(undefined, ownerId)
     onMockExamSubmitted?.(result)
     setCurrentPage('result')
-  }, [activeQuestions, onMockExamSubmitted, setCurrentPage])
+  }, [activeQuestions, onMockExamSubmitted, ownerId, setCurrentPage])
+
+  useEffect(() => {
+    if (!activeQuestions.length || submittedRef.current) return undefined
+    saveMiniMockDraft({
+      ...initialState.draft,
+      answers,
+      currentIndex: currentIdx,
+      updatedAt: new Date().toISOString(),
+    }, undefined, ownerId)
+    return undefined
+  }, [activeQuestions.length, answers, currentIdx, initialState.draft, ownerId])
 
   useEffect(() => {
     if (!activeQuestions.length) return undefined
-    const timer = window.setInterval(() => {
-      if (submittedRef.current) return window.clearInterval(timer)
-      const next = Math.max(0, timeLeftRef.current - 1)
+    const finishExpiredExam = () => {
+      if (submittedRef.current) return true
+      const next = Math.max(0, Math.ceil((endsAtRef.current - Date.now()) / 1000))
       timeLeftRef.current = next
       setTimeLeft(next)
-      if (next === 0) {
-        window.clearInterval(timer)
-        window.alert('時間到！系統已自動幫您提交試卷。')
-        submitExam()
-      }
-      return undefined
+      if (next > 0) return false
+      window.alert('時間到！系統已自動幫您提交試卷。')
+      submitExam()
+      return true
+    }
+    if (finishExpiredExam()) return undefined
+    const timer = window.setInterval(() => {
+      if (finishExpiredExam()) window.clearInterval(timer)
     }, 1000)
     return () => window.clearInterval(timer)
   }, [activeQuestions.length, submitExam])

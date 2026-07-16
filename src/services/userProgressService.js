@@ -112,6 +112,7 @@ export function recordPracticeOutcomes(user, outcomes = [], now = new Date()) {
 
 export function recordMockResult(user, result, now = new Date()) {
   const next = cloneProfile(user);
+  if (result?.id && next.mockTestHistory.some((entry) => entry.id === result.id)) return next;
   next.mockTestHistory.push({
     id: result.id,
     date: result.date,

@@ -1,7 +1,13 @@
 export const CLOUD_USER_KEY = 'toeic_sprint_cloud_user';
 export const LEGACY_USERS_KEY = 'toeic_sprint_users';
 
-const resolveStorage = (storage) => storage || globalThis.localStorage;
+const resolveStorage = (storage) => {
+  try {
+    return storage || globalThis.localStorage || null;
+  } catch {
+    return null;
+  }
+};
 
 export function loadJson(storage, key, fallback = null) {
   const target = resolveStorage(storage);
@@ -33,11 +39,13 @@ export function loadCachedUser(storage) {
 export function saveCachedUser(storage, user) {
   const target = resolveStorage(storage);
   if (!target) return false;
-  if (!user) {
+  if (user) return saveJson(target, CLOUD_USER_KEY, user);
+  try {
     target.removeItem(CLOUD_USER_KEY);
     return true;
+  } catch {
+    return false;
   }
-  return saveJson(target, CLOUD_USER_KEY, user);
 }
 
 export function loadLegacyUsers(storage) {
@@ -50,28 +58,50 @@ export function getLegacyImportKey(userId) {
 }
 
 export function hasImportedLegacyData(storage, userId) {
-  return resolveStorage(storage)?.getItem(getLegacyImportKey(userId)) === 'true';
+  if (!userId) return false;
+  try {
+    return resolveStorage(storage)?.getItem(getLegacyImportKey(userId)) === 'true';
+  } catch {
+    return false;
+  }
 }
 
 export function markLegacyDataImported(storage, userId) {
-  if (!userId) return;
-  resolveStorage(storage)?.setItem(getLegacyImportKey(userId), 'true');
+  if (!userId) return false;
+  try {
+    const target = resolveStorage(storage);
+    if (!target) return false;
+    target.setItem(getLegacyImportKey(userId), 'true');
+    return true;
+  } catch {
+    return false;
+  }
 }
+
+const isOwnedAuthKey = (key) => (
+  key.startsWith('sb-')
+  || key.startsWith('supabase.auth.')
+  || key === CLOUD_USER_KEY
+  || key.startsWith('toeic_sprint_imported_for_')
+);
 
 export function clearAuthStorage(storage) {
   const target = resolveStorage(storage);
-  if (!target) return;
+  if (!target) return false;
 
-  const keys = Array.from({ length: target.length }, (_, index) => target.key(index))
-    .filter(Boolean);
-
-  keys
-    .filter((key) => (
-      key.startsWith('sb-') ||
-      key.includes('supabase') ||
-      key.includes('auth') ||
-      key === CLOUD_USER_KEY ||
-      key.startsWith('toeic_sprint_imported_for_')
-    ))
-    .forEach((key) => target.removeItem(key));
+  try {
+    const keys = Array.from({ length: target.length }, (_, index) => target.key(index))
+      .filter((key) => typeof key === 'string' && isOwnedAuthKey(key));
+    let cleared = true;
+    for (const key of keys) {
+      try {
+        target.removeItem(key);
+      } catch {
+        cleared = false;
+      }
+    }
+    return cleared;
+  } catch {
+    return false;
+  }
 }

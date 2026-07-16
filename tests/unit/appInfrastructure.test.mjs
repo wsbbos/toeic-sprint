@@ -3,7 +3,9 @@ import test from 'node:test';
 
 import {
   clearAuthStorage,
+  hasImportedLegacyData,
   loadCachedUser,
+  markLegacyDataImported,
   saveCachedUser,
 } from '../../src/services/localUserRepository.js';
 import { buildPublicStats } from '../../src/services/cloudUserService.js';
@@ -62,7 +64,8 @@ test('cached user repository survives malformed JSON and round-trips valid users
 test('auth cleanup removes auth material without deleting practice drafts', () => {
   const storage = new MemoryStorage({
     'sb-demo-auth-token': 'secret',
-    'custom-auth-cache': 'secret',
+    'custom-auth-cache': 'unrelated application data',
+    toeic_sprint_author_notes: 'must survive logout',
     toeic_sprint_cloud_user: '{}',
     toeic_sprint_imported_for_123: 'true',
     toeic_sprint_practice_draft: '{"answers":{}}',
@@ -71,10 +74,26 @@ test('auth cleanup removes auth material without deleting practice drafts', () =
   clearAuthStorage(storage);
 
   assert.equal(storage.getItem('sb-demo-auth-token'), null);
-  assert.equal(storage.getItem('custom-auth-cache'), null);
+  assert.equal(storage.getItem('custom-auth-cache'), 'unrelated application data');
+  assert.equal(storage.getItem('toeic_sprint_author_notes'), 'must survive logout');
   assert.equal(storage.getItem('toeic_sprint_cloud_user'), null);
   assert.equal(storage.getItem('toeic_sprint_imported_for_123'), null);
   assert.equal(storage.getItem('toeic_sprint_practice_draft'), '{"answers":{}}');
+});
+
+test('storage denial never crashes cache cleanup or legacy-import checks', () => {
+  const deniedStorage = {
+    get length() { throw new Error('SECURITY_ERR'); },
+    getItem() { throw new Error('SECURITY_ERR'); },
+    setItem() { throw new Error('QUOTA_ERR'); },
+    removeItem() { throw new Error('SECURITY_ERR'); },
+  };
+
+  assert.equal(loadCachedUser(deniedStorage), null);
+  assert.equal(saveCachedUser(deniedStorage, null), false);
+  assert.equal(hasImportedLegacyData(deniedStorage, 'u1'), false);
+  assert.equal(markLegacyDataImported(deniedStorage, 'u1'), false);
+  assert.equal(clearAuthStorage(deniedStorage), false);
 });
 
 test('error sanitizer masks tokens and Supabase project URLs', () => {
@@ -163,4 +182,33 @@ test('public stats projection is deterministic and contains no private profile d
     updated_at: '2026-07-13T08:00:00.000Z',
   });
   assert.equal(JSON.stringify(stats).includes('private@example.com'), false);
+});
+
+test('corrupted legacy profile fields are repaired before progress mutations', () => {
+  const corrupted = {
+    id: 'u1',
+    goals: 'invalid',
+    progress: { totalQuestionsAnswered: 'not-a-number', totalCorrect: -4 },
+    wrongBook: [null, { questionId: 'p5-001', wrongCount: 1 }, { questionId: 'p5-001', wrongCount: 3 }],
+    favorites: [{ questionId: 'p5-001' }, { questionId: 'p5-001' }, 'invalid'],
+    dailyRecords: [null, { date: '2026-07-16', questionsAnswered: 'bad' }, { date: '2026-07-16', questionsAnswered: 5 }],
+  };
+
+  const normalized = normalizeUserProfile(corrupted);
+  assert.equal(normalized.goals.dailyQuestionGoal, 30);
+  assert.equal(normalized.progress.totalQuestionsAnswered, 0);
+  assert.equal(normalized.progress.totalCorrect, 0);
+  assert.equal(normalized.wrongBook.length, 1);
+  assert.equal(normalized.wrongBook[0].wrongCount, 3);
+  assert.equal(normalized.favorites.length, 1);
+  assert.equal(normalized.dailyRecords.length, 1);
+  assert.equal(normalized.dailyRecords[0].questionsAnswered, 5);
+
+  assert.doesNotThrow(() => recordPracticeAnswer(
+    corrupted,
+    { id: 'p5-002', part: 5, question: 'Safe mutation', choices: {}, correctAnswer: 'A' },
+    'B',
+    false,
+    new Date('2026-07-16T12:00:00Z'),
+  ));
 });
