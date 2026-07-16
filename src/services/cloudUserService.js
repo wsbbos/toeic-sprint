@@ -1,4 +1,46 @@
 import { createDefaultUserProfile, normalizeUserProfile } from '../data/userProfile.js';
+const parseTimestamp = (value) => {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
+const collectActivityTimestamps = (user) => {
+  const values = [user?.dataUpdatedAt];
+  for (const item of user?.practiceHistory || []) values.push(item?.answeredAt, item?.submittedAt);
+  for (const item of user?.wrongBook || []) values.push(item?.lastAnsweredAt, item?.lastReviewedAt, item?.createdAt);
+  for (const item of user?.favorites || []) values.push(item?.addedAt);
+  for (const item of user?.mockTestHistory || []) values.push(item?.submittedAt, item?.date);
+  for (const item of user?.dailyRecords || []) values.push(item?.date);
+  return values.map(parseTimestamp).filter(Number.isFinite);
+};
+
+export function getProfileUpdatedAt(user) {
+  const timestamps = collectActivityTimestamps(user);
+  return timestamps.length ? new Date(Math.max(...timestamps)).toISOString() : '';
+}
+
+export function stampProfileUpdate(user, now = new Date()) {
+  const normalized = normalizeUserProfile(user);
+  return { ...normalized, dataUpdatedAt: now.toISOString() };
+}
+
+export function selectNewestUserProfile(localUser, cloudUser) {
+  if (!localUser) return { source: 'cloud', user: normalizeUserProfile(cloudUser) };
+  if (!cloudUser) return { source: 'local', user: normalizeUserProfile(localUser) };
+
+  const local = normalizeUserProfile(localUser);
+  const cloud = normalizeUserProfile(cloudUser);
+  if (!local.id || !cloud.id || local.id !== cloud.id || local.isGuest) {
+    return { source: 'cloud', user: cloud };
+  }
+
+  const localTimestamp = parseTimestamp(getProfileUpdatedAt(local)) ?? -1;
+  const cloudTimestamp = parseTimestamp(getProfileUpdatedAt(cloud)) ?? -1;
+  return localTimestamp > cloudTimestamp
+    ? { source: 'local', user: local }
+    : { source: 'cloud', user: cloud };
+}
 
 export function toCloudAppData(user) {
   const appData = normalizeUserProfile(user);
@@ -22,7 +64,7 @@ export async function upsertProfile(client, authUser, username) {
 export async function fetchCloudUser(client, authUser) {
   const { data, error } = await client
     .from('user_data')
-    .select('app_data')
+    .select('app_data, updated_at')
     .eq('user_id', authUser.id)
     .maybeSingle();
 
@@ -30,10 +72,11 @@ export async function fetchCloudUser(client, authUser) {
   if (!data?.app_data) return null;
 
   return normalizeUserProfile({
+    ...data.app_data,
     id: authUser.id,
     email: authUser.email,
     username: data.app_data.username || authUser.email?.split('@')[0],
-    ...data.app_data,
+    dataUpdatedAt: getProfileUpdatedAt(data.app_data) || data.updated_at || '',
   });
 }
 
@@ -53,17 +96,40 @@ export async function saveCloudUser(client, user, now = new Date()) {
   if (error) throw error;
 }
 
-export async function fetchOrCreateCloudUser(client, authUser, username) {
+export async function fetchOrCreateCloudUser(
+  client,
+  authUser,
+  username,
+  localUser = null,
+  now = new Date(),
+) {
+  const localCandidate = localUser?.id === authUser.id && !localUser.isGuest
+    ? normalizeUserProfile({
+      ...localUser,
+      id: authUser.id,
+      email: authUser.email,
+      username: localUser.username || username || authUser.email?.split('@')[0] || 'Learner',
+    })
+    : null;
   const existing = await fetchCloudUser(client, authUser);
-  if (existing) return { user: existing, created: false };
 
-  const user = createDefaultUserProfile({
+  if (existing) {
+    const resolved = selectNewestUserProfile(localCandidate, existing);
+    if (resolved.source === 'local') {
+      const user = stampProfileUpdate(resolved.user, now);
+      await saveCloudUser(client, user, now);
+      return { user, created: false, source: 'local' };
+    }
+    return { user: resolved.user, created: false, source: 'cloud' };
+  }
+
+  const user = stampProfileUpdate(localCandidate || createDefaultUserProfile({
     id: authUser.id,
     email: authUser.email,
     username: username || authUser.email?.split('@')[0] || 'Learner',
-  });
-  await saveCloudUser(client, user);
-  return { user, created: true };
+  }), now);
+  await saveCloudUser(client, user, now);
+  return { user, created: true, source: localCandidate ? 'local' : 'created' };
 }
 
 const safePercentage = (value, goal) => {

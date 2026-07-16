@@ -5,6 +5,7 @@
  * @property {boolean} [isGuest]
  * @property {string} username
  * @property {string} createdAt
+ * @property {string} [dataUpdatedAt]
  * @property {Record<string, any>} goals
  * @property {Record<string, any>} progress
  * @property {Record<string, any>} vocabularyProgress

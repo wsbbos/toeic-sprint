@@ -36,6 +36,7 @@ beforeEach(() => {
   mocks.saveCloudUser.mockImplementation((_client, user) => new Promise((resolve) => {
     mocks.pendingSaves.push({ user: structuredClone(user), resolve })
   }))
+  mocks.fetchOrCreateCloudUser.mockReset()
   mocks.fetchOrCreateCloudUser.mockResolvedValue({
     created: false,
     user: { id: mocks.authUser.id, email: mocks.authUser.email, username: 'Learner', favorites: [] },
@@ -55,6 +56,7 @@ test('cloud writes are serialized so an older profile cannot overwrite newer pro
 
   await waitFor(() => expect(mocks.pendingSaves).toHaveLength(1))
   expect(mocks.pendingSaves[0].user.favorites.map((item) => item.questionId)).toEqual(['p5-001'])
+  expect(mocks.pendingSaves[0].user.dataUpdatedAt).toEqual(expect.any(String))
 
   mocks.pendingSaves[0].resolve()
   await waitFor(() => expect(mocks.pendingSaves).toHaveLength(2))
@@ -63,4 +65,52 @@ test('cloud writes are serialized so an older profile cannot overwrite newer pro
   mocks.pendingSaves[1].resolve()
   await act(async () => Promise.all([firstUpdate, secondUpdate]))
   expect(result.current.syncStatus).toBe('synced')
+})
+test('initial session reconciles a matching cached profile instead of discarding it', async () => {
+  const cached = {
+    id: mocks.authUser.id,
+    email: mocks.authUser.email,
+    username: 'Learner',
+    dataUpdatedAt: '2026-07-16T05:00:00.000Z',
+    favorites: [{ questionId: 'p5-legacy' }],
+  }
+  localStorage.setItem('toeic_sprint_cloud_user', JSON.stringify(cached))
+  mocks.fetchOrCreateCloudUser.mockImplementationOnce(async (_client, _authUser, _username, localUser) => ({
+    created: false,
+    source: 'local',
+    user: localUser,
+  }))
+
+  const { result } = renderHook(() => useAppController())
+  await waitFor(() => expect(result.current.currentUser?.id).toBe(mocks.authUser.id))
+  expect(result.current.currentUser.favorites.map((item) => item.questionId)).toEqual(['p5-legacy'])
+  expect(mocks.fetchOrCreateCloudUser.mock.calls[0][3]).toMatchObject({
+    id: mocks.authUser.id,
+    dataUpdatedAt: '2026-07-16T05:00:00.000Z',
+  })
+})
+
+test('manual sync reconciles the latest in-memory profile through the same conflict policy', async () => {
+  const { result } = renderHook(() => useAppController())
+  await waitFor(() => expect(result.current.currentUser?.id).toBe(mocks.authUser.id))
+  mocks.fetchOrCreateCloudUser.mockImplementationOnce(async (_client, _authUser, _username, localUser) => ({
+    created: false,
+    source: 'local',
+    user: localUser,
+  }))
+
+  await act(async () => result.current.actions.onManualSync())
+  expect(mocks.fetchOrCreateCloudUser).toHaveBeenCalledTimes(2)
+  expect(mocks.fetchOrCreateCloudUser.mock.calls[1][3]).toMatchObject({ id: mocks.authUser.id })
+  expect(result.current.syncStatus).toBe('synced')
+})
+test('manual sync failure preserves local learning data and exposes a retryable state', async () => {
+  const { result } = renderHook(() => useAppController())
+  await waitFor(() => expect(result.current.currentUser?.id).toBe(mocks.authUser.id))
+  mocks.fetchOrCreateCloudUser.mockRejectedValueOnce(new Error('network unavailable'))
+
+  await act(async () => result.current.actions.onManualSync())
+  expect(result.current.currentUser?.id).toBe(mocks.authUser.id)
+  expect(result.current.syncStatus).toBe('failed')
+  expect(result.current.syncError).toMatchObject({ message: 'network unavailable' })
 })

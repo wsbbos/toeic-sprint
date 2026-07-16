@@ -2,9 +2,9 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { createGuestProfile, normalizeUserProfile } from '../data/userProfile';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import {
-  fetchCloudUser,
   fetchOrCreateCloudUser,
   saveCloudUser,
+  stampProfileUpdate,
   signOutWithTimeout,
   syncPublicStats as syncPublicStatsToCloud,
   upsertProfile,
@@ -149,6 +149,7 @@ export function useAppController() {
         supabase,
         authUser,
         customUsername,
+        currentUserRef.current,
       );
       commitCurrentUser(user);
       saveCachedUser(undefined, user);
@@ -200,7 +201,9 @@ export function useAppController() {
   const updateActiveUser = useCallback(async (transform) => {
     const activeUser = currentUserRef.current;
     if (!activeUser) return null;
-    const updated = normalizeUserProfile(transform(normalizeUserProfile(activeUser)));
+    const updated = stampProfileUpdate(
+      normalizeUserProfile(transform(normalizeUserProfile(activeUser))),
+    );
     commitCurrentUser(updated);
     saveCachedUser(undefined, updated);
     await syncWithCloud(updated);
@@ -224,13 +227,13 @@ export function useAppController() {
     const legacyUser = loadLegacyUsers().find((user) => user.id === legacyUserId);
     if (!legacyUser || !currentUser) return;
 
-    const mergedUser = normalizeUserProfile({
+    const mergedUser = stampProfileUpdate(normalizeUserProfile({
       ...currentUser,
       ...legacyUser,
       id: currentUser.id,
       email: currentUser.email,
       username: currentUser.username || legacyUser.username,
-    });
+    }));
     commitCurrentUser(mergedUser);
     saveCachedUser(undefined, mergedUser);
     await syncWithCloud(mergedUser);
@@ -247,37 +250,39 @@ export function useAppController() {
   }, [currentUser]);
 
   const handleManualSync = useCallback(async () => {
-    if (!supabase || !currentUser) return;
+    if (!supabase || !currentUserRef.current) return;
     setSyncStatus('syncing');
     setSyncError(null);
 
     try {
+      await syncQueueRef.current.catch(() => undefined);
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
       const authUser = data?.session?.user;
       if (!authUser) throw new Error('NO_ACTIVE_SESSION');
+      const localUser = currentUserRef.current;
 
       const { error: profileError } = await upsertProfile(
         supabase,
         authUser,
-        currentUser.username,
+        localUser.username,
       );
       if (profileError) throw profileError;
 
-      const cloudUser = await fetchCloudUser(supabase, authUser);
-      if (cloudUser) {
-        commitCurrentUser(cloudUser);
-        saveCachedUser(undefined, cloudUser);
-        await syncPublicStatsSafely(cloudUser, authUser.id);
-      } else {
-        await saveCloudUser(supabase, currentUser);
-        await syncPublicStatsSafely(currentUser, authUser.id);
-      }
+      const { user } = await fetchOrCreateCloudUser(
+        supabase,
+        authUser,
+        localUser.username,
+        localUser,
+      );
+      commitCurrentUser(user);
+      saveCachedUser(undefined, user);
+      await syncPublicStatsSafely(user, authUser.id);
       setSyncStatus('synced');
     } catch (error) {
       await exposeSyncError(error);
     }
-  }, [commitCurrentUser, currentUser, exposeSyncError, syncPublicStatsSafely]);
+  }, [commitCurrentUser, exposeSyncError, syncPublicStatsSafely]);
 
   const safeLogout = useCallback(async () => {
     try {
