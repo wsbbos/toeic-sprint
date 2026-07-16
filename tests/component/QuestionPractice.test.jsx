@@ -1,12 +1,13 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, test, expect, beforeEach } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import QuestionPractice from '../../src/pages/QuestionPractice.jsx'
 import { savePracticeDraft } from '../../src/services/practiceDraftRepository.js'
 
 const questions = [1, 2].map((number) => ({ id: `q-${number}`, part: 5, category: 'word_form', difficulty: 'easy', question: `Question ${number} -------.`, choices: { A: 'correct', B: 'wrong', C: 'other', D: 'none' }, correctAnswer: 'A', answer: 'A', explanation: 'A is correct.' }))
 
 beforeEach(() => { localStorage.clear(); vi.spyOn(window, 'confirm').mockReturnValue(true) })
+afterEach(() => vi.restoreAllMocks())
 
 test('answers, navigates, submits once, and renders result analysis', async () => {
   const onAnswerSubmitted = vi.fn()
@@ -38,4 +39,22 @@ test('does not resume a draft created for a different requested question count',
   render(<QuestionPractice currentUser={{ isGuest: true, favorites: [] }} setCurrentPage={vi.fn()} practiceFilter={{ type: 'part5', count: 2 }} questions={questions} />)
 
   expect(screen.getByText('1 / 2')).toBeInTheDocument()
+})
+test('practice drafts report storage failures to the application shell', async () => {
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new DOMException('Quota exceeded', 'QuotaExceededError')
+  })
+  const onLocalPersistenceResult = vi.fn()
+
+  render(
+    <QuestionPractice
+      currentUser={{ isGuest: true, favorites: [] }}
+      setCurrentPage={vi.fn()}
+      practiceFilter={{ type: 'part5', count: 2 }}
+      questions={questions}
+      onLocalPersistenceResult={onLocalPersistenceResult}
+    />,
+  )
+
+  await waitFor(() => expect(onLocalPersistenceResult).toHaveBeenCalledWith(false))
 })

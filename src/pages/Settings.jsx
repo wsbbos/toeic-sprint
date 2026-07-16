@@ -1,7 +1,7 @@
 // src/pages/Settings.jsx
 import { useState } from 'react';
 
-export default function Settings({ currentUser, onSaveGoals, onClearData, onDeleteAccount, syncStatus = 'synced', syncError = null, onManualSync }) {
+export default function Settings({ currentUser, onSaveGoals, onClearData, onDeleteAccount, syncStatus = 'synced', syncError = null, localPersistenceStatus = 'available', onManualSync }) {
   const [targetScore, setTargetScore] = useState(currentUser?.goals?.targetScore || 700);
   const [examDate, setExamDate] = useState(currentUser?.goals?.examDate || '');
   const [dailyVocabularyGoal, setDailyVocabularyGoal] = useState(currentUser?.goals?.dailyVocabularyGoal || 30);
@@ -20,7 +20,10 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
     });
   };
 
-  const getSyncStatusText = (status, localOnly) => {
+  const getSyncStatusText = (status, localOnly, persistenceStatus) => {
+    if (localOnly && persistenceStatus === 'failed') {
+      return { text: '⚠️ 本機儲存失敗', color: 'var(--danger)', bg: 'var(--danger-light)' };
+    }
     if (localOnly) return { text: '💾 已儲存於此裝置', color: 'var(--success)', bg: 'var(--success-light)' };
     switch (status) {
       case 'syncing':
@@ -33,7 +36,7 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
     }
   };
 
-  const syncInfo = getSyncStatusText(syncStatus, isGuest);
+  const syncInfo = getSyncStatusText(syncStatus, isGuest, localPersistenceStatus);
 
   // Wiping of current user logs (Cloud data clear)
   const handleClearClick = async () => {
@@ -135,6 +138,14 @@ export default function Settings({ currentUser, onSaveGoals, onClearData, onDele
             >
               <strong>雲端同步暫時失敗，本機資料已保留。</strong>
               <span>請確認網路後重新同步；若持續發生，請稍後再試。</span>
+            </div>
+          )}
+          {localPersistenceStatus === 'failed' && (
+            <div className="offline-notice" role="alert" aria-live="assertive">
+              <strong>此瀏覽器目前無法儲存學習進度。</strong>
+              <span style={{ display: 'block', marginTop: '0.25rem' }}>
+                請保留此頁面並確認儲存空間或隱私設定；登入使用者仍可嘗試雲端同步。
+              </span>
             </div>
           )}
           {!isGuest && (

@@ -16,7 +16,7 @@ import { extractAudioTranscript, isSpeechSupported, speakText, stopSpeaking } fr
 
 const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 
-export default function QuestionPractice({ currentUser, setCurrentPage, practiceFilter, onAnswerSubmitted, onPracticeCompleted, onToggleFavorite, questions = [] }) {
+export default function QuestionPractice({ currentUser, setCurrentPage, practiceFilter, onAnswerSubmitted, onPracticeCompleted, onToggleFavorite, onLocalPersistenceResult, questions = [] }) {
   const ownerId = currentUser?.isGuest ? 'guest-local' : currentUser?.id || 'guest-local'
   const questionById = useMemo(() => new Map(questions.map((question) => [question.id, question])), [questions])
   const [session, setSession] = useState(() => {
@@ -43,9 +43,10 @@ export default function QuestionPractice({ currentUser, setCurrentPage, practice
 
   useEffect(() => {
     if (session.status !== 'active') return undefined
-    savePracticeDraft(session, undefined, ownerId)
+    const persisted = savePracticeDraft(session, undefined, ownerId)
+    if (!persisted) onLocalPersistenceResult?.(false)
     return undefined
-  }, [ownerId, session])
+  }, [onLocalPersistenceResult, ownerId, session])
 
   useEffect(() => {
     if (session.status !== 'active') return undefined

@@ -13,7 +13,7 @@ import {
   saveMiniMockDraft,
 } from '../services/miniMockDraftRepository.js'
 
-export default function ActiveMockTest({ currentUser, setCurrentPage, onMockExamSubmitted, questions = [] }) {
+export default function ActiveMockTest({ currentUser, setCurrentPage, onMockExamSubmitted, onLocalPersistenceResult, questions = [] }) {
   const ownerId = currentUser?.isGuest ? 'guest-local' : currentUser?.id || 'guest-local'
   const [initialState] = useState(() => {
     const initializedAt = new Date()
@@ -58,14 +58,15 @@ export default function ActiveMockTest({ currentUser, setCurrentPage, onMockExam
 
   useEffect(() => {
     if (!activeQuestions.length || submittedRef.current) return undefined
-    saveMiniMockDraft({
+    const persisted = saveMiniMockDraft({
       ...initialState.draft,
       answers,
       currentIndex: currentIdx,
       updatedAt: new Date().toISOString(),
     }, undefined, ownerId)
+    if (!persisted) onLocalPersistenceResult?.(false)
     return undefined
-  }, [activeQuestions.length, answers, currentIdx, initialState.draft, ownerId])
+  }, [activeQuestions.length, answers, currentIdx, initialState.draft, onLocalPersistenceResult, ownerId])
 
   useEffect(() => {
     if (!activeQuestions.length) return undefined

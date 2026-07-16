@@ -26,6 +26,7 @@ export default function AppRoutes({
   todayRecord,
   syncStatus,
   syncError,
+  localPersistenceStatus,
   actions,
 }) {
   if (!currentUser) {
@@ -57,6 +58,7 @@ export default function AppRoutes({
           practiceFilter={practiceFilter}
           onPracticeCompleted={actions.onPracticeCompleted}
           onToggleFavorite={actions.onToggleFavorite}
+          onLocalPersistenceResult={actions.onLocalPersistenceResult}
         />
       );
     case 'vocabulary':
@@ -74,6 +76,7 @@ export default function AppRoutes({
           currentUser={currentUser}
           setCurrentPage={actions.setCurrentPage}
           onMockExamSubmitted={actions.onMockExamSubmitted}
+          onLocalPersistenceResult={actions.onLocalPersistenceResult}
         />
       );
     case 'result':
@@ -113,6 +116,7 @@ export default function AppRoutes({
           onDeleteAccount={actions.onDeleteAccount}
           syncStatus={syncStatus}
           syncError={syncError}
+          localPersistenceStatus={localPersistenceStatus}
           onManualSync={actions.onManualSync}
         />
       );

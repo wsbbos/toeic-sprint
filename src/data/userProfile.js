@@ -34,6 +34,12 @@ export const DEFAULT_PROGRESS = Object.freeze({
   learnedVocabularyCount: 0,
 });
 
+export const PROFILE_RETENTION_LIMITS = Object.freeze({
+  practiceHistory: 2000,
+  mockTestHistory: 100,
+  dailyRecords: 730,
+});
+
 const isRecord = (value) => Boolean(value && typeof value === 'object' && !Array.isArray(value));
 const asRecord = (value) => isRecord(value) ? value : {};
 const nonNegativeNumber = (value, fallback = 0) => {
@@ -131,7 +137,7 @@ const normalizeDailyRecords = (value) => {
     }
     byDate.set(date, normalized);
   }
-  return [...byDate.values()];
+  return [...byDate.values()].slice(-PROFILE_RETENTION_LIMITS.dailyRecords);
 };
 
 /**
@@ -153,8 +159,8 @@ export function createDefaultUserProfile(overrides = {}) {
     vocabularyProgress: { ...asRecord(source.vocabularyProgress) },
     wrongBook: dedupeByQuestionId(source.wrongBook),
     favorites: dedupeFavorites(source.favorites),
-    practiceHistory: copyObjectArray(source.practiceHistory),
-    mockTestHistory: copyObjectArray(source.mockTestHistory),
+    practiceHistory: copyObjectArray(source.practiceHistory).slice(-PROFILE_RETENTION_LIMITS.practiceHistory),
+    mockTestHistory: copyObjectArray(source.mockTestHistory).slice(-PROFILE_RETENTION_LIMITS.mockTestHistory),
     dailyRecords: normalizeDailyRecords(source.dailyRecords),
   };
 }

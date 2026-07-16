@@ -2,6 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, test, vi } from 'vitest'
 import Settings from '../../src/pages/Settings.jsx'
+import LocalPersistenceBanner from '../../src/components/LocalPersistenceBanner.jsx'
 
 const guest = {
   id: 'guest-local',
@@ -42,4 +43,22 @@ test('sync failures show recovery guidance without backend diagnostics', () => {
   />)
   expect(screen.getByRole('alert')).toHaveTextContent('本機資料已保留')
   expect(screen.queryByText(/private SQL|42501|row policy/)).not.toBeInTheDocument()
+})
+test('local persistence failures replace the saved claim with an actionable alert', () => {
+  const { rerender } = render(
+    <Settings
+      currentUser={guest}
+      onSaveGoals={vi.fn()}
+      onClearData={vi.fn()}
+      onDeleteAccount={vi.fn()}
+      localPersistenceStatus="failed"
+    />,
+  )
+
+  expect(screen.getByText('⚠️ 本機儲存失敗')).toBeInTheDocument()
+  expect(screen.queryByText('💾 已儲存於此裝置')).not.toBeInTheDocument()
+  expect(screen.getByRole('alert')).toHaveTextContent('無法儲存學習進度')
+
+  rerender(<LocalPersistenceBanner status="failed" />)
+  expect(screen.getByRole('alert')).toHaveTextContent('重新整理後遺失')
 })

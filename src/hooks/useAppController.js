@@ -49,6 +49,8 @@ export function useAppController() {
   const [retakeList, setRetakeList] = useState([]);
   const [syncStatus, setSyncStatus] = useState('synced');
   const [syncError, setSyncError] = useState(null);
+  const [localPersistenceStatus, setLocalPersistenceStatus] = useState('available');
+  const [localPersistenceError, setLocalPersistenceError] = useState(null);
   const [legacyLocalUsers, setLegacyLocalUsers] = useState([]);
   const [selectedLegacyUserToImport, setSelectedLegacyUserToImport] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
@@ -59,6 +61,25 @@ export function useAppController() {
     currentUserRef.current = user;
     setCurrentUser(user);
   }, []);
+
+  const reportLocalPersistence = useCallback((persisted) => {
+    if (persisted) {
+      setLocalPersistenceStatus('available');
+      setLocalPersistenceError(null);
+    } else {
+      setLocalPersistenceStatus('failed');
+      setLocalPersistenceError({
+        code: 'LOCAL_STORAGE_UNAVAILABLE',
+        message: '此瀏覽器目前無法儲存學習進度。',
+        details: '請保留此頁面並確認瀏覽器儲存空間或隱私設定；登入使用者仍可嘗試雲端同步。',
+      });
+    }
+    return persisted;
+  }, []);
+
+  const persistCachedUser = useCallback((user) => (
+    reportLocalPersistence(saveCachedUser(undefined, user))
+  ), [reportLocalPersistence]);
 
   const clearLocalSession = useCallback(() => {
     clearAuthStorage();
@@ -149,7 +170,7 @@ export function useAppController() {
         currentUserRef.current,
       );
       commitCurrentUser(user);
-      saveCachedUser(undefined, user);
+      persistCachedUser(user);
       setCurrentPage(user.goals?.examDate ? 'home' : 'onboarding');
       setSyncStatus('synced');
       await syncPublicStatsSafely(user, authUser.id);
@@ -163,7 +184,7 @@ export function useAppController() {
     } catch (error) {
       await exposeSyncError(error);
     }
-  }, [clearLocalSession, commitCurrentUser, exposeSyncError, handleStaleSession, syncPublicStatsSafely]);
+  }, [clearLocalSession, commitCurrentUser, exposeSyncError, handleStaleSession, persistCachedUser, syncPublicStatsSafely]);
 
   const sessionStatus = useSupabaseSession({
     client: supabase,
@@ -202,18 +223,18 @@ export function useAppController() {
       normalizeUserProfile(transform(normalizeUserProfile(activeUser))),
     );
     commitCurrentUser(updated);
-    saveCachedUser(undefined, updated);
+    persistCachedUser(updated);
     await syncWithCloud(updated);
     return updated;
-  }, [commitCurrentUser, syncWithCloud]);
+  }, [commitCurrentUser, persistCachedUser, syncWithCloud]);
 
   const handleGuestLogin = useCallback(() => {
     const guest = createGuestProfile();
     commitCurrentUser(guest);
-    saveCachedUser(undefined, guest);
+    persistCachedUser(guest);
     setSyncStatus('synced');
     setCurrentPage('home');
-  }, [commitCurrentUser]);
+  }, [commitCurrentUser, persistCachedUser]);
 
   const handleLoginSuccess = useCallback((session, customUsername) => (
     handleSessionChange(session, 'SIGNED_IN', customUsername)
@@ -231,12 +252,12 @@ export function useAppController() {
       username: currentUser.username || legacyUser.username,
     }));
     commitCurrentUser(mergedUser);
-    saveCachedUser(undefined, mergedUser);
+    persistCachedUser(mergedUser);
     await syncWithCloud(mergedUser);
     markLegacyDataImported(undefined, currentUser.id);
     setShowImportModal(false);
     window.alert('本機學習資料已匯入。');
-  }, [commitCurrentUser, currentUser, syncWithCloud]);
+  }, [commitCurrentUser, currentUser, persistCachedUser, syncWithCloud]);
 
   const dismissImportModal = useCallback(() => {
     if (currentUser?.id) {
@@ -272,13 +293,13 @@ export function useAppController() {
         localUser,
       );
       commitCurrentUser(user);
-      saveCachedUser(undefined, user);
+      persistCachedUser(user);
       await syncPublicStatsSafely(user, authUser.id);
       setSyncStatus('synced');
     } catch (error) {
       await exposeSyncError(error);
     }
-  }, [commitCurrentUser, exposeSyncError, syncPublicStatsSafely]);
+  }, [commitCurrentUser, exposeSyncError, persistCachedUser, syncPublicStatsSafely]);
 
   const safeLogout = useCallback(async () => {
     try {
@@ -359,6 +380,7 @@ export function useAppController() {
     onGuestLogin: handleGuestLogin,
     onLoginSuccess: handleLoginSuccess,
     onManualSync: handleManualSync,
+    onLocalPersistenceResult: reportLocalPersistence,
     onMockExamSubmitted: handleMockExamSubmitted,
     onRemoveWrongQuestion: handleRemoveWrongQuestion,
     onRetakeCompleted: handleRetakeCompleted,
@@ -378,6 +400,7 @@ export function useAppController() {
     handleLoginSuccess,
     handleManualSync,
     handleMockExamSubmitted,
+    reportLocalPersistence,
     handleRemoveWrongQuestion,
     handleRetakeCompleted,
     handleSaveGoals,
@@ -393,6 +416,8 @@ export function useAppController() {
     activeMockResult,
     currentPage,
     currentUser,
+    localPersistenceError,
+    localPersistenceStatus,
     importModal: {
       onDismiss: dismissImportModal,
       onImport: handleImportLocalData,

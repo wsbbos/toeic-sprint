@@ -215,3 +215,17 @@ test('corrupted legacy profile fields are repaired before progress mutations', (
     new Date('2026-07-16T12:00:00Z'),
   ));
 });
+test('profile normalization bounds long-term history without losing recent activity', () => {
+  const normalized = normalizeUserProfile({
+    practiceHistory: Array.from({ length: 2005 }, (_, index) => ({ questionId: `p-${index}`, answeredAt: `${index}` })),
+    mockTestHistory: Array.from({ length: 105 }, (_, index) => ({ id: `m-${index}` })),
+    dailyRecords: Array.from({ length: 735 }, (_, index) => ({ date: `day-${index}`, questionsAnswered: 1 })),
+  });
+
+  assert.equal(normalized.practiceHistory.length, 2000);
+  assert.equal(normalized.practiceHistory[0].questionId, 'p-5');
+  assert.equal(normalized.mockTestHistory.length, 100);
+  assert.equal(normalized.mockTestHistory[0].id, 'm-5');
+  assert.equal(normalized.dailyRecords.length, 730);
+  assert.equal(normalized.dailyRecords[0].date, 'day-5');
+});

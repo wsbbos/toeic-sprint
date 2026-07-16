@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import AppLoadingState from './components/AppLoadingState';
 import AppRoutes from './components/AppRoutes';
 import LocalImportModal from './components/LocalImportModal';
+import LocalPersistenceBanner from './components/LocalPersistenceBanner';
 import Navbar from './components/Navbar';
 import OfflineBanner from './components/OfflineBanner';
 import { useAppController } from './hooks/useAppController';
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <div className="app-container">
       <OfflineBanner />
+      <LocalPersistenceBanner status={app.localPersistenceStatus} />
       <Navbar
         currentPage={app.currentPage}
         setCurrentPage={app.actions.setCurrentPage}
@@ -35,6 +37,7 @@ export default function App() {
             todayRecord={app.todayRecord}
             syncStatus={app.syncStatus}
             syncError={app.syncError}
+            localPersistenceStatus={app.localPersistenceStatus}
             actions={app.actions}
           />
         </Suspense>

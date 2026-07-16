@@ -76,3 +76,21 @@ test('an expired restored Mini Mock auto-submits exactly once', async () => {
   await waitFor(() => expect(onMockExamSubmitted).toHaveBeenCalledTimes(1))
   expect(setCurrentPage).toHaveBeenCalledWith('result')
 })
+test('Mini Mock drafts report storage failures to the application shell', async () => {
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new DOMException('Quota exceeded', 'QuotaExceededError')
+  })
+  const onLocalPersistenceResult = vi.fn()
+
+  render(
+    <ActiveMockTest
+      currentUser={{ id: 'guest-local', isGuest: true }}
+      questions={questions}
+      setCurrentPage={vi.fn()}
+      onMockExamSubmitted={vi.fn()}
+      onLocalPersistenceResult={onLocalPersistenceResult}
+    />,
+  )
+
+  await waitFor(() => expect(onLocalPersistenceResult).toHaveBeenCalledWith(false))
+})
